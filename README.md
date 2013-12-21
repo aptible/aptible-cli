@@ -1,18 +1,16 @@
-# ![](https://raw.github.com/aptible/straptible/master/lib/straptible/rails/templates/public.api/icon-60px.png) Aptible::Cli
+# ![](https://raw.github.com/aptible/straptible/master/lib/straptible/rails/templates/public.api/icon-60px.png) Aptible CLI
 
 [![Gem Version](https://badge.fury.io/rb/aptible-cli.png)](https://rubygems.org/gems/aptible-cli)
 [![Build Status](https://travis-ci.org/aptible/aptible-cli.png?branch=master)](https://travis-ci.org/aptible/aptible-cli)
 [![Dependency Status](https://gemnasium.com/aptible/aptible-cli.png)](https://gemnasium.com/aptible/aptible-cli)
 
-TODO: Add description.
+Command-line interface for Aptible services.
 
 ## Installation
 
-Add the following line to your application's Gemfile.
+Install the command line tool using Rubygems:
 
-    gem 'aptible-cli'
-
-And then run `bundle install`.
+    gem install aptible-cli
 
 ## Usage
 

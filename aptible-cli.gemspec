@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.version       = Aptible::Cli::VERSION
   spec.authors       = ['Frank Macreery']
   spec.email         = ['frank@macreery.com']
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.description   = %q{Aptible CLI}
+  spec.summary       = %q{Command-line interface for Aptible services}
   spec.homepage      = 'https://github.com/aptible/aptible-cli'
   spec.license       = 'MIT'
 
