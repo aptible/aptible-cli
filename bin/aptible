@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+begin
+  require 'aptible/cli'
+rescue
+  require 'rubygems'
+  require 'aptible/cli'
+end
+
+Aptible::CLI::Agent.start
