@@ -1,7 +1,7 @@
 require 'aptible/cli/version'
+require 'aptible/cli/agent'
 
 module Aptible
-  module Cli
-    # Your code goes here...
+  module CLI
   end
 end
