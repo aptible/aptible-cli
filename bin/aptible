@@ -7,4 +7,11 @@ rescue
   require 'aptible/cli'
 end
 
-Aptible::CLI::Agent.start
+begin
+  Aptible::CLI::Agent.start
+rescue HyperResource::ClientError => e
+  if e.body['error'] == 'invalid_token'
+    STDERR.puts 'API authentication error: please run aptible login'
+    exit 1
+  end
+end

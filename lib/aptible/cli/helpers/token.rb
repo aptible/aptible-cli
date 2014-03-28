@@ -12,11 +12,12 @@ module Aptible
 
         # rubocop:disable MethodLength
         def save_token(token)
+          hash = current_token_hash.merge(
+            Aptible::Auth.configuration.root_url => token
+          )
+
           FileUtils.mkdir_p(File.dirname(token_file))
           File.open(token_file, 'w') do |file|
-            hash = current_token_hash.merge(
-              Aptible::Auth.configuration.root_url => token
-            )
             file.puts hash.to_json
           end
         rescue
