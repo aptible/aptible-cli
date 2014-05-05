@@ -24,7 +24,7 @@ module Aptible
 
               ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_COMMAND'] = command_from_args(*args)
-              ENV['APTIBLE_APP'] = options[:app]
+              ENV['APTIBLE_APP'] = app.handle
 
               Kernel.exec "ssh -o 'SendEnv=*' -p #{port} root@#{host}"
             end
@@ -32,7 +32,7 @@ module Aptible
             private
 
             def command_from_args(*args)
-              Shellwords.join(args)
+              args.empty? ? '/bin/bash' : Shellwords.join(args)
             end
           end
         end
