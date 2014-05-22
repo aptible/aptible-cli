@@ -24,9 +24,11 @@ module Aptible
       end
 
       desc 'login', 'Log in to Aptible'
+      option :email
+      option :password
       def login
-        email = ask('Email: ')
-        password = ask('Password: ', echo: false)
+        email = options[:email] || ask('Email: ')
+        password = options[:password] || ask('Password: ', echo: false)
         puts ''
 
         begin
