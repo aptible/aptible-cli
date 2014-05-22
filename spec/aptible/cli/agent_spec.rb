@@ -29,5 +29,12 @@ describe Aptible::CLI::Agent do
         subject.login
       end.to raise_error 'Could not authenticate with given credentials'
     end
+
+    it 'should use command line arguments if passed' do
+      options = { email: 'test@example.com', password: 'password' }
+      subject.stub(:options) { options }
+      expect(Aptible::Auth::Token).to receive(:create).with(options) { token }
+      subject.login
+    end
   end
 end
