@@ -9,9 +9,8 @@ module Aptible
         def poll_for_success(operation)
           puts 'Updating configuration and restarting app...'
           wait_for_completion operation
-          unless operation.status == 'succeeded'
-            fail Thor::Error, 'Operation failed: please check logs'
-          end
+          return if operation.status == 'succeeded'
+          fail Thor::Error, 'Operation failed: please check logs'
         end
 
         def wait_for_completion(operation)
