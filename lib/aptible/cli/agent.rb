@@ -7,6 +7,8 @@ require_relative 'helpers/operation'
 require_relative 'helpers/app'
 
 require_relative 'subcommands/config'
+require_relative 'subcommands/rebuild'
+require_relative 'subcommands/restart'
 require_relative 'subcommands/ssh'
 
 module Aptible
@@ -16,6 +18,8 @@ module Aptible
 
       include Helpers::Token
       include Subcommands::Config
+      include Subcommands::Rebuild
+      include Subcommands::Restart
       include Subcommands::SSH
 
       desc 'version', 'Print Aptible CLI version'
