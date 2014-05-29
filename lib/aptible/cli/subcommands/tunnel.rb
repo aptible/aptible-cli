@@ -25,6 +25,7 @@ module Aptible
             end
 
             private
+
             def database_from_handle(handle)
               Aptible::Api::Database.all(token: fetch_token).find do |a|
                 a.handle == handle
