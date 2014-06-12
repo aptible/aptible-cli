@@ -17,6 +17,7 @@ module Aptible
               host = database.account.bastion_host
               port = database.account.bastion_port
 
+              ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_DATABASE'] = handle
               tunnel_args = "-L #{local_port}:localhost:#{remote_port}"
               connection_args = "-o 'SendEnv=*' -p #{port} root@#{host}"
