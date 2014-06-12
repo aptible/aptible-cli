@@ -8,6 +8,7 @@ require_relative 'helpers/app'
 
 require_relative 'subcommands/config'
 require_relative 'subcommands/ssh'
+require_relative 'subcommands/tunnel'
 
 module Aptible
   module CLI
@@ -17,6 +18,7 @@ module Aptible
       include Helpers::Token
       include Subcommands::Config
       include Subcommands::SSH
+      include Subcommands::Tunnel
 
       desc 'version', 'Print Aptible CLI version'
       def version
