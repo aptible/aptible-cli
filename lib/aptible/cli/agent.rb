@@ -4,8 +4,10 @@ require 'json'
 
 require_relative 'helpers/token'
 require_relative 'helpers/operation'
+require_relative 'helpers/account'
 require_relative 'helpers/app'
 
+require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
 require_relative 'subcommands/ssh'
 require_relative 'subcommands/tunnel'
@@ -16,6 +18,7 @@ module Aptible
       include Thor::Actions
 
       include Helpers::Token
+      include Subcommands::Apps
       include Subcommands::Config
       include Subcommands::SSH
       include Subcommands::Tunnel
