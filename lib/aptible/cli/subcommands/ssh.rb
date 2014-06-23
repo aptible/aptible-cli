@@ -26,7 +26,9 @@ module Aptible
               ENV['APTIBLE_COMMAND'] = command_from_args(*args)
               ENV['APTIBLE_APP'] = app.handle
 
-              Kernel.exec "ssh -o 'SendEnv=*' -p #{port} root@#{host}"
+              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
+                     '-o UserKnownHostsFile=/dev/null'
+              Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
             end
 
             private
