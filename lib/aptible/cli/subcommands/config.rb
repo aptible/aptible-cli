@@ -27,6 +27,7 @@ module Aptible
               app = ensure_app(options)
               env = Hash[args.map { |arg| arg.split('=', 2) }]
               operation = app.create_operation(type: 'configure', env: env)
+              puts 'Updating configuration and restarting app...'
               poll_for_success(operation)
             end
 
@@ -37,6 +38,7 @@ module Aptible
               app = ensure_app(options)
               env = Hash[args.map { |arg| [arg, ''] }]
               operation = app.create_operation(type: 'configure', env: env)
+              puts 'Updating configuration and restarting app...'
               poll_for_success(operation)
             end
 
