@@ -8,3 +8,7 @@ end
 
 # Require library up front
 require 'aptible/cli'
+
+RSpec.configure do |config|
+  config.before {}
+end
