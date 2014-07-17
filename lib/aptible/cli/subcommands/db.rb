@@ -27,6 +27,20 @@ module Aptible
               end
             end
 
+            desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
+            define_method 'db:clone' do |source_handle, dest_handle|
+              source = database_from_handle(source_handle)
+
+              unless source
+                fail Thor::Error, "Could not find database #{source_handle}"
+              end
+
+              op = database.create_operation(type: clone, handle: dest_handle)
+              poll_for_success(op)
+              dest = database_from_handle(dest_handle)
+              say dest.connection_url
+            end
+
             desc 'db:dump HANDLE', 'Dump a remote database to file'
             define_method 'db:dump' do |handle|
               begin
