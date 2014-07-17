@@ -10,7 +10,7 @@ module Aptible
             include Helpers::Operation
             include Helpers::App
 
-            desc 'ssh COMMAND', 'Run a command against an app'
+            desc 'ssh [COMMAND]', 'Run a command against an app'
             long_desc <<-LONGDESC
               Runs an interactive command against a remote Aptible app
 
