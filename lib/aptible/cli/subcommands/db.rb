@@ -8,6 +8,25 @@ module Aptible
             include Helpers::Operation
             include Helpers::Token
 
+            desc 'db:create HANDLE', 'Create a new database'
+            option :type, default: 'postgresql'
+            option :size, default: 10
+            option :account
+            define_method 'db:create' do |handle|
+              account = ensure_account(options)
+              database = account.create_database(handle: handle,
+                                                 type: options[:type])
+
+              if database.errors.any?
+                fail Thor::Error, database.errors.full_messages.first
+              else
+                op = database.create_operation(type: 'provision',
+                                               disk_size: options[:size])
+                poll_for_success(op)
+                say database.reload.connection_url
+              end
+            end
+
             desc 'db:dump HANDLE', 'Dump a remote database to file'
             define_method 'db:dump' do |handle|
               begin

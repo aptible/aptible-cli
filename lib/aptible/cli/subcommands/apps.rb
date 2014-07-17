@@ -33,7 +33,7 @@ module Aptible
               app = account.create_app(handle: handle)
 
               if app.errors.any?
-                fail app.errors.full_messages.first
+                fail Thor::Error, app.errors.full_messages.first
               else
                 say "App #{handle} created!"
               end
