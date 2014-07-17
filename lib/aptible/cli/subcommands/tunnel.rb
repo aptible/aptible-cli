@@ -22,7 +22,9 @@ module Aptible
               tunnel_args = "-L #{local_port}:localhost:#{remote_port}"
               connection_args = "-o 'SendEnv=*' -p #{port} root@#{host}"
               puts "Creating tunnel at localhost:#{local_port}..."
-              Kernel.exec "ssh #{tunnel_args} #{connection_args}"
+              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
+                     '-o UserKnownHostsFile=/dev/null'
+              Kernel.exec "ssh #{opts} #{tunnel_args} #{connection_args}"
             end
 
             private
