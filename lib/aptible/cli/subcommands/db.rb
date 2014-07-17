@@ -1,15 +1,16 @@
 module Aptible
   module CLI
     module Subcommands
-      module Tunnel
+      module DB
         # rubocop:disable MethodLength
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
             include Helpers::Token
 
-            desc 'tunnel DATABASE', 'Create a local tunnel to a database'
-            def tunnel(handle)
+            desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
+            option :port, type: :numeric
+            define_method 'db:tunnel' do |handle|
               database = database_from_handle(handle)
               unless database
                 fail Thor::Error, "Could not find database #{handle}"
@@ -19,6 +20,7 @@ module Aptible
 
               ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_DATABASE'] = handle
+              local_port = options[:port] || random_port
               tunnel_args = "-L #{local_port}:localhost:#{remote_port}"
               connection_args = "-o 'SendEnv=*' -p #{port} root@#{host}"
               puts "Creating tunnel at localhost:#{local_port}..."
@@ -35,14 +37,12 @@ module Aptible
               end
             end
 
-            def local_port
-              return @local_port if @local_port
-
+            def random_port
               # Allocate a dummy server to discover an available port
               dummy = TCPServer.new('127.0.0.1', 0)
               port = dummy.addr[1]
               dummy.close
-              @local_port = port
+              port
             end
 
             def remote_port
