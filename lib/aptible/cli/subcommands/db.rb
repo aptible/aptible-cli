@@ -8,6 +8,32 @@ module Aptible
             include Helpers::Operation
             include Helpers::Token
 
+            desc 'db:dump HANDLE', 'Dump a remote database to file'
+            define_method 'db:dump' do |handle|
+              begin
+                database = database_from_handle(handle)
+                unless database
+                  fail Thor::Error, "Could not find database #{handle}"
+                end
+                unless database.type == 'postgresql'
+                  fail Thor::Error, 'db:dump only works for PostgreSQL'
+                end
+
+                local_port = random_port
+                pid = fork { establish_connection(database, local_port) }
+
+                # TODO: Better test for connection readiness
+                sleep 10
+
+                filename = "#{handle}.dump"
+                puts "Dumping to #{filename}"
+                url = "aptible:#{database.passphrase}@localhost:#{local_port}"
+                `pg_dump postgresql://#{url}/db > #{filename}`
+              ensure
+                Process.kill('HUP', pid) if pid
+              end
+            end
+
             desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
             option :port, type: :numeric
             define_method 'db:tunnel' do |handle|
@@ -15,21 +41,27 @@ module Aptible
               unless database
                 fail Thor::Error, "Could not find database #{handle}"
               end
+
+              local_port = options[:port] || random_port
+              puts "Creating tunnel at localhost:#{local_port}..."
+              establish_connection(database, local_port)
+            end
+
+            private
+
+            def establish_connection(database, local_port)
               host = database.account.bastion_host
               port = database.account.bastion_port
 
               ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_DATABASE'] = handle
-              local_port = options[:port] || random_port
+              ENV['APTIBLE_DATABASE'] = database.handle
               tunnel_args = "-L #{local_port}:localhost:#{remote_port}"
               connection_args = "-o 'SendEnv=*' -p #{port} root@#{host}"
-              puts "Creating tunnel at localhost:#{local_port}..."
               opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
                      '-o UserKnownHostsFile=/dev/null'
-              Kernel.exec "ssh #{opts} #{tunnel_args} #{connection_args}"
+              command = "ssh #{opts} #{tunnel_args} #{connection_args}"
+              Kernel.exec(command)
             end
-
-            private
 
             def database_from_handle(handle)
               Aptible::Api::Database.all(token: fetch_token).find do |a|
