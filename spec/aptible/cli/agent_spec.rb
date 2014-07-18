@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Aptible::CLI::Agent do
   before { subject.stub(:ask) }
+  before { subject.stub(:save_token) }
 
   describe '#version' do
     it 'should print the version' do
