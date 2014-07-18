@@ -31,6 +31,12 @@ module Aptible
               poll_for_success(operation)
             end
 
+            desc 'config:set', 'Alias for config:add'
+            option :app
+            define_method 'config:set' do |*args|
+              send('config:add', *args)
+            end
+
             desc 'config:rm', 'Remove an ENV variable from an app'
             option :app
             define_method 'config:rm' do |*args|
@@ -40,6 +46,12 @@ module Aptible
               operation = app.create_operation(type: 'configure', env: env)
               puts 'Updating configuration and restarting app...'
               poll_for_success(operation)
+            end
+
+            desc 'config:unset', 'Alias for config:rm'
+            option :app
+            define_method 'config:unset' do |*args|
+              send('config:add', *args)
             end
 
             private
