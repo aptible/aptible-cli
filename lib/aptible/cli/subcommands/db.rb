@@ -36,7 +36,7 @@ module Aptible
                 fail Thor::Error, "Could not find database #{source_handle}"
               end
 
-              op = source.create_operation(type: clone, handle: dest_handle)
+              op = source.create_operation(type: 'clone', handle: dest_handle)
               poll_for_success(op)
               dest = database_from_handle(dest_handle)
               say dest.connection_url
