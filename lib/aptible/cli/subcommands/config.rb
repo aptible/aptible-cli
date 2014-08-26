@@ -4,8 +4,6 @@ module Aptible
   module CLI
     module Subcommands
       module Config
-        # rubocop:disable MethodLength
-        # rubocop:disable CyclomaticComplexity
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
@@ -61,8 +59,6 @@ module Aptible
             end
           end
         end
-        # rubocop:enable CyclomaticComplexity
-        # rubocop:enable MethodLength
       end
     end
   end
