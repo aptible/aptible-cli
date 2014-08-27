@@ -4,7 +4,6 @@ module Aptible
   module CLI
     module Subcommands
       module SSH
-        # rubocop:disable MethodLength
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
@@ -17,6 +16,7 @@ module Aptible
               If specifying an app, invoke via: aptible ssh [--app=APP] COMMAND
             LONGDESC
             option :app
+            option :force_tty, type: :boolean
             def ssh(*args)
               app = ensure_app(options)
               host = app.account.bastion_host
@@ -26,8 +26,9 @@ module Aptible
               ENV['APTIBLE_COMMAND'] = command_from_args(*args)
               ENV['APTIBLE_APP'] = app.handle
 
-              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                     '-o UserKnownHostsFile=/dev/null'
+              opts = options[:force_tty] ? '-t -t' : ''
+              opts << " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
+                      '-o UserKnownHostsFile=/dev/null'
               Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
             end
 
@@ -38,7 +39,6 @@ module Aptible
             end
           end
         end
-        # rubocop:enable MethodLength
       end
     end
   end

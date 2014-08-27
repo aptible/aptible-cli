@@ -10,7 +10,6 @@ module Aptible
           fail Thor::Error, 'Could not read token: please run aptible login'
         end
 
-        # rubocop:disable MethodLength
         def save_token(token)
           hash = current_token_hash.merge(
             Aptible::Auth.configuration.root_url => token
@@ -26,7 +25,6 @@ module Aptible
             permissions
           ERR
         end
-        # rubocop:enable MethodLength
 
         def current_token_hash
           JSON.parse(File.read(token_file))

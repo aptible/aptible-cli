@@ -2,7 +2,6 @@ module Aptible
   module CLI
     module Subcommands
       module Rebuild
-        # rubocop:disable MethodLength
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
@@ -18,7 +17,6 @@ module Aptible
             end
           end
         end
-        # rubocop:enable MethodLength
       end
     end
   end

@@ -2,7 +2,6 @@ module Aptible
   module CLI
     module Subcommands
       module Apps
-        # rubocop:disable MethodLength
         def self.included(thor)
           thor.class_eval do
             include Helpers::Account
@@ -40,7 +39,6 @@ module Aptible
             end
           end
         end
-        # rubocop:enable MethodLength
       end
     end
   end
