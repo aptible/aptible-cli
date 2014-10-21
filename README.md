@@ -53,3 +53,5 @@ Commands:
 MIT License, see [LICENSE](LICENSE.md) for details.
 
 Copyright (c) 2013 [Aptible](https://www.aptible.com), Frank Macreery, and contributors.
+
+[<img src="https://s.gravatar.com/avatar/f7790b867ae619ae0496460aa28c5861?s=60" style="border-radius: 50%;" alt="@fancyremarker" />](https://github.com/fancyremarker)
