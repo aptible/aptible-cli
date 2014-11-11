@@ -25,6 +25,9 @@ CyclomaticComplexity:
 PerceivedComplexity:
   Enabled: false
 
+AbcSize:
+  Enabled: false
+
 AllCops:
   Include:
     - !ruby/regexp /\.rb$/
