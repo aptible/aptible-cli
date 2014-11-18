@@ -51,7 +51,7 @@ module Aptible
                   fail Thor::Error, 'db:dump only works for PostgreSQL'
                 end
 
-                local_port = random_port
+                local_port = random_local_port
                 pid = fork { establish_connection(database, local_port) }
 
                 # TODO: Better test for connection readiness
@@ -74,7 +74,7 @@ module Aptible
                 fail Thor::Error, "Could not find database #{handle}"
               end
 
-              local_port = options[:port] || random_port
+              local_port = options[:port] || random_local_port
               puts "Creating tunnel at localhost:#{local_port}..."
               establish_connection(database, local_port)
             end
@@ -82,16 +82,14 @@ module Aptible
             private
 
             def establish_connection(database, local_port)
-              host = database.account.bastion_host
-              port = database.account.bastion_port
-
               ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_DATABASE'] = database.handle
+
+              remote_port = claim_remote_port(database)
+              ENV['TUNNEL_PORT'] = remote_port
+
               tunnel_args = "-L #{local_port}:localhost:#{remote_port}"
-              connection_args = "-o 'SendEnv=*' -p #{port} root@#{host}"
-              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                     '-o UserKnownHostsFile=/dev/null'
-              command = "ssh #{opts} #{tunnel_args} #{connection_args}"
+              command = "ssh #{tunnel_args} #{common_ssh_args(database)}"
               Kernel.exec(command)
             end
 
@@ -101,7 +99,7 @@ module Aptible
               end
             end
 
-            def random_port
+            def random_local_port
               # Allocate a dummy server to discover an available port
               dummy = TCPServer.new('127.0.0.1', 0)
               port = dummy.addr[1]
@@ -109,8 +107,20 @@ module Aptible
               port
             end
 
-            def remote_port
-              8080
+            def claim_remote_port(database)
+              ENV['ACCESS_TOKEN'] = fetch_token
+
+              `ssh #{common_ssh_args(database)} 2>/dev/null`.chomp
+            end
+
+            def common_ssh_args(database)
+              host = database.account.bastion_host
+              port = database.account.bastion_port
+
+              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
+                     '-o UserKnownHostsFile=/dev/null'
+              connection_args = "-p #{port} root@#{host}"
+              "#{opts} #{connection_args}"
             end
           end
         end
