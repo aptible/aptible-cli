@@ -28,55 +28,35 @@ module Aptible
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
             define_method 'db:clone' do |source_handle, dest_handle|
-              source = database_from_handle(source_handle)
-
-              unless source
-                fail Thor::Error, "Could not find database #{source_handle}"
-              end
-
-              op = source.create_operation(type: 'clone', handle: dest_handle)
-              poll_for_success(op)
-              dest = database_from_handle(dest_handle)
+              dest = clone_database(source_handle, dest_handle)
               say dest.connection_url
             end
 
             desc 'db:dump HANDLE', 'Dump a remote database to file'
             define_method 'db:dump' do |handle|
-              begin
-                database = database_from_handle(handle)
-                unless database
-                  fail Thor::Error, "Could not find database #{handle}"
-                end
-                unless database.type == 'postgresql'
-                  fail Thor::Error, 'db:dump only works for PostgreSQL'
-                end
-
-                local_port = random_local_port
-                pid = fork { establish_connection(database, local_port) }
-
-                # TODO: Better test for connection readiness
-                sleep 10
-
-                filename = "#{handle}.dump"
-                puts "Dumping to #{filename}"
-                url = "aptible:#{database.passphrase}@localhost:#{local_port}"
-                `pg_dump postgresql://#{url}/db > #{filename}`
-              ensure
-                Process.kill('HUP', pid) if pid
-              end
+              dump_database( handle )
             end
 
             desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
             option :port, type: :numeric
             define_method 'db:tunnel' do |handle|
               database = database_from_handle(handle)
-              unless database
-                fail Thor::Error, "Could not find database #{handle}"
-              end
-
               local_port = options[:port] || random_local_port
               puts "Creating tunnel at localhost:#{local_port}..."
               establish_connection(database, local_port)
+            end
+
+            desc 'db:anonymize HANDLE SQL_FILE', 'Clone a database, anonymize the clone with the given sql file, and then downloads it'
+            define_method 'db:anonymize' do |source_handle, sql_path|
+              dest_handle = "#{source_handle}-anonymized-#{Time.now.to_i}"
+              dest = clone_database(source_handle, dest_handle)
+
+              execute_local_tunnel(dest_handle) do |url|
+                puts "Executing #{sql_path} against #{dest_handle}"
+                `psql #{url} < #{sql_path}`
+              end
+
+              dump_database( dest_handle )
             end
 
             private
@@ -93,9 +73,55 @@ module Aptible
               Kernel.exec(command)
             end
 
-            def database_from_handle(handle)
-              Aptible::Api::Database.all(token: fetch_token).find do |a|
+            def database_from_handle(handle, options = {:postgres_only => false})
+              database = Aptible::Api::Database.all(token: fetch_token).find do |a|
                 a.handle == handle
+              end
+
+              unless database
+                fail Thor::Error, "Could not find database #{handle}"
+              end
+
+              if options[:postgres_only] && database.type != 'postgresql'
+                fail Thor::Error, 'This command only works for PostgreSQL'
+              end
+
+              return database
+            end
+
+            def clone_database(source_handle, dest_handle)
+              puts "Cloning #{source_handle} to #{dest_handle}"
+
+              source = database_from_handle(source_handle)
+              op = source.create_operation(type: 'clone', handle: dest_handle)
+              poll_for_success(op)
+
+              return database_from_handle(dest_handle)
+            end
+
+            def dump_database(handle)
+              execute_local_tunnel(handle) do |url|
+                filename = "#{handle}.dump"
+                puts "Dumping to #{filename}"
+                `pg_dump #{url} > #{filename}`
+              end
+            end
+
+            # Creates a local tunnel and yields the url to it
+
+            def execute_local_tunnel(handle)
+              begin
+                database = database_from_handle(handle, :postgres_only => true)
+
+                local_port = random_local_port
+                pid = fork { establish_connection(database, local_port) }
+
+                # TODO: Better test for connection readiness
+                sleep 10
+
+                yield "postgresql://aptible:#{database.passphrase}@localhost:#{local_port}/db"
+              ensure
+                Process.kill('HUP', pid) if pid
               end
             end
 
