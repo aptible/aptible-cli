@@ -51,10 +51,18 @@ Commands:
 1. If you add a command, update this README with the output of `aptible help | grep -v help`.
 1. Create a new pull request on GitHub.
 
+## Contributors
+
+* Frank Macreery ([@fancyremarker](https://github.com/fancyremarker))
+* Graham Melcher ([@melcher](https://github.com/melcher))
+* Pete Browne ([@petebrowne](https://github.com/petebrowne))
+* Rich Humphrey ([@rdh](https://github.com/rdh))
+
+
 ## Copyright and License
 
 MIT License, see [LICENSE](LICENSE.md) for details.
 
-Copyright (c) 2014 [Aptible](https://www.aptible.com) and contributors.
+Copyright (c) 2015 [Aptible](https://www.aptible.com) and contributors.
 
 [<img src="https://s.gravatar.com/avatar/f7790b867ae619ae0496460aa28c5861?s=60" style="border-radius: 50%;" alt="@fancyremarker" />](https://github.com/fancyremarker)
