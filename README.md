@@ -22,22 +22,25 @@ From `aptible help`:
 
 ```
 Commands:
-  aptible apps                  # List all applications
-  aptible apps:create HANDLE    # Create a new application
-  aptible config                # Print an app's current configuration
-  aptible config:add            # Add an ENV variable to an app
-  aptible config:rm             # Remove an ENV variable from an app
-  aptible config:set            # Alias for config:add
-  aptible config:unset          # Alias for config:rm
-  aptible db:clone SOURCE DEST  # Clone a database to create a new one
-  aptible db:create HANDLE      # Create a new database
-  aptible db:dump HANDLE        # Dump a remote database to file
-  aptible db:tunnel HANDLE      # Create a local tunnel to a database
-  aptible login                 # Log in to Aptible
-  aptible rebuild               # Rebuild an app, and restart its services
-  aptible restart               # Restart all services associated with an app
-  aptible ssh [COMMAND]         # Run a command against an app
-  aptible version               # Print Aptible CLI version
+  aptible apps                        # List all applications
+  aptible apps:create HANDLE          # Create a new application
+  aptible config                      # Print an app's current configuration
+  aptible config:add                  # Add an ENV variable to an app
+  aptible config:rm                   # Remove an ENV variable from an app
+  aptible config:set                  # Alias for config:add
+  aptible config:unset                # Alias for config:rm
+  aptible db:clone SOURCE DEST        # Clone a database to create a new one
+  aptible db:create HANDLE            # Create a new database
+  aptible db:dump HANDLE              # Dump a remote database to file
+  aptible db:execute HANDLE SQL_FILE  # Executes sql against a database
+  aptible db:tunnel HANDLE            # Create a local tunnel to a database
+  aptible help [COMMAND]              # Describe available commands or one specific command
+  aptible login                       # Log in to Aptible
+  aptible logs                        # Follows logs from a running app
+  aptible rebuild                     # Rebuild an app, and restart its services
+  aptible restart                     # Restart all services associated with an app
+  aptible ssh [COMMAND]               # Run a command against an app
+  aptible version                     # Print Aptible CLI version
 ```
 
 ## Contributing
