@@ -1,5 +1,5 @@
 module Aptible
   module CLI
-    VERSION = '0.5.3.rdh'
+    VERSION = '0.5.4'
   end
 end
