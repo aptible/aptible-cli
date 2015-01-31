@@ -54,6 +54,14 @@ module Aptible
               establish_connection(database, local_port)
             end
 
+            desc 'db:deprovision HANDLE', 'Deprovision a database'
+            define_method 'db:deprovision' do |handle|
+              database = database_from_handle(handle)
+              puts "Deprovisioning #{handle}..."
+              database.update!(status: 'deprovisioned')
+              database.create_operation(type: 'deprovision')
+            end
+
             private
 
             def establish_connection(database, local_port)
