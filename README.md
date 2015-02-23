@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/aptible/aptible-cli.png?branch=master)](https://travis-ci.org/aptible/aptible-cli)
 [![Dependency Status](https://gemnasium.com/aptible/aptible-cli.png)](https://gemnasium.com/aptible/aptible-cli)
 
+[![Roadmap](https://badge.waffle.io/aptible/aptible-cli.svg?label=ready&title=roadmap)](http://waffle.io/aptible/aptible-cli)
+
 Command-line interface for Aptible services.
 
 ## Installation
