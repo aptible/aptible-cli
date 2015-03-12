@@ -8,7 +8,9 @@ module Aptible
         include Helpers::Token
 
         def ensure_app(options = {})
-          handle = options[:app] || ensure_default_handle
+          handle = options[:app] ||
+                   handle_from_remote(options[:remote]) ||
+                   ensure_default_handle
           app = app_from_handle(handle)
           return app if app
           fail Thor::Error, "Could not find app #{handle}"
@@ -29,8 +31,12 @@ module Aptible
         end
 
         def default_handle
+          handle_from_remote(:aptible)
+        end
+
+        def handle_from_remote(remote_name)
           git = Git.open(Dir.pwd)
-          aptible_remote = git.remote(:aptible).url || ''
+          aptible_remote = git.remote(remote_name).url || ''
           aptible_remote[/:(?<name>.+)\.git/, :name]
         rescue
           nil

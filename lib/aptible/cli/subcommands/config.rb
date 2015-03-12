@@ -11,6 +11,7 @@ module Aptible
 
             desc 'config', "Print an app's current configuration"
             option :app
+            option :remote, aliases: '-r'
             def config
               app = ensure_app(options)
               config = app.current_configuration
