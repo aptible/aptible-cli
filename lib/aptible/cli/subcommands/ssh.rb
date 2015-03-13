@@ -16,6 +16,7 @@ module Aptible
               If specifying an app, invoke via: aptible ssh [--app=APP] COMMAND
             LONGDESC
             option :app
+            option :remote, aliases: '-r'
             option :force_tty, type: :boolean
             def ssh(*args)
               app = ensure_app(options)

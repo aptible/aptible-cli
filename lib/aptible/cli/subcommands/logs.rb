@@ -11,6 +11,7 @@ module Aptible
 
             desc 'logs', 'Follows logs from a running app'
             option :app
+            option :remote, aliases: '-r'
             def logs
               app = ensure_app(options)
               host = app.account.bastion_host
