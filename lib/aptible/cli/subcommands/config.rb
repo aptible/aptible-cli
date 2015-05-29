@@ -60,6 +60,7 @@ module Aptible
             private
 
             def formatted_config(env)
+              env = Hash[env.sort]
               env.map { |k, v| "#{k}=#{Shellwords.escape(v)}" }.join("\n")
             end
           end
