@@ -37,6 +37,17 @@ module Aptible
                 say "App #{handle} created!"
               end
             end
+
+            desc 'apps:scale TYPE NUMBER', 'Scale app to NUMBER of instances'
+            option :app
+            option :account
+            define_method 'apps:scale' do |type, num|
+              app = ensure_app(options)
+              service = app.services.find { |s| s.process_type == type }
+              op = service.create_operation(type: 'scale', container_count: num)
+              poll_for_success(op)
+              say "Scaled #{app.handle} to #{num} instances."
+            end
           end
         end
       end
