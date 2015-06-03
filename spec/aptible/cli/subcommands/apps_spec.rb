@@ -13,6 +13,7 @@ end
 describe Aptible::CLI::Agent do
   before { subject.stub(:ask) }
   before { subject.stub(:save_token) }
+  before { subject.stub(:fetch_token) { double 'token' } }
 
   service = Service.new(process_type: 'web')
   op = Operation.new(status: 'succeeded')
