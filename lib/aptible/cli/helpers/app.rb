@@ -8,8 +8,9 @@ module Aptible
         include Helpers::Token
 
         def ensure_app(options = {})
+          remote = options[:remote] || ENV['APTIBLE_REMOTE']
           handle = options[:app] ||
-                   handle_from_remote(options[:remote]) ||
+                   handle_from_remote(remote) ||
                    ensure_default_handle
           app = app_from_handle(handle)
           return app if app
