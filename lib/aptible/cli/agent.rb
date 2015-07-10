@@ -6,11 +6,13 @@ require_relative 'helpers/token'
 require_relative 'helpers/operation'
 require_relative 'helpers/account'
 require_relative 'helpers/app'
+require_relative 'helpers/env'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
 require_relative 'subcommands/db'
 require_relative 'subcommands/logs'
+require_relative 'subcommands/ps'
 require_relative 'subcommands/rebuild'
 require_relative 'subcommands/restart'
 require_relative 'subcommands/ssh'
@@ -25,6 +27,7 @@ module Aptible
       include Subcommands::Config
       include Subcommands::DB
       include Subcommands::Logs
+      include Subcommands::Ps
       include Subcommands::Rebuild
       include Subcommands::Restart
       include Subcommands::SSH
