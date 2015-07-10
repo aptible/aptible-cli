@@ -3,24 +3,25 @@ require 'shellwords'
 module Aptible
   module CLI
     module Subcommands
-      module Logs
+      module Ps
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Env
 
-            desc 'logs', 'Follows logs from a running app'
+            desc 'ps', 'Display running processes for an app'
             option :app
             option :remote, aliases: '-r'
-            def logs
+            def ps
               app = ensure_app(options)
 
               host = app.account.bastion_host
               port = app.account.dumptruck_port
 
-              ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_APP'] = app.handle
-              ENV['APTIBLE_CLI_COMMAND'] = 'logs'
+              set_env('ACCESS_TOKEN', fetch_token)
+              set_env('APTIBLE_APP', app.handle)
+              set_env('APTIBLE_CLI_COMMAND', 'ps')
 
               opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
                      '-o UserKnownHostsFile=/dev/null'
