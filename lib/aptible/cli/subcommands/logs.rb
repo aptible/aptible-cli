@@ -3,7 +3,7 @@ require 'shellwords'
 module Aptible
   module CLI
     module Subcommands
-      module Tail
+      module Logs
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
@@ -14,6 +14,7 @@ module Aptible
             option :remote, aliases: '-r'
             def logs
               app = ensure_app(options)
+
               host = app.account.bastion_host
               port = app.account.dumptruck_port
 

@@ -24,10 +24,10 @@ module Aptible
       include Subcommands::Apps
       include Subcommands::Config
       include Subcommands::DB
+      include Subcommands::Logs
       include Subcommands::Rebuild
       include Subcommands::Restart
       include Subcommands::SSH
-      include Subcommands::Tail
 
       desc 'version', 'Print Aptible CLI version'
       def version
