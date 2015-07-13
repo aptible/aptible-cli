@@ -15,6 +15,11 @@ module Aptible
             def logs
               app = ensure_app(options)
 
+              unless app.status == 'provisioned' && app.services.any?
+                fail Thor::Error, 'Unable to retrieve logs. ' \
+                                  "Have you deployed #{app.handle} yet?"
+              end
+
               host = app.account.bastion_host
               port = app.account.dumptruck_port
 
