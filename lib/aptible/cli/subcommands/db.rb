@@ -1,3 +1,5 @@
+require 'term/ansicolor'
+
 module Aptible
   module CLI
     module Subcommands
@@ -6,6 +8,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::Token
+            include Term::ANSIColor
 
             desc 'db:create HANDLE', 'Create a new database'
             option :type, default: 'postgresql'
@@ -40,7 +43,7 @@ module Aptible
             desc 'db:execute HANDLE SQL_FILE', 'Executes sql against a database'
             define_method 'db:execute' do |handle, sql_path|
               execute_local_tunnel(handle) do |url|
-                puts "Executing #{sql_path} against #{handle}"
+                say "Executing #{sql_path} against #{handle}"
                 `psql #{url} < #{sql_path}`
               end
             end
@@ -50,14 +53,16 @@ module Aptible
             define_method 'db:tunnel' do |handle|
               database = database_from_handle(handle)
               local_port = options[:port] || random_local_port
-              puts "Creating tunnel at localhost:#{local_port}..."
+
+              say 'Creating tunnel...', :green
+              say "Connect at #{local_url(database, local_port)}", :green
               establish_connection(database, local_port)
             end
 
             desc 'db:deprovision HANDLE', 'Deprovision a database'
             define_method 'db:deprovision' do |handle|
               database = database_from_handle(handle)
-              puts "Deprovisioning #{handle}..."
+              say "Deprovisioning #{handle}..."
               database.update!(status: 'deprovisioned')
               database.create_operation(type: 'deprovision')
             end
@@ -92,7 +97,7 @@ module Aptible
             end
 
             def clone_database(source_handle, dest_handle)
-              puts "Cloning #{source_handle} to #{dest_handle}"
+              say "Cloning #{source_handle} to #{dest_handle}"
 
               source = database_from_handle(source_handle)
               op = source.create_operation(type: 'clone', handle: dest_handle)
@@ -104,7 +109,7 @@ module Aptible
             def dump_database(handle)
               execute_local_tunnel(handle) do |url|
                 filename = "#{handle}.dump"
-                puts "Dumping to #{filename}"
+                say "Dumping to #{filename}"
                 `pg_dump #{url} > #{filename}`
               end
             end
@@ -133,6 +138,14 @@ module Aptible
               port = dummy.addr[1]
               dummy.close
               port
+            end
+
+            def local_url(database, local_port)
+              remote_url = database.connection_url
+              uri = URI.parse(remote_url)
+
+              "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
+              "127.0.0.1:#{local_port}#{uri.path}"
             end
 
             def claim_remote_port(database)
