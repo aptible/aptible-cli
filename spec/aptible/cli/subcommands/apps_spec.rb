@@ -15,9 +15,9 @@ describe Aptible::CLI::Agent do
   before { subject.stub(:save_token) }
   before { subject.stub(:fetch_token) { double 'token' } }
 
-  service = Service.new(process_type: 'web')
-  op = Operation.new(status: 'succeeded')
-  apps = [App.new(handle: 'hello', services: [service])]
+  let(:service) { Service.new(process_type: 'web') }
+  let(:op) { Operation.new(status: 'succeeded') }
+  let(:apps) { [App.new(handle: 'hello', services: [service])] }
 
   describe '#apps:scale' do
     it 'should pass given correct parameters' do
