@@ -64,7 +64,7 @@ module Aptible
               database = database_from_handle(handle)
               say "Deprovisioning #{handle}..."
               database.update!(status: 'deprovisioned')
-              database.create_operation(type: 'deprovision')
+              database.create_operation!(type: 'deprovision')
             end
 
             private
