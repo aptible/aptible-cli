@@ -40,7 +40,6 @@ module Aptible
 
             desc 'apps:scale TYPE NUMBER', 'Scale app to NUMBER of instances'
             option :app
-            option :account
             define_method 'apps:scale' do |type, n|
               num = Integer(n)
               app = ensure_app(options)
@@ -48,6 +47,14 @@ module Aptible
               op = service.create_operation(type: 'scale', container_count: num)
               poll_for_success(op)
               say "Scaled #{app.handle} to #{num} instances."
+            end
+
+            option :app
+            desc 'apps:deprovision', 'Deprovision an app'
+            define_method 'apps:deprovision' do
+              app = ensure_app(options)
+              say "Deprovisioning #{app.handle}..."
+              app.create_operation!(type: 'deprovision')
             end
           end
         end
