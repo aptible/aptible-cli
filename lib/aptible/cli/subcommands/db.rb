@@ -97,8 +97,6 @@ module Aptible
             end
 
             def clone_database(source_handle, dest_handle)
-              say "Cloning #{source_handle} to #{dest_handle}"
-
               source = database_from_handle(source_handle)
               op = source.create_operation(type: 'clone', handle: dest_handle)
               poll_for_success(op)
