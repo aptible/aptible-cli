@@ -33,6 +33,9 @@ describe Aptible::CLI::Agent do
       local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
       expect(subject).to receive(:say).with('Creating tunnel...', :green)
       expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
+
+      # db:tunnel should also explain each component of the URL:
+      expect(subject).to receive(:say).exactly(6).times
       subject.send('db:tunnel', 'foobar')
     end
   end

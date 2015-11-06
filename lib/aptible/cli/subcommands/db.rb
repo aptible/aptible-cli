@@ -56,6 +56,15 @@ module Aptible
 
               say 'Creating tunnel...', :green
               say "Connect at #{local_url(database, local_port)}", :green
+
+              uri = URI(local_url(database, local_port))
+              db = uri.path.gsub(%r{^/}, '')
+              say 'Or, use the following arguments:', :green
+              say("* Host: #{uri.host}", :green)
+              say("* Port: #{uri.port}", :green)
+              say("* Username: #{uri.user}", :green) unless uri.user.empty?
+              say("* Password: #{uri.password}", :green)
+              say("* Database: #{db}", :green) unless db.empty?
               establish_connection(database, local_port)
             end
 
