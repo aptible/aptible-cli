@@ -58,7 +58,7 @@ module Aptible
               say "Connect at #{local_url(database, local_port)}", :green
 
               uri = URI(local_url(database, local_port))
-              db = uri.path.gsub(/^\//, '')
+              db = uri.path.gsub(%r{^/}, '')
               say 'Or, use the following arguments:', :green
               say("* Host: #{uri.host}", :green)
               say("* Port: #{uri.port}", :green)
