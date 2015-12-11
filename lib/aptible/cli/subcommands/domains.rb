@@ -1,5 +1,4 @@
 require 'shellwords'
-require 'pry'
 
 module Aptible
   module CLI
