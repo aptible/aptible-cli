@@ -86,18 +86,6 @@ module Aptible
 
             private
 
-            def appropriate_accounts(options)
-              if options[:account]
-                if (account = account_from_handle(options[:account]))
-                  [account]
-                else
-                  fail Thor::Error, 'Specified account does not exist'
-                end
-              else
-                Aptible::Api::Account.all(token: fetch_token)
-              end
-            end
-
             def present_account_databases(account)
               say "=== #{account.handle}"
               account.databases.each { |db| say db.handle }

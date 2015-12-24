@@ -10,13 +10,7 @@ module Aptible
             desc 'apps', 'List all applications'
             option :account
             def apps
-              if options[:account]
-                accounts = [account_from_handle(options[:account])]
-              else
-                accounts = Aptible::Api::Account.all(token: fetch_token)
-              end
-
-              accounts.each do |account|
+              appropriate_accounts(options).each do |account|
                 say "=== #{account.handle}"
                 account.apps.each do |app|
                   say app.handle

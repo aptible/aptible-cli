@@ -7,6 +7,18 @@ module Aptible
       module Account
         include Helpers::Token
 
+        def appropriate_accounts(options)
+          if options[:account]
+            if (account = account_from_handle(options[:account]))
+              [account]
+            else
+              fail Thor::Error, 'Specified account does not exist'
+            end
+          else
+            Aptible::Api::Account.all(token: fetch_token)
+          end
+        end
+
         def ensure_account(options = {})
           if (handle = options[:account])
             account = account_from_handle(handle)
