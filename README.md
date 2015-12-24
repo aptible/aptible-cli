@@ -35,6 +35,7 @@ Commands:
   aptible db:create HANDLE            # Create a new database
   aptible db:dump HANDLE              # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE  # Executes sql against a database
+  aptible db:list                     # List all databases
   aptible db:tunnel HANDLE            # Create a local tunnel to a database
   aptible help [COMMAND]              # Describe available commands or one specific command
   aptible login                       # Log in to Aptible
