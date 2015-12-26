@@ -60,7 +60,7 @@ Commands:
 * Graham Melcher ([@melcher](https://github.com/melcher))
 * Pete Browne ([@petebrowne](https://github.com/petebrowne))
 * Rich Humphrey ([@rdh](https://github.com/rdh))
-
+* Daniel Levenson ([@dleve123](https://github.com/dleve123))
 
 ## Copyright and License
 
