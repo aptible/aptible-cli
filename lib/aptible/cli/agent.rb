@@ -32,6 +32,11 @@ module Aptible
       include Subcommands::Restart
       include Subcommands::SSH
 
+      # Forward return codes on failures.
+      def self.exit_on_failure?
+        true
+      end
+
       desc 'version', 'Print Aptible CLI version'
       def version
         puts "aptible-cli v#{Aptible::CLI::VERSION}"

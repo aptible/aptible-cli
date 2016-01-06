@@ -30,7 +30,11 @@ module Aptible
 
           opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
                  '-o UserKnownHostsFile=/dev/null -o LogLevel=quiet'
-          Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
+          result = Kernel.system "ssh #{opts} -p #{port} root@#{host}"
+          # If Dumptruck is down, fall back to polling for success. If the
+          # operation failed, poll_for_success will immediately fall through to
+          # the error message.
+          poll_for_success(operation) unless result
         end
       end
     end
