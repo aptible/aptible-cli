@@ -28,7 +28,7 @@ module Aptible
               env = Hash[args.map { |arg| arg.split('=', 2) }]
               operation = app.create_operation(type: 'configure', env: env)
               puts 'Updating configuration and restarting app...'
-              poll_for_success(operation)
+              attach_to_operation_logs(operation)
             end
 
             desc 'config:set', 'Alias for config:add'
@@ -47,7 +47,7 @@ module Aptible
               env = Hash[args.map { |arg| [arg, ''] }]
               operation = app.create_operation(type: 'configure', env: env)
               puts 'Updating configuration and restarting app...'
-              poll_for_success(operation)
+              attach_to_operation_logs(operation)
             end
 
             desc 'config:unset', 'Alias for config:rm'

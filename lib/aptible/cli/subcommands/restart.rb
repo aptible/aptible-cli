@@ -14,7 +14,7 @@ module Aptible
               app = ensure_app(options)
               operation = app.create_operation(type: 'restart')
               puts 'Restarting app...'
-              poll_for_success(operation)
+              attach_to_operation_logs(operation)
             end
           end
         end
