@@ -24,7 +24,7 @@ module Aptible
               else
                 op = database.create_operation(type: 'provision',
                                                disk_size: options[:size])
-                poll_for_success(op)
+                attach_to_operation_logs(op)
                 say database.reload.connection_url
               end
             end
