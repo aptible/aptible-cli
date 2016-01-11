@@ -35,6 +35,7 @@ Commands:
   aptible db:create HANDLE            # Create a new database
   aptible db:dump HANDLE              # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE  # Executes sql against a database
+  aptible db:list                     # List all databases
   aptible db:tunnel HANDLE            # Create a local tunnel to a database
   aptible help [COMMAND]              # Describe available commands or one specific command
   aptible login                       # Log in to Aptible
@@ -59,7 +60,7 @@ Commands:
 * Graham Melcher ([@melcher](https://github.com/melcher))
 * Pete Browne ([@petebrowne](https://github.com/petebrowne))
 * Rich Humphrey ([@rdh](https://github.com/rdh))
-
+* Daniel Levenson ([@dleve123](https://github.com/dleve123))
 
 ## Copyright and License
 

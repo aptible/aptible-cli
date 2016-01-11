@@ -10,6 +10,14 @@ module Aptible
             include Helpers::Token
             include Term::ANSIColor
 
+            desc 'db:list', 'List all databases'
+            option :account
+            define_method 'db:list' do
+              appropriate_accounts(options).each do |account|
+                present_account_databases(account)
+              end
+            end
+
             desc 'db:create HANDLE', 'Create a new database'
             option :type, default: 'postgresql'
             option :size, default: 10
@@ -77,6 +85,11 @@ module Aptible
             end
 
             private
+
+            def present_account_databases(account)
+              say "=== #{account.handle}"
+              account.databases.each { |db| say db.handle }
+            end
 
             def establish_connection(database, local_port)
               ENV['ACCESS_TOKEN'] = fetch_token
