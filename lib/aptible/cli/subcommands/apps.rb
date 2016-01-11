@@ -10,7 +10,7 @@ module Aptible
             desc 'apps', 'List all applications'
             option :account
             def apps
-              appropriate_accounts(options).each do |account|
+              scoped_accounts(options).each do |account|
                 say "=== #{account.handle}"
                 account.apps.each do |app|
                   say app.handle

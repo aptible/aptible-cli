@@ -7,7 +7,7 @@ module Aptible
       module Account
         include Helpers::Token
 
-        def appropriate_accounts(options)
+        def scoped_accounts(options)
           if options[:account]
             if (account = account_from_handle(options[:account]))
               [account]
