@@ -47,28 +47,17 @@ describe Aptible::CLI::Agent do
         subject.send('domains')
       end.to raise_error(Thor::Error)
     end
-  end
 
-  describe '#domains:hostnames' do
-    it 'should print out the hostnames' do
+    it 'should print hostnames if -v is passed' do
       allow(service).to receive(:create_operation) { op }
-      allow(subject).to receive(:options) { { app: 'hello' } }
+      allow(subject).to receive(:options) { { verbose: true, app: 'hello' } }
       allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect(app).to receive(:vhosts) { [vhost1, vhost2] }
       expect(subject).to receive(:say).with('domain1 -> host1')
       expect(subject).to receive(:say).with('domain2 -> host2')
 
-      subject.send('domains:hostnames')
-    end
-
-    it 'should fail if app is non-existent' do
-      allow(service).to receive(:create_operation) { op }
-      allow(Aptible::Api::App).to receive(:all) { apps }
-
-      expect do
-        subject.send('domains:hostnames')
-      end.to raise_error(Thor::Error)
+      subject.send('domains')
     end
   end
 end

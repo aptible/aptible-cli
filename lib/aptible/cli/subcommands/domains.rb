@@ -11,21 +11,16 @@ module Aptible
 
             desc 'domains', "Print an app's current virtual domains"
             option :app
+            option :verbose, aliases: '-v'
             option :remote, aliases: '-r'
             def domains
               app = ensure_app(options)
               print_vhosts(app) do |vhost|
-                vhost.virtual_domain
-              end
-            end
-
-            desc 'domains:hostnames', "Print an app's hostnames"
-            option :app
-            option :remote, aliases: '-r'
-            define_method 'domains:hostnames' do
-              app = ensure_app(options)
-              print_vhosts(app) do |vhost|
-                "#{vhost.virtual_domain} -> #{vhost.external_host}"
+                if options[:verbose]
+                  "#{vhost.virtual_domain} -> #{vhost.external_host}"
+                else
+                  vhost.virtual_domain
+                end
               end
             end
 

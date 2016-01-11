@@ -13,7 +13,7 @@ module Aptible
             desc 'db:list', 'List all databases'
             option :account
             define_method 'db:list' do
-              appropriate_accounts(options).each do |account|
+              scoped_accounts(options).each do |account|
                 present_account_databases(account)
               end
             end
@@ -89,6 +89,7 @@ module Aptible
             def present_account_databases(account)
               say "=== #{account.handle}"
               account.databases.each { |db| say db.handle }
+              say ''
             end
 
             def establish_connection(database, local_port)

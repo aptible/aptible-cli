@@ -61,6 +61,7 @@ Commands:
 * Pete Browne ([@petebrowne](https://github.com/petebrowne))
 * Rich Humphrey ([@rdh](https://github.com/rdh))
 * Daniel Levenson ([@dleve123](https://github.com/dleve123))
+* Ryan Aipperspach ([@ryanaip](https://github.com/ryanaip))
 
 ## Copyright and License
 
