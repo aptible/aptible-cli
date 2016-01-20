@@ -105,7 +105,14 @@ module Aptible
             end
 
             def database_from_handle(handle, options = { postgres_only: false })
-              all = Aptible::Api::Database.all(token: fetch_token)
+              all = []
+              page = 1
+              loop do
+                dbs = Aptible::Api::Database.all(token: fetch_token, page: page)
+                break if dbs.count == 0
+                page += 1
+                all << dbs
+              end
               database = all.find { |a|  a.handle == handle }
 
               unless database

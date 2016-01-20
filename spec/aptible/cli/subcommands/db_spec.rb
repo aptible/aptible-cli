@@ -32,7 +32,13 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should print a message about how to connect' do
-      allow(Aptible::Api::Database).to receive(:all) { [database] }
+      allow(Aptible::Api::Database).to receive(:all) do |arg|
+        if arg[:page] == 1
+          database
+        else
+          []
+        end
+      end
       local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
       expect(subject).to receive(:say).with('Creating tunnel...', :green)
       expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
@@ -65,7 +71,6 @@ describe Aptible::CLI::Agent do
       it 'prints out the database handles for the account' do
         setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
-
         subject.options = { account: 'staging' }
         subject.send('db:list')
 
@@ -93,17 +98,37 @@ describe Aptible::CLI::Agent do
   end
 
   def setup_prod_and_staging_accounts
-    staging_redis = Database.new(handle: 'staging-redis-db')
-    staging_postgres = Database.new(handle: 'staging-postgres-db')
-    prod_elsearch = Database.new(handle: 'prod-elsearch-db')
-    prod_postgres = Database.new(handle: 'prod-postgres-db')
+    staging_dbs = []
+    prod_dbs = []
+    staging_dbs << Database.new(handle: 'staging-redis-db')
+    staging_dbs << Database.new(handle: 'staging-postgres-db')
+    prod_dbs << Database.new(handle: 'prod-elsearch-db')
+    prod_dbs << Database.new(handle: 'prod-postgres-db')
 
     stub_local_token_with('the-token')
     setup_new_accounts_with_dbs(
       token: 'the-token',
       account_db_mapping: {
-        'staging' => [staging_redis, staging_postgres],
-        'production' => [prod_elsearch, prod_postgres]
+        'staging' => staging_dbs,
+        'production' => prod_dbs
+      }
+    )
+  end
+
+  def setup_many_prod_and_staging_accounts(count)
+    staging_dbs = []
+    prod_dbs = []
+    count.times do |i|
+      staging_dbs << Database.new(handle: "staging-postgres-db-#{i + 1}")
+      prod_dbs << Database.new(handle: "prod-elsearch-db-#{i + 1}")
+    end
+
+    stub_local_token_with('the-token')
+    setup_new_accounts_with_dbs(
+      token: 'the-token',
+      account_db_mapping: {
+        'staging' => staging_dbs,
+        'production' => prod_dbs
       }
     )
   end
@@ -119,7 +144,7 @@ describe Aptible::CLI::Agent do
     end
 
     allow(Aptible::Api::Account).to receive(:all).with(token: token)
-      .and_return(accounts_with_dbs)
+      .and_return(accounts_with_dbs, [])
   end
 
   def stub_local_token_with(token)
