@@ -21,7 +21,11 @@ describe Aptible::CLI::Agent do
 
   let(:service) { Service.new(process_type: 'web') }
   let(:op) { Operation.new(status: 'succeeded') }
-  let(:account) { Account.new(bastion_host: 'localhost', dumptruck_port: 1234) }
+  let(:account) do
+    Account.new(bastion_host: 'localhost',
+                dumptruck_port: 1234,
+                handle: 'aptible')
+  end
   let(:apps) do
     [App.new(handle: 'hello', services: [service], account: account)]
   end
@@ -31,14 +35,16 @@ describe Aptible::CLI::Agent do
       allow(service).to receive(:create_operation) { op }
       allow(subject).to receive(:options) { { app: 'hello' } }
       allow(op).to receive(:resource) { apps.first }
-      allow(Aptible::Api::App).to receive(:all) { apps }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(account).to receive(:apps) { apps }
 
       subject.send('apps:scale', 'web', 3)
     end
 
     it 'should fail if app is non-existent' do
       allow(service).to receive(:create_operation) { op }
-      allow(Aptible::Api::App).to receive(:all) { apps }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(account).to receive(:apps) { [] }
 
       expect do
         subject.send('apps:scale', 'web', 3)
