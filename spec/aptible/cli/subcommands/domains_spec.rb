@@ -55,6 +55,16 @@ describe Aptible::CLI::Agent do
       end.to raise_error(Thor::Error)
     end
 
+    it 'should fail if environment is non-existent' do
+      allow(service).to receive(:create_operation) { op }
+      allow(Aptible::Api::Account).to receive(:all) { [] }
+      allow(account).to receive(:apps) { apps }
+
+      expect do
+        subject.send('domains')
+      end.to raise_error(Thor::Error)
+    end
+
     it 'should print hostnames if -v is passed' do
       allow(service).to receive(:create_operation) { op }
       allow(subject).to receive(:options) { { verbose: true, app: 'hello' } }

@@ -41,6 +41,17 @@ describe Aptible::CLI::Agent do
       subject.send('apps:scale', 'web', 3)
     end
 
+    it 'should fail if environment is non-existent' do
+      allow(subject).to receive(:options) { { environment: 'foo', app: 'web' } }
+      allow(service).to receive(:create_operation) { op }
+      allow(Aptible::Api::Account).to receive(:all) { [] }
+      allow(account).to receive(:apps) { [apps] }
+
+      expect do
+        subject.send('apps:scale', 'web', 3)
+      end.to raise_error(Thor::Error)
+    end
+
     it 'should fail if app is non-existent' do
       allow(service).to receive(:create_operation) { op }
       allow(Aptible::Api::Account).to receive(:all) { [account] }

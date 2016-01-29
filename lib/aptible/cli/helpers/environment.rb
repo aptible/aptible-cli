@@ -23,7 +23,7 @@ module Aptible
           if (handle = options[:environment])
             environment = environment_from_handle(handle)
             return environment if environment
-            fail "Could not find environment #{handle}"
+            fail Thor::Error, "Could not find environment #{handle}"
           else
             ensure_default_environment
           end
