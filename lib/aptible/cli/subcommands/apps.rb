@@ -4,15 +4,15 @@ module Aptible
       module Apps
         def self.included(thor)
           thor.class_eval do
-            include Helpers::Account
+            include Helpers::Environment
             include Helpers::Token
 
             desc 'apps', 'List all applications'
-            option :account
+            option :environment
             def apps
-              scoped_accounts(options).each do |account|
-                say "=== #{account.handle}"
-                account.apps.each do |app|
+              scoped_environments(options).each do |env|
+                say "=== #{env.handle}"
+                env.apps.each do |app|
                   say app.handle
                 end
                 say ''
@@ -20,10 +20,10 @@ module Aptible
             end
 
             desc 'apps:create HANDLE', 'Create a new application'
-            option :account
+            option :environment
             define_method 'apps:create' do |handle|
-              account = ensure_account(options)
-              app = account.create_app(handle: handle)
+              environment = ensure_environment(options)
+              app = environment.create_app(handle: handle)
 
               if app.errors.any?
                 fail Thor::Error, app.errors.full_messages.first
@@ -34,6 +34,7 @@ module Aptible
 
             desc 'apps:scale TYPE NUMBER', 'Scale app to NUMBER of instances'
             option :app
+            option :environment
             define_method 'apps:scale' do |type, n|
               num = Integer(n)
               app = ensure_app(options)
@@ -43,6 +44,7 @@ module Aptible
             end
 
             option :app
+            option :environment
             desc 'apps:deprovision', 'Deprovision an app'
             define_method 'apps:deprovision' do
               app = ensure_app(options)

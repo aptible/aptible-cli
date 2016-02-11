@@ -14,6 +14,11 @@ describe Aptible::CLI::Agent do
   before { subject.stub(:random_local_port) { 4242 } }
   before { subject.stub(:establish_connection) }
 
+  let(:account) do
+    Account.new(bastion_host: 'localhost',
+                dumptruck_port: 1234,
+                handle: 'aptible')
+  end
   let(:database) do
     Database.new(
       type: 'postgresql',
@@ -25,14 +30,16 @@ describe Aptible::CLI::Agent do
 
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
-      allow(Aptible::Api::Database).to receive(:all) { [] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(account).to receive(:databases) { [] }
       expect do
         subject.send('db:tunnel', 'foobar')
       end.to raise_error('Could not find database foobar')
     end
 
     it 'should print a message about how to connect' do
-      allow(Aptible::Api::Database).to receive(:all) { [database] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(account).to receive(:databases) { [database] }
       local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
       expect(subject).to receive(:say).with('Creating tunnel...', :green)
       expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
@@ -66,7 +73,7 @@ describe Aptible::CLI::Agent do
         setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
 
-        subject.options = { account: 'staging' }
+        subject.options = { environment: 'staging' }
         subject.send('db:list')
 
         expect(subject).to have_received(:say).with('=== staging')
@@ -84,7 +91,7 @@ describe Aptible::CLI::Agent do
         setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
 
-        subject.options = { account: 'foo' }
+        subject.options = { environment: 'foo' }
         expect { subject.send('db:list') }.to raise_error(
           'Specified account does not exist'
         )

@@ -6,19 +6,38 @@ module Aptible
     module Helpers
       module App
         include Helpers::Token
+        include Helpers::Environment
+
+        class HandleFromGitRemote
+          PATTERN = %r{
+  :((?<environment_handle>[0-9a-z\-_\.]+?)/)?(?<app_handle>[0-9a-z\-_\.]+)\.git
+  \z
+}x
+
+          def self.parse(url)
+            PATTERN.match(url)
+          end
+        end
 
         def ensure_app(options = {})
           remote = options[:remote] || ENV['APTIBLE_REMOTE']
-          handle = options[:app] ||
-                   handle_from_remote(remote) ||
-                   ensure_default_handle
-          app = app_from_handle(handle)
+          handle = options[:app]
+          if handle
+            environment = ensure_environment(options)
+          else
+            handles = handle_from_remote(remote) || ensure_default_handle
+            handle = handles[:app_handle]
+            env_handle = handles[:environment_handle] || options[:environment]
+            environment = ensure_environment(environment: env_handle)
+          end
+
+          app = app_from_handle(handle, environment)
           return app if app
           fail Thor::Error, "Could not find app #{handle}"
         end
 
-        def app_from_handle(handle)
-          Aptible::Api::App.all(token: fetch_token).find do |a|
+        def app_from_handle(handle, environment)
+          environment.apps.find do |a|
             a.handle == handle
           end
         end
@@ -38,7 +57,7 @@ module Aptible
         def handle_from_remote(remote_name)
           git = Git.open(Dir.pwd)
           aptible_remote = git.remote(remote_name).url || ''
-          aptible_remote[/:(?<name>.+)\.git/, :name]
+          HandleFromGitRemote.parse(aptible_remote)
         rescue
           nil
         end

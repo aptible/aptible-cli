@@ -11,6 +11,7 @@ module Aptible
 
             desc 'domains', "Print an app's current virtual domains"
             option :app
+            option :environment
             option :verbose, aliases: '-v'
             option :remote, aliases: '-r'
             def domains

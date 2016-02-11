@@ -11,21 +11,21 @@ module Aptible
             include Term::ANSIColor
 
             desc 'db:list', 'List all databases'
-            option :account
+            option :environment
             define_method 'db:list' do
-              scoped_accounts(options).each do |account|
-                present_account_databases(account)
+              scoped_environments(options).each do |env|
+                present_environment_databases(env)
               end
             end
 
             desc 'db:create HANDLE', 'Create a new database'
             option :type, default: 'postgresql'
             option :size, default: 10
-            option :account
+            option :environment
             define_method 'db:create' do |handle|
-              account = ensure_account(options)
-              database = account.create_database(handle: handle,
-                                                 type: options[:type])
+              environment = ensure_environment(options)
+              database = environment.create_database(handle: handle,
+                                                     type: options[:type])
 
               if database.errors.any?
                 fail Thor::Error, database.errors.full_messages.first
@@ -38,28 +38,36 @@ module Aptible
             end
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
+            option :environment
             define_method 'db:clone' do |source_handle, dest_handle|
-              dest = clone_database(source_handle, dest_handle)
+              environment = ensure_environment(options)
+              dest = clone_database(source_handle, dest_handle, environment)
               say dest.connection_url
             end
 
             desc 'db:dump HANDLE', 'Dump a remote database to file'
+            option :environment
             define_method 'db:dump' do |handle|
-              dump_database(handle)
+              environment = ensure_environment(options)
+              dump_database(handle, environment)
             end
 
             desc 'db:execute HANDLE SQL_FILE', 'Executes sql against a database'
+            option :environment
             define_method 'db:execute' do |handle, sql_path|
-              execute_local_tunnel(handle) do |url|
+              environment = ensure_environment(options)
+              execute_local_tunnel(handle, environment) do |url|
                 say "Executing #{sql_path} against #{handle}"
                 `psql #{url} < #{sql_path}`
               end
             end
 
             desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
+            option :environment
             option :port, type: :numeric
             define_method 'db:tunnel' do |handle|
-              database = database_from_handle(handle)
+              environment = ensure_environment(options)
+              database = database_from_handle(handle, environment)
               local_port = options[:port] || random_local_port
 
               say 'Creating tunnel...', :green
@@ -77,8 +85,10 @@ module Aptible
             end
 
             desc 'db:deprovision HANDLE', 'Deprovision a database'
+            option :environment
             define_method 'db:deprovision' do |handle|
-              database = database_from_handle(handle)
+              environment = ensure_environment(options)
+              database = database_from_handle(handle, environment)
               say "Deprovisioning #{handle}..."
               database.update!(status: 'deprovisioned')
               database.create_operation!(type: 'deprovision')
@@ -86,9 +96,9 @@ module Aptible
 
             private
 
-            def present_account_databases(account)
-              say "=== #{account.handle}"
-              account.databases.each { |db| say db.handle }
+            def present_environment_databases(environment)
+              say "=== #{environment.handle}"
+              environment.databases.each { |db| say db.handle }
               say ''
             end
 
@@ -104,8 +114,10 @@ module Aptible
               Kernel.exec(command)
             end
 
-            def database_from_handle(handle, options = { postgres_only: false })
-              all = Aptible::Api::Database.all(token: fetch_token)
+            def database_from_handle(handle,
+                                     environment,
+                                     options = { postgres_only: false })
+              all = environment.databases
               database = all.find { |a|  a.handle == handle }
 
               unless database
@@ -119,16 +131,16 @@ module Aptible
               database
             end
 
-            def clone_database(source_handle, dest_handle)
-              source = database_from_handle(source_handle)
+            def clone_database(source_handle, dest_handle, environment)
+              source = database_from_handle(source_handle, environment)
               op = source.create_operation(type: 'clone', handle: dest_handle)
               poll_for_success(op)
 
               database_from_handle(dest_handle)
             end
 
-            def dump_database(handle)
-              execute_local_tunnel(handle) do |url|
+            def dump_database(handle, environment)
+              execute_local_tunnel(handle, environment) do |url|
                 filename = "#{handle}.dump"
                 say "Dumping to #{filename}"
                 `pg_dump #{url} > #{filename}`
@@ -137,8 +149,10 @@ module Aptible
 
             # Creates a local tunnel and yields the url to it
 
-            def execute_local_tunnel(handle)
-              database = database_from_handle(handle, postgres_only: true)
+            def execute_local_tunnel(handle, environment)
+              database = database_from_handle(handle,
+                                              environment,
+                                              postgres_only: true)
 
               local_port = random_local_port
               pid = fork { establish_connection(database, local_port) }
