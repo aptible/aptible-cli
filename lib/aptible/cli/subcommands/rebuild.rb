@@ -8,9 +8,7 @@ module Aptible
             include Helpers::App
 
             desc 'rebuild', 'Rebuild an app, and restart its services'
-            option :app
-            option :environment
-            option :remote, aliases: '-r'
+            app_options
             def rebuild
               app = ensure_app(options)
               operation = app.create_operation(type: 'rebuild')

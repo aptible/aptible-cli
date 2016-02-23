@@ -8,9 +8,7 @@ module Aptible
             include Helpers::App
 
             desc 'restart', 'Restart all services associated with an app'
-            option :app
-            option :environment
-            option :remote, aliases: '-r'
+            app_options
             def restart
               app = ensure_app(options)
               operation = app.create_operation(type: 'restart')

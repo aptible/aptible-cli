@@ -11,9 +11,7 @@ module Aptible
             include Helpers::Env
 
             desc 'ps', 'Display running processes for an app'
-            option :app
-            option :environment
-            option :remote, aliases: '-r'
+            app_options
             def ps
               app = ensure_app(options)
 

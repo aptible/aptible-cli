@@ -19,6 +19,18 @@ module Aptible
           end
         end
 
+        def self.included(base)
+          base.extend ClassMethods
+        end
+
+        module ClassMethods
+          def app_options
+            option :app
+            option :environment
+            option :remote, aliases: '-r'
+          end
+        end
+
         def ensure_app(options = {})
           remote = options[:remote] || ENV['APTIBLE_REMOTE']
           handle = options[:app]
