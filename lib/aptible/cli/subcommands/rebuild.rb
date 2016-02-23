@@ -9,6 +9,7 @@ module Aptible
 
             desc 'rebuild', 'Rebuild an app, and restart its services'
             option :app
+            option :environment
             option :remote, aliases: '-r'
             def rebuild
               app = ensure_app(options)

@@ -11,6 +11,7 @@ module Aptible
 
             desc 'config', "Print an app's current configuration"
             option :app
+            option :environment
             option :remote, aliases: '-r'
             def config
               app = ensure_app(options)
@@ -21,6 +22,7 @@ module Aptible
 
             desc 'config:add', 'Add an ENV variable to an app'
             option :app
+            option :environment
             option :remote, aliases: '-r'
             define_method 'config:add' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
@@ -33,6 +35,7 @@ module Aptible
 
             desc 'config:set', 'Alias for config:add'
             option :app
+            option :environment
             option :remote, aliases: '-r'
             define_method 'config:set' do |*args|
               send('config:add', *args)
@@ -40,6 +43,7 @@ module Aptible
 
             desc 'config:rm', 'Remove an ENV variable from an app'
             option :app
+            option :environment
             option :remote, aliases: '-r'
             define_method 'config:rm' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
@@ -52,6 +56,7 @@ module Aptible
 
             desc 'config:unset', 'Alias for config:rm'
             option :app
+            option :environment
             option :remote, aliases: '-r'
             define_method 'config:unset' do |*args|
               send('config:add', *args)
