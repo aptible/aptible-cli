@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Frank Macreery']
   spec.email         = ['frank@macreery.com']
   spec.description   = 'Aptible CLI'
-  spec.summary       = 'Command-line interface for Aptible services'
+  spec.summary       = 'A Unix/Linux command-line interface for Aptible services'
   spec.homepage      = 'https://github.com/aptible/aptible-cli'
   spec.license       = 'MIT'
 
