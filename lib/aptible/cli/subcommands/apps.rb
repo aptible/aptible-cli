@@ -4,6 +4,7 @@ module Aptible
       module Apps
         def self.included(thor)
           thor.class_eval do
+            include Helpers::App
             include Helpers::Environment
             include Helpers::Token
 
@@ -33,8 +34,7 @@ module Aptible
             end
 
             desc 'apps:scale TYPE NUMBER', 'Scale app to NUMBER of instances'
-            option :app
-            option :environment
+            app_options
             define_method 'apps:scale' do |type, n|
               num = Integer(n)
               app = ensure_app(options)
@@ -43,9 +43,8 @@ module Aptible
               attach_to_operation_logs(op)
             end
 
-            option :app
-            option :environment
             desc 'apps:deprovision', 'Deprovision an app'
+            app_options
             define_method 'apps:deprovision' do
               app = ensure_app(options)
               say "Deprovisioning #{app.handle}..."

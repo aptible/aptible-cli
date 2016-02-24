@@ -10,10 +10,8 @@ module Aptible
             include Helpers::App
 
             desc 'domains', "Print an app's current virtual domains"
-            option :app
-            option :environment
+            app_options
             option :verbose, aliases: '-v'
-            option :remote, aliases: '-r'
             def domains
               app = ensure_app(options)
               print_vhosts(app) do |vhost|

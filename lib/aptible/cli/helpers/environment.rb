@@ -30,6 +30,7 @@ module Aptible
         end
 
         def environment_from_handle(handle)
+          return nil unless handle
           Aptible::Api::Account.all(token: fetch_token).find do |a|
             a.handle == handle
           end

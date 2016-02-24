@@ -10,8 +10,7 @@ module Aptible
             include Helpers::App
 
             desc 'logs', 'Follows logs from a running app'
-            option :app
-            option :remote, aliases: '-r'
+            app_options
             def logs
               app = ensure_app(options)
 
