@@ -35,8 +35,7 @@ describe Aptible::CLI::Agent do
       allow(service).to receive(:create_operation) { op }
       allow(subject).to receive(:options) { { app: 'hello' } }
       allow(op).to receive(:resource) { apps.first }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:apps) { apps }
+      allow(Aptible::Api::App).to receive(:all) { apps }
 
       subject.send('apps:scale', 'web', 3)
     end

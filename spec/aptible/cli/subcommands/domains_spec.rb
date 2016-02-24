@@ -35,8 +35,7 @@ describe Aptible::CLI::Agent do
     it 'should print out the hostnames' do
       allow(service).to receive(:create_operation) { op }
       allow(subject).to receive(:options) { { app: 'hello' } }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:apps) { apps }
+      allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect(app).to receive(:vhosts) { [vhost1, vhost2] }
       expect(subject).to receive(:say).with('domain1')
@@ -68,8 +67,7 @@ describe Aptible::CLI::Agent do
     it 'should print hostnames if -v is passed' do
       allow(service).to receive(:create_operation) { op }
       allow(subject).to receive(:options) { { verbose: true, app: 'hello' } }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:apps) { apps }
+      allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect(app).to receive(:vhosts) { [vhost1, vhost2] }
       expect(subject).to receive(:say).with('domain1 -> host1')
