@@ -30,16 +30,14 @@ describe Aptible::CLI::Agent do
 
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:databases) { [] }
+      allow(Aptible::Api::Database).to receive(:all) { [] }
       expect do
         subject.send('db:tunnel', 'foobar')
       end.to raise_error('Could not find database foobar')
     end
 
     it 'should print a message about how to connect' do
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:databases) { [database] }
+      allow(Aptible::Api::Database).to receive(:all) { [database] }
       local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
       expect(subject).to receive(:say).with('Creating tunnel...', :green)
       expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
