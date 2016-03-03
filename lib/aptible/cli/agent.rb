@@ -8,6 +8,7 @@ require_relative 'helpers/environment'
 require_relative 'helpers/app'
 require_relative 'helpers/database'
 require_relative 'helpers/env'
+require_relative 'helpers/tunnel'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
