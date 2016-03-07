@@ -57,7 +57,7 @@ module Aptible
           # TODO: Should pass the DB ID...
           env = {
             'ACCESS_TOKEN' => fetch_token,
-            'APTIBLE_DATABASE' => database.handle,
+            'APTIBLE_DATABASE' => database.href,
             'TUNNEL_PORT' => '-1'  # Request no port forwarding
           }
           command = ['ssh', '-q'] + ssh_args(database)

@@ -24,7 +24,7 @@ module Aptible
 
               ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_COMMAND'] = command_from_args(*args)
-              ENV['APTIBLE_APP'] = app.handle
+              ENV['APTIBLE_APP'] = app.href
 
               opts = options[:force_tty] ? '-t -t' : ''
               opts << " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
