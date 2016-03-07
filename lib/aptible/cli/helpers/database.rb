@@ -54,10 +54,9 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(database, port = 0)
-          # TODO: Should pass the DB ID...
           env = {
             'ACCESS_TOKEN' => fetch_token,
-            'APTIBLE_DATABASE' => database.handle
+            'APTIBLE_DATABASE' => database.href
           }
           command = ['ssh', '-q'] + ssh_args(database)
           Helpers::Tunnel.new(env, command).tap do |tunnel_helper|
