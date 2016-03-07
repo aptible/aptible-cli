@@ -50,7 +50,6 @@ module Aptible
             desc 'db:dump HANDLE', 'Dump a remote database to file'
             option :environment
             define_method 'db:dump' do |handle|
-              # TODO: This no longer restricts to PG dbs
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 filename = "#{handle}.dump"
