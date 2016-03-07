@@ -70,6 +70,10 @@ module Aptible
         # Creates a local PG tunnel and yields the url to it
 
         def with_postgres_tunnel(database)
+          if database.type != 'postgresql'
+            fail Thor::Error, 'This command only works for PostgreSQL'
+          end
+
           with_local_tunnel(database) do |tunnel_helper|
             auth = "aptible:#{database.passphrase}"
             host = "localhost:#{tunnel_helper.port}"
