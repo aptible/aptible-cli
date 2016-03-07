@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'timeout'
+require 'benchmark'
 
 describe Aptible::CLI::Helpers::Socat do
   context 'without connections' do
@@ -45,7 +46,9 @@ describe Aptible::CLI::Helpers::Socat do
   end
 
   context 'with socat' do
-    let!(:socat) { described_class.new(socat_env, socat_cmd) }
+    let!(:socat) do
+      described_class.new(socat_env, socat_cmd, File.open(File::NULL, 'w'))
+    end
     let(:socat_env) { {} }
     let(:socat_cmd) { [] }
 
@@ -101,6 +104,23 @@ describe Aptible::CLI::Helpers::Socat do
         Socket.tcp('127.0.0.1', socat.port) do |sock|
           expect(sock.read).to eq('VALUE')
         end
+      end
+    end
+
+    context 'overhead' do
+      let(:socat_cmd) { ['dd', 'if=/dev/urandom', 'bs=8096', 'count=1024'] }
+
+      it 'should transfer 8MB of data with less than 10% real overhead' do
+        t_cmd, t_socat = Benchmark.bm do |b|
+          b.report('bare') { Open3.capture3(*socat_cmd) }
+          b.report('socat') do
+            Socket.tcp('127.0.0.1', socat.port) do |sock|
+              expect(sock.read.size).to eq(8290304)
+            end
+          end
+        end
+
+        expect(t_socat.real / t_cmd.real).to be <= 1.1
       end
     end
   end
