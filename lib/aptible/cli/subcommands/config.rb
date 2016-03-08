@@ -49,7 +49,7 @@ module Aptible
             desc 'config:unset', 'Alias for config:rm'
             app_options
             define_method 'config:unset' do |*args|
-              send('config:add', *args)
+              send('config:rm', *args)
             end
 
             private
