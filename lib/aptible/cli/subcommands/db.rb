@@ -89,7 +89,7 @@ module Aptible
                 say("* Password: #{uri.password}", :green)
                 say("* Database: #{db}", :green) unless db.empty?
 
-                say 'Tunnel ready. Ctrl-C to close connection.'
+                say 'Connected. Ctrl-C to close connection.'
 
                 begin
                   tunnel_helper.wait

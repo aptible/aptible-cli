@@ -93,7 +93,6 @@ module Aptible
           port = database.account.bastion_port
 
           ['-o', 'SendEnv=APTIBLE_DATABASE',
-           '-o', 'SendEnv=TUNNEL_PORT',
            '-o', 'SendEnv=ACCESS_TOKEN',
            '-o', 'StrictHostKeyChecking=no',
            '-o', 'UserKnownHostsFile=/dev/null',

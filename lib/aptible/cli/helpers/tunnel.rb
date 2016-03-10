@@ -17,11 +17,19 @@ module Aptible
           # First, grab a remote port
           out, err, status = Open3.capture3(@env, *@cmd)
           fail "Failed to request remote port: #{err}" unless status.success?
+          remote_port = out.chomp
 
           # Then, spin up a SSH session using that port and port forwarding
-          remote_port = out.chomp
-          tunnel_env = @env.merge('TUNNEL_PORT' => remote_port)
-          tunnel_cmd = @cmd + ['-L', "#{@local_port}:localhost:#{remote_port}"]
+          tunnel_env = @env.merge(
+            'TUNNEL_PORT' => remote_port, # Request a specific port
+            'TUNNEL_SIGNAL_OPEN' => '1'   # Request signal when tunnel is up
+          )
+
+          tunnel_cmd = @cmd + [
+            '-L', "#{@local_port}:localhost:#{remote_port}",
+            '-o', 'SendEnv=TUNNEL_PORT',
+            '-o', 'SendEnv=TUNNEL_SIGNAL_OPEN'
+          ]
 
           r_pipe, w_pipe = IO.pipe
           @pid = Process.spawn(tunnel_env, *tunnel_cmd, in: :close,

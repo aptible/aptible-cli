@@ -17,9 +17,13 @@ describe Aptible::CLI::Helpers::Tunnel do
     helper.start(0, w)
     helper.stop
 
-    expect(r.readline.chomp).to eq('2')
+    expect(r.readline.chomp).to eq('6')
     expect(r.readline.chomp).to eq('-L')
     expect(r.readline.chomp).to match(/\d+:localhost:1234$/)
+    expect(r.readline.chomp).to eq('-o')
+    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_PORT')
+    expect(r.readline.chomp).to eq('-o')
+    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_SIGNAL_OPEN')
 
     r.close
     w.close
@@ -31,9 +35,13 @@ describe Aptible::CLI::Helpers::Tunnel do
     helper.start(5678, w)
     helper.stop
 
-    expect(r.readline.chomp).to eq('2')
+    expect(r.readline.chomp).to eq('6')
     expect(r.readline.chomp).to eq('-L')
     expect(r.readline.chomp).to eq('5678:localhost:1234')
+    expect(r.readline.chomp).to eq('-o')
+    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_PORT')
+    expect(r.readline.chomp).to eq('-o')
+    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_SIGNAL_OPEN')
 
     r.close
     w.close
