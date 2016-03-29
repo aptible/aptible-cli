@@ -89,7 +89,6 @@ module Aptible
             define_method 'db:deprovision' do |handle|
               database = ensure_database(options.merge(db: handle))
               say "Deprovisioning #{database.handle}..."
-              database.update!(status: 'deprovisioned')
               database.create_operation!(type: 'deprovision')
             end
           end
