@@ -10,10 +10,11 @@ module Aptible
             include Helpers::App
             include Helpers::Env
 
-            desc 'ps', 'Display running processes for an app'
+            desc 'ps', 'Display running processes for an app - DEPRECATED'
             app_options
             def ps
               app = ensure_app(options)
+              deprecated('This command is deprecated on Aptible v2 stacks.')
 
               host = app.account.bastion_host
               port = app.account.dumptruck_port
