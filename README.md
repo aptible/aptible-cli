@@ -26,6 +26,8 @@ From `aptible help`:
 Commands:
   aptible apps                        # List all applications
   aptible apps:create HANDLE          # Create a new application
+  aptible apps:deprovision            # Deprovision an app
+  aptible apps:scale TYPE NUMBER      # Scale app to NUMBER of instances
   aptible config                      # Print an app's current configuration
   aptible config:add                  # Add an ENV variable to an app
   aptible config:rm                   # Remove an ENV variable from an app
@@ -33,13 +35,16 @@ Commands:
   aptible config:unset                # Alias for config:rm
   aptible db:clone SOURCE DEST        # Clone a database to create a new one
   aptible db:create HANDLE            # Create a new database
+  aptible db:deprovision HANDLE       # Deprovision a database
   aptible db:dump HANDLE              # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE  # Executes sql against a database
   aptible db:list                     # List all databases
   aptible db:tunnel HANDLE            # Create a local tunnel to a database
+  aptible domains                     # Print an app's current virtual domains
   aptible help [COMMAND]              # Describe available commands or one specific command
   aptible login                       # Log in to Aptible
-  aptible logs                        # Follows logs from a running app
+  aptible logs                        # Follows logs from a running app - DEPRECATED
+  aptible ps                          # Display running processes for an app - DEPRECATED
   aptible rebuild                     # Rebuild an app, and restart its services
   aptible restart                     # Restart all services associated with an app
   aptible ssh [COMMAND]               # Run a command against an app
@@ -62,6 +67,7 @@ Commands:
 * Rich Humphrey ([@rdh](https://github.com/rdh))
 * Daniel Levenson ([@dleve123](https://github.com/dleve123))
 * Ryan Aipperspach ([@ryanaip](https://github.com/ryanaip))
+* Chas Ballew ([@chasballew](https://github.com/chasballew))
 
 ## Copyright and License
 
