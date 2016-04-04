@@ -62,6 +62,13 @@ module Aptible
         save_token(token.access_token)
         puts "Token written to #{token_file}"
       end
+
+      private
+
+      def deprecated(msg)
+        say "DEPRECATION NOTICE: #{msg}"
+        say 'Please contact support@aptible.com with any questions.'
+      end
     end
   end
 end
