@@ -9,11 +9,14 @@ module Aptible
             include Helpers::Operation
             include Helpers::App
 
-            desc 'logs', 'Follows logs from a running app'
+            desc 'logs', 'Follows logs from a running app - DEPRECATED'
             app_options
             def logs
               app = ensure_app(options)
 
+              puts 'DEPRECATION NOTICE: ' \
+                   'This command is deprecated on Aptible v2 stacks. ' \
+                   'Please contact support@aptible.com with any questions.'
               unless app.status == 'provisioned' && app.services.any?
                 fail Thor::Error, 'Unable to retrieve logs. ' \
                                   "Have you deployed #{app.handle} yet?"
