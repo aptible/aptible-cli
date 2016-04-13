@@ -39,6 +39,16 @@ module Aptible
               num = Integer(n)
               app = ensure_app(options)
               service = app.services.find { |s| s.process_type == type }
+              if service.nil?
+                valid_types = if app.services.empty?
+                                'NONE (deploy the app first)'
+                              else
+                                app.services.map(&:process_type).join(', ')
+                              end
+                fail Thor::Error, "Service with type #{type} does not " \
+                                  "exist for app #{app.handle}. Valid " \
+                                  "types: #{valid_types}."
+              end
               op = service.create_operation(type: 'scale', container_count: num)
               attach_to_operation_logs(op)
             end
