@@ -26,8 +26,9 @@ describe Aptible::CLI::Agent do
                 dumptruck_port: 1234,
                 handle: 'aptible')
   end
+  let(:services) { [service] }
   let(:apps) do
-    [App.new(handle: 'hello', services: [service], account: account)]
+    [App.new(handle: 'hello', services: services, account: account)]
   end
 
   describe '#apps:scale' do
@@ -69,6 +70,28 @@ describe Aptible::CLI::Agent do
       expect do
         subject.send('apps:scale', 'web', 'potato')
       end.to raise_error(ArgumentError)
+    end
+
+    it 'should fail if the service does not exist' do
+      allow(subject).to receive(:options) { { app: 'hello' } }
+      allow(Aptible::Api::App).to receive(:all) { apps }
+
+      expect do
+        subject.send('apps:scale', 'potato', 1)
+      end.to raise_error(Thor::Error, /Service.* potato.* does not exist/)
+    end
+
+    context 'no service' do
+      let(:services) { [] }
+
+      it 'should fail if the app has no services' do
+        allow(subject).to receive(:options) { { app: 'hello' } }
+        allow(Aptible::Api::App).to receive(:all) { apps }
+
+        expect do
+          subject.send('apps:scale', 'web', 1)
+        end.to raise_error(Thor::Error, /deploy the app first/)
+      end
     end
   end
 end
