@@ -35,6 +35,14 @@ module Aptible
 
             desc 'apps:scale TYPE NUMBER', 'Scale app to NUMBER of instances'
             app_options
+            option :size, type: :numeric, enum: [512,
+                                                 1024,
+                                                 2048,
+                                                 4096,
+                                                 8192,
+                                                 16384,
+                                                 32768,
+                                                 65536]
             define_method 'apps:scale' do |type, n|
               num = Integer(n)
               app = ensure_app(options)
@@ -49,7 +57,9 @@ module Aptible
                                   "exist for app #{app.handle}. Valid " \
                                   "types: #{valid_types}."
               end
-              op = service.create_operation(type: 'scale', container_count: num)
+              op = service.create_operation(type: 'scale',
+                                            container_count: num,
+                                            container_size: options[:size])
               attach_to_operation_logs(op)
             end
 
