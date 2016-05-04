@@ -33,8 +33,14 @@ describe Aptible::CLI::Agent do
 
   describe '#domains' do
     it 'should print out the hostnames' do
+      expect(subject).to receive(:environment_from_handle)
+        .with('foobar')
+        .and_return(account)
+      expect(subject).to receive(:apps_from_handle).and_return(apps)
       allow(service).to receive(:create_operation) { op }
-      allow(subject).to receive(:options) { { app: 'hello' } }
+      allow(subject).to receive(:options) do
+        { environment: 'foobar', app: 'web' }
+      end
       allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect(app).to receive(:vhosts) { [vhost1, vhost2] }
@@ -65,8 +71,14 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should print hostnames if -v is passed' do
+      expect(subject).to receive(:environment_from_handle)
+        .with('foobar')
+        .and_return(account)
+      expect(subject).to receive(:apps_from_handle).and_return(apps)
       allow(service).to receive(:create_operation) { op }
-      allow(subject).to receive(:options) { { verbose: true, app: 'hello' } }
+      allow(subject).to receive(:options) do
+        { verbose: true, app: 'hello', environment: 'foobar' }
+      end
       allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect(app).to receive(:vhosts) { [vhost1, vhost2] }

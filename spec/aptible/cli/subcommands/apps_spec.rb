@@ -34,15 +34,41 @@ describe Aptible::CLI::Agent do
   describe '#apps:scale' do
     it 'should pass given correct parameters' do
       allow(service).to receive(:create_operation) { op }
-      allow(subject).to receive(:options) { { app: 'hello' } }
+      allow(subject).to receive(:options) do
+        { app: 'hello', environment: 'foobar' }
+      end
       allow(op).to receive(:resource) { apps.first }
       allow(Aptible::Api::App).to receive(:all) { apps }
 
+      expect(subject).to receive(:environment_from_handle)
+        .with('foobar')
+        .and_return(account)
+      expect(subject).to receive(:apps_from_handle).and_return(apps)
+      subject.send('apps:scale', 'web', 3)
+    end
+
+    it 'should pass container size param to operation if given' do
+      expect(service).to receive(:create_operation)
+        .with(type: 'scale', container_count: 3, container_size: 90210)
+        .and_return(op)
+      allow(subject).to receive(:options) do
+        { app: 'hello', size: 90210, environment: 'foobar' }
+      end
+
+      allow(op).to receive(:resource) { apps.first }
+      allow(Aptible::Api::App).to receive(:all) { apps }
+
+      expect(subject).to receive(:environment_from_handle)
+        .with('foobar')
+        .and_return(account)
+      expect(subject).to receive(:apps_from_handle).and_return(apps)
       subject.send('apps:scale', 'web', 3)
     end
 
     it 'should fail if environment is non-existent' do
-      allow(subject).to receive(:options) { { environment: 'foo', app: 'web' } }
+      allow(subject).to receive(:options) do
+        { environment: 'foo', app: 'web' }
+      end
       allow(service).to receive(:create_operation) { op }
       allow(Aptible::Api::Account).to receive(:all) { [] }
       allow(account).to receive(:apps) { [apps] }
@@ -73,7 +99,13 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should fail if the service does not exist' do
-      allow(subject).to receive(:options) { { app: 'hello' } }
+      allow(subject).to receive(:options) do
+        { app: 'hello', environment: 'foobar' }
+      end
+      expect(subject).to receive(:environment_from_handle)
+        .with('foobar')
+        .and_return(account)
+      expect(subject).to receive(:apps_from_handle).and_return(apps)
       allow(Aptible::Api::App).to receive(:all) { apps }
 
       expect do
@@ -85,7 +117,14 @@ describe Aptible::CLI::Agent do
       let(:services) { [] }
 
       it 'should fail if the app has no services' do
-        allow(subject).to receive(:options) { { app: 'hello' } }
+        expect(subject).to receive(:environment_from_handle)
+          .with('foobar')
+          .and_return(account)
+        expect(subject).to receive(:apps_from_handle).and_return(apps)
+        allow(subject).to receive(:options) do
+          { app: 'hello', environment: 'foobar' }
+        end
+
         allow(Aptible::Api::App).to receive(:all) { apps }
 
         expect do
