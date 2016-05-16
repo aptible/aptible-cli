@@ -43,7 +43,7 @@ Commands:
   aptible domains                     # Print an app's current virtual domains
   aptible help [COMMAND]              # Describe available commands or one specific command
   aptible login                       # Log in to Aptible
-  aptible logs                        # Follows logs from a running app - DEPRECATED
+  aptible logs                        # Follows logs from a running app
   aptible ps                          # Display running processes for an app - DEPRECATED
   aptible rebuild                     # Rebuild an app, and restart its services
   aptible restart                     # Restart all services associated with an app
