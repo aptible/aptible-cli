@@ -104,8 +104,9 @@ module Aptible
 
         def claim_remote_port(database)
           ENV['ACCESS_TOKEN'] = fetch_token
+          null_directory = Gem.win_platform? ? 'nul' : '/dev/null'
 
-          `ssh #{common_ssh_args(database)} 2>/dev/null`.chomp
+          `ssh #{common_ssh_args(database)} 2>#{null_directory}`.chomp
         end
 
         def common_ssh_args(database)
