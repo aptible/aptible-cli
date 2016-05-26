@@ -3,7 +3,7 @@
 [![Gem Version](https://badge.fury.io/rb/aptible-cli.png)](https://rubygems.org/gems/aptible-cli)
 [![Build Status](https://travis-ci.org/aptible/aptible-cli.png?branch=master)](https://travis-ci.org/aptible/aptible-cli)
 [![Dependency Status](https://gemnasium.com/aptible/aptible-cli.png)](https://gemnasium.com/aptible/aptible-cli)
-
+[![codecov](https://codecov.io/gh/aptible/aptible-cli/branch/master/graph/badge.svg)](https://codecov.io/gh/aptible/aptible-cli)
 [![Roadmap](https://badge.waffle.io/aptible/aptible-cli.svg?label=ready&title=roadmap)](http://waffle.io/aptible/aptible-cli)
 
 Command-line interface for Aptible services.

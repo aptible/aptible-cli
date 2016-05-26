@@ -3,6 +3,12 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'webmock/rspec'
 
+require 'simplecov'
+SimpleCov.start
+
+require 'codecov'
+SimpleCov.formatter = SimpleCov::Formatter::Codecov
+
 # Load shared spec files
 Dir["#{File.dirname(__FILE__)}/shared/**/*.rb"].each do |file|
   require file
