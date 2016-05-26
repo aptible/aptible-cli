@@ -20,7 +20,7 @@ module Aptible
               port = app.account.dumptruck_port
 
               set_env('ACCESS_TOKEN', fetch_token)
-              set_env('APTIBLE_APP', app.handle)
+              set_env('APTIBLE_APP', app.href)
               set_env('APTIBLE_CLI_COMMAND', 'ps')
 
               opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \

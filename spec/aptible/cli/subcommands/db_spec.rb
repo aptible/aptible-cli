@@ -7,12 +7,13 @@ end
 class Account < OpenStruct
 end
 
+class SocatHelperMock < OpenStruct
+end
+
 describe Aptible::CLI::Agent do
   before { subject.stub(:ask) }
   before { subject.stub(:save_token) }
   before { subject.stub(:fetch_token) { double 'token' } }
-  before { subject.stub(:random_local_port) { 4242 } }
-  before { subject.stub(:establish_connection) }
 
   let(:account) do
     Account.new(bastion_host: 'localhost',
@@ -24,7 +25,14 @@ describe Aptible::CLI::Agent do
       type: 'postgresql',
       handle: 'foobar',
       passphrase: 'password',
-      connection_url: 'postgresql://aptible:password@10.252.1.125:49158/db'
+      connection_url: 'postgresql://aptible:password@10.252.1.125:49158/db',
+      account: account
+    )
+  end
+
+  let(:socat_helper) do
+    SocatHelperMock.new(
+      port: 4242
     )
   end
 
@@ -39,11 +47,14 @@ describe Aptible::CLI::Agent do
     it 'should print a message about how to connect' do
       allow(Aptible::Api::Database).to receive(:all) { [database] }
       local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
+
+      expect(subject).to receive(:with_local_tunnel).with(database, 0)
+        .and_yield(socat_helper)
       expect(subject).to receive(:say).with('Creating tunnel...', :green)
       expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
 
       # db:tunnel should also explain each component of the URL:
-      expect(subject).to receive(:say).exactly(6).times
+      expect(subject).to receive(:say).exactly(7).times
       subject.send('db:tunnel', 'foobar')
     end
   end

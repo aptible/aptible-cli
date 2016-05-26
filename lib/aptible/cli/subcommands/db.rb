@@ -1,4 +1,5 @@
 require 'term/ansicolor'
+require 'uri'
 
 module Aptible
   module CLI
@@ -50,15 +51,19 @@ module Aptible
             option :environment
             define_method 'db:dump' do |handle|
               database = ensure_database(options.merge(db: handle))
-              dump_database(database)
+              with_postgres_tunnel(database) do |url|
+                filename = "#{handle}.dump"
+                say "Dumping to #{filename}"
+                `pg_dump #{url} > #{filename}`
+              end
             end
 
             desc 'db:execute HANDLE SQL_FILE', 'Executes sql against a database'
             option :environment
             define_method 'db:execute' do |handle, sql_path|
               database = ensure_database(options.merge(db: handle))
-              execute_local_tunnel(database) do |url|
-                say "Executing #{sql_path} against #{database.handle}"
+              with_postgres_tunnel(database) do |url|
+                say "Executing #{sql_path} against #{handle}"
                 `psql #{url} < #{sql_path}`
               end
             end
@@ -67,21 +72,31 @@ module Aptible
             option :environment
             option :port, type: :numeric
             define_method 'db:tunnel' do |handle|
+              desired_port = Integer(options[:port] || 0)
               database = ensure_database(options.merge(db: handle))
-              local_port = options[:port] || random_local_port
-
               say 'Creating tunnel...', :green
-              say "Connect at #{local_url(database, local_port)}", :green
 
-              uri = URI(local_url(database, local_port))
-              db = uri.path.gsub(%r{^/}, '')
-              say 'Or, use the following arguments:', :green
-              say("* Host: #{uri.host}", :green)
-              say("* Port: #{uri.port}", :green)
-              say("* Username: #{uri.user}", :green) unless uri.user.empty?
-              say("* Password: #{uri.password}", :green)
-              say("* Database: #{db}", :green) unless db.empty?
-              establish_connection(database, local_port)
+              with_local_tunnel(database, desired_port) do |tunnel_helper|
+                port = tunnel_helper.port
+                say "Connect at #{local_url(database, port)}", :green
+
+                uri = URI(local_url(database, port))
+                db = uri.path.gsub(%r{^/}, '')
+                say 'Or, use the following arguments:', :green
+                say("* Host: #{uri.host}", :green)
+                say("* Port: #{uri.port}", :green)
+                say("* Username: #{uri.user}", :green) unless uri.user.empty?
+                say("* Password: #{uri.password}", :green)
+                say("* Database: #{db}", :green) unless db.empty?
+
+                say 'Connected. Ctrl-C to close connection.'
+
+                begin
+                  tunnel_helper.wait
+                rescue Interrupt
+                  say 'Closing tunnel'
+                end
+              end
             end
 
             desc 'db:deprovision HANDLE', 'Deprovision a database'

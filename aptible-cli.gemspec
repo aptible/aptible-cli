@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 2.0'
   spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'climate_control'
 end
