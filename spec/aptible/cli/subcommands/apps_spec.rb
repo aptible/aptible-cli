@@ -1,4 +1,18 @@
-require 'spec_helper'
+def dummy_strategy_factory(app_handle, env_handle, usable,
+                           options_receiver = [])
+  Class.new do
+    attr_reader :options
+
+    define_method(:initialize) { |options| options_receiver << options }
+    define_method(:app_handle) { app_handle }
+    define_method(:env_handle) { env_handle }
+    define_method(:usable?) { usable }
+
+    def explain
+      '(options from dummy)'
+    end
+  end
+end
 
 describe Aptible::CLI::Agent do
   before { subject.stub(:ask) }
@@ -99,6 +113,110 @@ describe Aptible::CLI::Agent do
         expect do
           subject.send('apps:scale', 'web', 1)
         end.to raise_error(Thor::Error, /deploy the app first/)
+      end
+    end
+  end
+
+  describe '#ensure_app' do
+    it 'fails if no usable strategy is found' do
+      strategies = [dummy_strategy_factory(nil, nil, false)]
+      subject.stub(:handle_strategies) { strategies }
+
+      expect { subject.ensure_app }.to raise_error(/Could not find app/)
+    end
+
+    it 'fails if an environment is specified but not found' do
+      strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+      subject.stub(:handle_strategies) { strategies }
+
+      expect(subject).to receive(:environment_from_handle).and_return(nil)
+
+      expect { subject.ensure_app }.to raise_error(/Could not find environment/)
+    end
+
+    context 'with apps' do
+      let(:apps) { [app] }
+
+      before do
+        account.apps = apps
+        allow(Aptible::Api::App).to receive(:all).and_return(apps)
+      end
+
+      it 'scopes the app search to an environment if provided' do
+        strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect(subject).to receive(:environment_from_handle).with('aptible')
+          .and_return(account)
+
+        expect(subject.ensure_app).to eq(apps.first)
+      end
+
+      it 'does not scope the app search to an environment if not provided' do
+        strategies = [dummy_strategy_factory('hello', nil, true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect(subject.ensure_app).to eq(apps.first)
+      end
+
+      it 'fails if no app is found' do
+        apps.pop
+
+        strategies = [dummy_strategy_factory('hello', nil, true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect { subject.ensure_app }.to raise_error(/not find app hello/)
+      end
+
+      it 'explains the strategy when it fails' do
+        apps.pop
+
+        strategies = [dummy_strategy_factory('hello', nil, true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect { subject.ensure_app }.to raise_error(/from dummy/)
+      end
+
+      it 'indicates the environment when the app search was scoped' do
+        apps.pop
+
+        strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect(subject).to receive(:environment_from_handle).with('aptible')
+          .and_return(account)
+
+        expect { subject.ensure_app }.to raise_error(/in environment aptible/)
+      end
+
+      it 'fails if multiple apps are found' do
+        apps << Fabricate(:app, handle: 'hello')
+
+        strategies = [dummy_strategy_factory('hello', nil, true)]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect { subject.ensure_app }.to raise_error(/Multiple apps/)
+      end
+
+      it 'falls back to another strategy when the first one is unusable' do
+        strategies = [
+          dummy_strategy_factory('hello', nil, false),
+          dummy_strategy_factory('hello', nil, true)
+        ]
+        subject.stub(:handle_strategies) { strategies }
+
+        expect(subject.ensure_app).to eq(apps.first)
+      end
+
+      it 'passes options to the strategy' do
+        receiver = []
+        strategies = [dummy_strategy_factory('hello', nil, false, receiver)]
+        subject.stub(:handle_strategies) { strategies }
+
+        options = { app: 'foo', environment: 'bar' }
+        expect { subject.ensure_app options }.to raise_error(/not find app/)
+
+        expect(receiver).to eq([options])
       end
     end
   end
