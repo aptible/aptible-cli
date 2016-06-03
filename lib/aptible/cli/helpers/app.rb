@@ -54,7 +54,18 @@ module Aptible
           when 1
             return apps.first
           when 0
-            fail Thor::Error, "Could not find app #{app_handle}"
+            err_bits = ["Could not find app #{app_handle}"]
+
+            if environment_handle
+              err_bits << "in environment #{environment_handle}"
+              unless options[:environment]
+                # We guessed the environment, and our guess might have been
+                # wrong, let the user know.
+                err_bits << '(NOTE: environment was derived from git remote ' \
+                            "#{remote}, use --environment to override)"
+              end
+            end
+            fail Thor::Error, err_bits.join(' ')
           else
             fail Thor::Error, 'Multiple apps exist, please specify environment'
           end
