@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'aptible-api', '~> 0.9.7'
-  spec.add_dependency 'aptible-auth', '~> 0.11.7'
+  spec.add_dependency 'aptible-auth', '~> 0.11.8'
   spec.add_dependency 'aptible-resource', '~> 0.3.6'
   spec.add_dependency 'thor', '~> 0.19.1'
   spec.add_dependency 'git'
