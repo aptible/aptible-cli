@@ -24,8 +24,8 @@ module Aptible
           when 0
             fail Thor::Error, "Could not find database #{db_handle}"
           else
-            fail Thor::Error,
-                 'Multiple databases exist, please specify environment'
+            err = 'Multiple databases exist, please specify with --environment'
+            fail Thor::Error, err
           end
         end
 

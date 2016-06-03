@@ -1,4 +1,3 @@
-require 'ostruct'
 require 'spec_helper'
 
 class Database < OpenStruct
