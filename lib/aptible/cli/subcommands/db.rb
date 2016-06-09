@@ -32,8 +32,8 @@ module Aptible
               if database.errors.any?
                 fail Thor::Error, database.errors.full_messages.first
               else
-                op = database.create_operation(type: 'provision',
-                                               disk_size: options[:size])
+                op = database.create_operation!(type: 'provision',
+                                                disk_size: options[:size])
                 attach_to_operation_logs(op)
                 say database.reload.connection_url
               end

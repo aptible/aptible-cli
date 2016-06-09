@@ -11,7 +11,7 @@ module Aptible
             app_options
             def rebuild
               app = ensure_app(options)
-              operation = app.create_operation(type: 'rebuild')
+              operation = app.create_operation!(type: 'rebuild')
               puts 'Rebuilding app...'
               attach_to_operation_logs(operation)
             end

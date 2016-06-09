@@ -11,7 +11,7 @@ module Aptible
             app_options
             def restart
               app = ensure_app(options)
-              operation = app.create_operation(type: 'restart')
+              operation = app.create_operation!(type: 'restart')
               puts 'Restarting app...'
               attach_to_operation_logs(operation)
             end
