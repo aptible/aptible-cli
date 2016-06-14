@@ -95,4 +95,24 @@ describe Aptible::CLI::Agent do
       end
     end
   end
+
+  describe '#db:backup' do
+    before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
+    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
+
+    let(:op) { Fabricate(:operation) }
+
+    it 'allows creating a new backup' do
+      expect(database).to receive(:create_operation!).and_return(op)
+      expect(subject).to receive(:say).with('Backing up foobar...')
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.send('db:backup', handle)
+    end
+
+    it 'fails if the DB is not found' do
+      expect { subject.send('db:backup', 'nope') }
+        .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+  end
 end
