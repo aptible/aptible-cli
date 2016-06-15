@@ -1,0 +1,12 @@
+# Only report coverage, don't set a failing status on branches or PRs
+coverage:
+  status:
+    project:
+      default:
+        target: 0
+    patch:
+      default:
+        target: 0
+    changes:
+      default:
+        target: 0
