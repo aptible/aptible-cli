@@ -58,9 +58,9 @@ module Aptible
                                   "exist for app #{app.handle}. Valid " \
                                   "types: #{valid_types}."
               end
-              op = service.create_operation(type: 'scale',
-                                            container_count: num,
-                                            container_size: options[:size])
+              op = service.create_operation!(type: 'scale',
+                                             container_count: num,
+                                             container_size: options[:size])
               attach_to_operation_logs(op)
             end
 

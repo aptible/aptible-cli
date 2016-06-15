@@ -33,7 +33,7 @@ describe Aptible::CLI::Agent do
 
   describe '#apps:scale' do
     it 'should pass given correct parameters' do
-      allow(service).to receive(:create_operation) { op }
+      allow(service).to receive(:create_operation!) { op }
       allow(subject).to receive(:options) do
         { app: 'hello', environment: 'foobar' }
       end
@@ -48,7 +48,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should pass container size param to operation if given' do
-      expect(service).to receive(:create_operation)
+      expect(service).to receive(:create_operation!)
         .with(type: 'scale', container_count: 3, container_size: 90210)
         .and_return(op)
       allow(subject).to receive(:options) do
@@ -69,7 +69,7 @@ describe Aptible::CLI::Agent do
       allow(subject).to receive(:options) do
         { environment: 'foo', app: 'web' }
       end
-      allow(service).to receive(:create_operation) { op }
+      allow(service).to receive(:create_operation!) { op }
       allow(Aptible::Api::Account).to receive(:all) { [] }
       allow(account).to receive(:apps) { [apps] }
 
@@ -79,7 +79,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should fail if app is non-existent' do
-      allow(service).to receive(:create_operation) { op }
+      allow(service).to receive(:create_operation!) { op }
       allow(Aptible::Api::Account).to receive(:all) { [account] }
       allow(account).to receive(:apps) { [] }
 
@@ -89,7 +89,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should fail if number is not a valid number' do
-      allow(service).to receive(:create_operation) { op }
+      allow(service).to receive(:create_operation!) { op }
       allow(subject).to receive(:options) { { app: 'hello' } }
       allow(Aptible::Api::App).to receive(:all) { apps }
 
