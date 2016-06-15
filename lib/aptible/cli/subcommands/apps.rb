@@ -30,6 +30,7 @@ module Aptible
                 fail Thor::Error, app.errors.full_messages.first
               else
                 say "App #{handle} created!"
+                say "Git remote: #{app.git_repo}"
               end
             end
 
