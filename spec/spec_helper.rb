@@ -6,8 +6,10 @@ require 'webmock/rspec'
 require 'simplecov'
 SimpleCov.start
 
-require 'codecov'
-SimpleCov.formatter = SimpleCov::Formatter::Codecov
+if ENV['CI']
+  require 'codecov'
+  SimpleCov.formatter = SimpleCov::Formatter::Codecov
+end
 
 # Load shared spec files
 Dir["#{File.dirname(__FILE__)}/shared/**/*.rb"].each do |file|
