@@ -1,6 +1,7 @@
 require 'aptible/auth'
 require 'thor'
 require 'json'
+require 'chronic_duration'
 
 require_relative 'helpers/token'
 require_relative 'helpers/operation'

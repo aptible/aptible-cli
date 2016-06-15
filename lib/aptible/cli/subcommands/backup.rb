@@ -33,10 +33,17 @@ module Aptible
 
             desc 'backup:list DB_HANDLE', 'List backups for a database'
             option :environment
+            option :max_age,
+                   default: '1mo',
+                   desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
-              # TODO: Expose pagination from aptible-resource
+              age = ChronicDuration.parse(options[:max_age])
+              fail Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
+              min_created_at = Time.now - age
+
               database = ensure_database(options.merge(db: handle))
-              database.backups.each do |backup|
+              database.each_backup do |backup|
+                break if backup.created_at < min_created_at
                 say "#{backup.id}: #{backup.created_at}, #{backup.aws_region}"
               end
             end

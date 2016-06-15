@@ -65,19 +65,46 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#backup:list' do
-    before { 10.times { Fabricate(:backup, database: database) } }
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
     before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
-    it 'shows backups for a database' do
+    before do
+      m = allow(database).to receive(:each_backup)
+
+      [
+        1.day, 2.days, 3.days, 4.days,
+        5.days, 2.weeks, 3.weeks, 1.month,
+        1.year
+      ].each do |age|
+        b = Fabricate(:backup, database: database, created_at: age.ago)
+        m.and_yield(b)
+      end
+    end
+
+    # The default value isn't set when we run sepcs
+    before { subject.options = { max_age: '1w' } }
+
+    it 'can show a subset of backups' do
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(11)
+      expect(messages.size).to eq(5)
     end
 
     it 'allows scoping via environment' do
-      subject.options = { environment: database.account.handle }
+      subject.options = { max_age: '1w', environment: database.account.handle }
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(11)
+      expect(messages.size).to eq(5)
+    end
+
+    it 'shows more backups if requested' do
+      subject.options = { max_age: '2y' }
+      subject.send('backup:list', database.handle)
+      expect(messages.size).to eq(9)
+    end
+
+    it 'errors out if max_age is invalid' do
+      subject.options = { max_age: 'foobar' }
+      expect { subject.send('backup:list', database.handle) }
+        .to raise_error(Thor::Error, 'Invalid age: foobar')
     end
 
     it 'fails if the DB is not found' do
