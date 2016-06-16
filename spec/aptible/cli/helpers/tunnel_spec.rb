@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'climate_control'
 
 describe Aptible::CLI::Helpers::Tunnel do
   around do |example|
