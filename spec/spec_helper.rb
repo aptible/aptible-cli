@@ -1,7 +1,7 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
-require 'webmock/rspec'
+Bundler.require :development
 
 require 'simplecov'
 SimpleCov.start
