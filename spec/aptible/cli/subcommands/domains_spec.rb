@@ -1,49 +1,39 @@
-require 'ostruct'
 require 'spec_helper'
-
-class App < OpenStruct
-end
-
-class Service < OpenStruct
-end
-
-class Operation < OpenStruct
-end
-
-class Vhost < OpenStruct
-end
 
 describe Aptible::CLI::Agent do
   before { subject.stub(:ask) }
   before { subject.stub(:save_token) }
   before { subject.stub(:fetch_token) { double 'token' } }
 
-  let(:service) { Service.new(process_type: 'web') }
-  let(:op) { Operation.new(status: 'succeeded') }
-  let(:app) { App.new(handle: 'hello', services: [service]) }
-  let(:apps) { [app] }
-  let(:account) do
-    Account.new(bastion_host: 'localhost',
-                dumptruck_port: 1234,
-                handle: 'aptible')
+  let!(:account) { Fabricate(:account) }
+  let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
+  let!(:service) { Fabricate(:service, app: app) }
+  let(:op) { Fabricate(:operation, status: 'succeeded', resource: app) }
+
+  before do
+    allow(Aptible::Api::App).to receive(:all) { [app] }
+    allow(Aptible::Api::Account).to receive(:all) { [account] }
   end
 
-  let(:vhost1) { Vhost.new(virtual_domain: 'domain1', external_host: 'host1') }
-  let(:vhost2) { Vhost.new(virtual_domain: 'domain2', external_host: 'host2') }
+  let!(:vhost1) do
+    Fabricate(:vhost, virtual_domain: 'domain1', external_host: 'host1',
+                      service: service)
+  end
+
+  let!(:vhost2) do
+    Fabricate(:vhost, virtual_domain: 'domain2', external_host: 'host2',
+                      service: service)
+  end
 
   describe '#domains' do
     it 'should print out the hostnames' do
       expect(subject).to receive(:environment_from_handle)
         .with('foobar')
         .and_return(account)
-      expect(subject).to receive(:apps_from_handle).and_return(apps)
-      allow(service).to receive(:create_operation) { op }
+      expect(subject).to receive(:apps_from_handle).and_return([app])
       allow(subject).to receive(:options) do
         { environment: 'foobar', app: 'web' }
       end
-      allow(Aptible::Api::App).to receive(:all) { apps }
-
-      expect(app).to receive(:vhosts) { [vhost1, vhost2] }
       expect(subject).to receive(:say).with('domain1')
       expect(subject).to receive(:say).with('domain2')
 
@@ -51,19 +41,15 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should fail if app is non-existent' do
-      allow(service).to receive(:create_operation) { op }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(account).to receive(:apps) { apps }
+      allow(subject).to receive(:options) { { app: 'not-an-app' } }
 
       expect do
         subject.send('domains')
-      end.to raise_error(Thor::Error)
+      end.to raise_error(Thor::Error, /Could not find app/)
     end
 
     it 'should fail if environment is non-existent' do
-      allow(service).to receive(:create_operation) { op }
       allow(Aptible::Api::Account).to receive(:all) { [] }
-      allow(account).to receive(:apps) { apps }
 
       expect do
         subject.send('domains')
@@ -74,14 +60,11 @@ describe Aptible::CLI::Agent do
       expect(subject).to receive(:environment_from_handle)
         .with('foobar')
         .and_return(account)
-      expect(subject).to receive(:apps_from_handle).and_return(apps)
-      allow(service).to receive(:create_operation) { op }
+      expect(subject).to receive(:apps_from_handle).and_return([app])
       allow(subject).to receive(:options) do
         { verbose: true, app: 'hello', environment: 'foobar' }
       end
-      allow(Aptible::Api::App).to receive(:all) { apps }
 
-      expect(app).to receive(:vhosts) { [vhost1, vhost2] }
       expect(subject).to receive(:say).with('domain1 -> host1')
       expect(subject).to receive(:say).with('domain2 -> host2')
 

@@ -106,6 +106,15 @@ module Aptible
               say "Deprovisioning #{database.handle}..."
               database.create_operation!(type: 'deprovision')
             end
+
+            desc 'db:backup HANDLE', 'Backup a database'
+            option :environment
+            define_method 'db:backup' do |handle|
+              database = ensure_database(options.merge(db: handle))
+              say "Backing up #{database.handle}..."
+              op = database.create_operation!(type: 'backup')
+              attach_to_operation_logs(op)
+            end
           end
         end
       end

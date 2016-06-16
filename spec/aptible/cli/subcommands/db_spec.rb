@@ -1,11 +1,4 @@
-require 'ostruct'
 require 'spec_helper'
-
-class Database < OpenStruct
-end
-
-class Account < OpenStruct
-end
 
 class SocatHelperMock < OpenStruct
 end
@@ -15,33 +8,16 @@ describe Aptible::CLI::Agent do
   before { subject.stub(:save_token) }
   before { subject.stub(:fetch_token) { double 'token' } }
 
-  let(:account) do
-    Account.new(bastion_host: 'localhost',
-                dumptruck_port: 1234,
-                handle: 'aptible')
-  end
-  let(:database) do
-    Database.new(
-      type: 'postgresql',
-      handle: 'foobar',
-      passphrase: 'password',
-      connection_url: 'postgresql://aptible:password@10.252.1.125:49158/db',
-      account: account
-    )
-  end
-
-  let(:socat_helper) do
-    SocatHelperMock.new(
-      port: 4242
-    )
-  end
+  let(:handle) { 'foobar' }
+  let(:database) { Fabricate(:database, handle: handle) }
+  let(:socat_helper) { SocatHelperMock.new(port: 4242) }
 
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
       allow(Aptible::Api::Database).to receive(:all) { [] }
       expect do
-        subject.send('db:tunnel', 'foobar')
-      end.to raise_error('Could not find database foobar')
+        subject.send('db:tunnel', handle)
+      end.to raise_error("Could not find database #{handle}")
     end
 
     it 'should print a message about how to connect' do
@@ -55,14 +31,28 @@ describe Aptible::CLI::Agent do
 
       # db:tunnel should also explain each component of the URL:
       expect(subject).to receive(:say).exactly(7).times
-      subject.send('db:tunnel', 'foobar')
+      subject.send('db:tunnel', handle)
     end
   end
 
   describe '#db:list' do
+    before do
+      staging = Fabricate(:account, handle: 'staging')
+      prod = Fabricate(:account, handle: 'production')
+
+      [[staging, 'staging-redis-db'], [staging, 'staging-postgres-db'],
+       [prod, 'prod-elsearch-db'], [prod, 'prod-postgres-db']].each do |a, h|
+        Fabricate(:database, account: a, handle: h)
+      end
+
+      token = 'the-token'
+      allow(subject).to receive(:fetch_token).and_return(token)
+      allow(Aptible::Api::Account).to receive(:all).with(token: token)
+        .and_return([staging, prod])
+    end
+
     context 'when no account is specified' do
       it 'prints out the grouped database handles for all accounts' do
-        setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
 
         subject.send('db:list')
@@ -79,7 +69,6 @@ describe Aptible::CLI::Agent do
 
     context 'when a valid account is specified' do
       it 'prints out the database handles for the account' do
-        setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
 
         subject.options = { environment: 'staging' }
@@ -97,7 +86,6 @@ describe Aptible::CLI::Agent do
 
     context 'when an invalid account is specified' do
       it 'prints out an error' do
-        setup_prod_and_staging_accounts
         allow(subject).to receive(:say)
 
         subject.options = { environment: 'foo' }
@@ -108,37 +96,23 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  def setup_prod_and_staging_accounts
-    staging_redis = Database.new(handle: 'staging-redis-db')
-    staging_postgres = Database.new(handle: 'staging-postgres-db')
-    prod_elsearch = Database.new(handle: 'prod-elsearch-db')
-    prod_postgres = Database.new(handle: 'prod-postgres-db')
+  describe '#db:backup' do
+    before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
+    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
-    stub_local_token_with('the-token')
-    setup_new_accounts_with_dbs(
-      token: 'the-token',
-      account_db_mapping: {
-        'staging' => [staging_redis, staging_postgres],
-        'production' => [prod_elsearch, prod_postgres]
-      }
-    )
-  end
+    let(:op) { Fabricate(:operation) }
 
-  def setup_new_accounts_with_dbs(options)
-    token = options.fetch(:token)
-    account_db_mapping = options.fetch(:account_db_mapping)
+    it 'allows creating a new backup' do
+      expect(database).to receive(:create_operation!).and_return(op)
+      expect(subject).to receive(:say).with('Backing up foobar...')
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
 
-    accounts_with_dbs = []
-    account_db_mapping.each do |account_handle, dbs|
-      account = Account.new(handle: account_handle, databases: dbs)
-      accounts_with_dbs << account
+      subject.send('db:backup', handle)
     end
 
-    allow(Aptible::Api::Account).to receive(:all).with(token: token)
-      .and_return(accounts_with_dbs)
-  end
-
-  def stub_local_token_with(token)
-    allow(subject).to receive(:fetch_token).and_return(token)
+    it 'fails if the DB is not found' do
+      expect { subject.send('db:backup', 'nope') }
+        .to raise_error(Thor::Error, 'Could not find database nope')
+    end
   end
 end
