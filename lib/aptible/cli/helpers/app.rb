@@ -1,5 +1,9 @@
 require 'aptible/api'
-require 'git'
+
+# Avoid requiring the git gem upfront, since it'll fail to load if git isn't
+# available, whereas we're able to gracefully handle that by requiring the
+# --app and / or --environment flags.
+autoload :Git, 'git'
 
 module Aptible
   module CLI
