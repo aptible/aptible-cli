@@ -1,5 +1,4 @@
 require 'aptible/api'
-require 'git'
 
 module Aptible
   module CLI
