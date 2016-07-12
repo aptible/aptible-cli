@@ -54,16 +54,12 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(database, port = 0)
-          env = {
-            'ACCESS_TOKEN' => fetch_token,
-            'APTIBLE_DATABASE' => database.href
-          }
-          command = ['ssh', '-q'] + ssh_args(database)
-          Helpers::Tunnel.new(env, command).tap do |tunnel_helper|
-            tunnel_helper.start(port)
-            yield tunnel_helper
-            tunnel_helper.stop
-          end
+          tunnel_helper = Helpers::Tunnel.new(ssh_env(database),
+                                              ssh_args(database))
+
+          tunnel_helper.start(port)
+          yield tunnel_helper if block_given?
+          tunnel_helper.stop
         end
 
         # Creates a local PG tunnel and yields the url to it
@@ -88,15 +84,27 @@ module Aptible
           "127.0.0.1:#{local_port}#{uri.path}"
         end
 
+        def ssh_env(database)
+          {
+            'APTIBLE_DATABASE' => database.href,
+            'ACCESS_TOKEN' => fetch_token
+          }
+        end
+
         def ssh_args(database)
           host = database.account.bastion_host
           port = database.account.bastion_port
 
-          ['-o', 'SendEnv=APTIBLE_DATABASE',
-           '-o', 'SendEnv=ACCESS_TOKEN',
-           '-o', 'StrictHostKeyChecking=no',
-           '-o', 'UserKnownHostsFile=/dev/null',
-           '-p', port.to_s, "root@#{host}"]
+          # TODO: Dynamically compose SendEnv from ssh_env
+          [
+            'ssh',
+            '-o', 'SendEnv=APTIBLE_DATABASE',
+            '-o', 'SendEnv=ACCESS_TOKEN',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-p', port.to_s,
+            "root@#{host}"
+          ]
         end
       end
     end
