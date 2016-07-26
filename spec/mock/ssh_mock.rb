@@ -10,9 +10,12 @@ else
   puts 1234
 end
 
-# Log to stderr so we can collect in test
+# Log to SSH_MOCK_OUTFILE
+require 'json'
 
-$stderr.puts ARGV.size
-ARGV.each do |a|
-  $stderr.puts a
+File.open(ENV.fetch('SSH_MOCK_OUTFILE'), 'w') do |f|
+  f.write({
+    'argc' => ARGV.size,
+    'argv' => ARGV
+  }.to_json)
 end

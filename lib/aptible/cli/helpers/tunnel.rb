@@ -5,44 +5,52 @@ module Aptible
   module CLI
     module Helpers
       class Tunnel
-        def initialize(env, cmd)
+        def initialize(env, ssh_cmd)
           @env = env
-          @cmd = cmd
+          @ssh_cmd = ssh_cmd
         end
 
-        def start(desired_port = 0, err_fd = $stderr)
+        def start(desired_port = 0)
           @local_port = desired_port
           @local_port = random_local_port if @local_port == 0
 
           # First, grab a remote port
-          out, err, status = Open3.capture3(@env, *@cmd)
+          out, err, status = Open3.capture3(@env, *@ssh_cmd)
           fail "Failed to request remote port: #{err}" unless status.success?
           remote_port = out.chomp
 
-          # Then, spin up a SSH session using that port and port forwarding
+          # Then, spin up a SSH session using that port and port forwarding.
+          # Pass ExitOnForwardFailure to ensure nothing else can be listening
+          # on this port (thanks to Diego Argueta for reporting this issue).
           tunnel_env = @env.merge(
             'TUNNEL_PORT' => remote_port, # Request a specific port
             'TUNNEL_SIGNAL_OPEN' => '1'   # Request signal when tunnel is up
           )
 
-          tunnel_cmd = @cmd + [
+          # TODO: Dynamically compose SendEnv from tunnel_env
+          tunnel_cmd = @ssh_cmd + [
             '-L', "#{@local_port}:localhost:#{remote_port}",
             '-o', 'SendEnv=TUNNEL_PORT',
-            '-o', 'SendEnv=TUNNEL_SIGNAL_OPEN'
+            '-o', 'SendEnv=TUNNEL_SIGNAL_OPEN',
+            '-o', 'ExitOnForwardFailure=yes'
           ]
 
-          r_pipe, w_pipe = IO.pipe
+          out_read, out_write = IO.pipe
+          err_read, err_write = IO.pipe
           @pid = Process.spawn(tunnel_env, *tunnel_cmd, in: :close,
-                                                        out: w_pipe,
-                                                        err: err_fd)
+                                                        out: out_write,
+                                                        err: err_write)
 
           # Wait for the tunnel to come up before returning. The other end
           # will send a message on stdout to indicate that the tunnel is ready.
-          w_pipe.close
+          [out_write, err_write].map(&:close)
           begin
-            r_pipe.readline
+            out_read.readline
           rescue EOFError
-            raise 'Server closed the tunnel'
+            stop
+            raise "Tunnel did not come up:\n#{err_read.read}"
+          ensure
+            [out_read, err_read].map(&:close)
           end
         end
 

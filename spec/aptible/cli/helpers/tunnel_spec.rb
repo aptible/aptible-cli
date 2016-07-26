@@ -1,61 +1,68 @@
 require 'spec_helper'
 
 describe Aptible::CLI::Helpers::Tunnel do
-  around do |example|
-    mocks_path = File.expand_path('../../../../mock', __FILE__)
-    path = "#{mocks_path}:#{ENV['PATH']}"
-    ClimateControl.modify PATH: path do
-      example.run
+  let(:ssh_mock_outfile) { Tempfile.new('tunnel_spec') }
+  after do
+    ssh_mock_outfile.close
+    ssh_mock_outfile.unlink
+  end
+
+  def read_mock_argv
+    File.open(ssh_mock_outfile) do |f|
+      return JSON.load(f.read).fetch('argv')
     end
   end
 
-  it 'reuses the port it was given' do
-    helper = described_class.new({}, ['ssh_mock.rb'])
-
-    r, w = IO.pipe
-    helper.start(0, w)
-    helper.stop
-
-    expect(r.readline.chomp).to eq('6')
-    expect(r.readline.chomp).to eq('-L')
-    expect(r.readline.chomp).to match(/\d+:localhost:1234$/)
-    expect(r.readline.chomp).to eq('-o')
-    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_PORT')
-    expect(r.readline.chomp).to eq('-o')
-    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_SIGNAL_OPEN')
-
-    r.close
-    w.close
+  around do |example|
+    mocks_path = File.expand_path('../../../../mock', __FILE__)
+    env = {
+      PATH: "#{mocks_path}:#{ENV['PATH']}",
+      SSH_MOCK_OUTFILE: ssh_mock_outfile.path
+    }
+    ClimateControl.modify(env) { example.run }
   end
 
-  it 'accepts a desired port' do
+  it 'forwards traffic to the remote port given by the server (1234)' do
     helper = described_class.new({}, ['ssh_mock.rb'])
-    r, w = IO.pipe
-    helper.start(5678, w)
+
+    helper.start(0)
     helper.stop
 
-    expect(r.readline.chomp).to eq('6')
-    expect(r.readline.chomp).to eq('-L')
-    expect(r.readline.chomp).to eq('5678:localhost:1234')
-    expect(r.readline.chomp).to eq('-o')
-    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_PORT')
-    expect(r.readline.chomp).to eq('-o')
-    expect(r.readline.chomp).to eq('SendEnv=TUNNEL_SIGNAL_OPEN')
+    mock_argv = read_mock_argv
+    expect(mock_argv.size).to eq(8)
 
-    r.close
-    w.close
+    expect(mock_argv.shift).to eq('-L')
+    expect(mock_argv.shift).to match(/\d+:localhost:1234$/)
+    expect(mock_argv.shift).to eq('-o')
+    expect(mock_argv.shift).to eq('SendEnv=TUNNEL_PORT')
+    expect(mock_argv.shift).to eq('-o')
+    expect(mock_argv.shift).to eq('SendEnv=TUNNEL_SIGNAL_OPEN')
+    expect(mock_argv.shift).to eq('-o')
+    expect(mock_argv.shift).to eq('ExitOnForwardFailure=yes')
+  end
+
+  it 'accepts a desired local port' do
+    helper = described_class.new({}, ['ssh_mock.rb'])
+    helper.start(5678)
+    helper.stop
+
+    mock_argv = read_mock_argv
+    expect(mock_argv.size).to eq(8)
+
+    expect(mock_argv.shift).to eq('-L')
+    expect(mock_argv.shift).to eq('5678:localhost:1234')
   end
 
   it 'captures and displays port discovery errors' do
     helper = described_class.new({ 'FAIL_PORT' => '1' }, ['ssh_mock.rb'])
-    expect { helper.start }.to raise_error(/Something went wrong/)
+    expect { helper.start }
+      .to raise_error(/Failed to request.*Something went wrong/m)
   end
 
   it 'captures and displays tunnel errors' do
     helper = described_class.new({ 'FAIL_TUNNEL' => '1' }, ['ssh_mock.rb'])
-    expect do
-      helper.start(0, File.open(File::NULL, 'w'))
-    end.to raise_error(/Server closed the tunnel/)
+    expect { helper.start(0) }
+      .to raise_error(/Tunnel did not come up.*Something went wrong/m)
   end
 
   it 'should fail if #port is called before #start' do
