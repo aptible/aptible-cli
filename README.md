@@ -10,13 +10,17 @@ Command-line interface for Aptible services.
 
 ## Installation
 
+**NOTE: To install the `aptible` tool as a system-level binary, Aptible
+recommends you install the
+[Aptible Toolbelt](https://support.aptible.com/toolbelt/)**, which is faster
+and more robust.
+
 Add the following line to your application's Gemfile.
 
     gem 'aptible-cli'
 
 And then run `bundle install`.
 
-*NOTE: To install the `aptible` tool as a system-level binary, consider using the [aptible-toolbelt gem](https://github.com/aptible/aptible-toolbelt), which is performance-optimized through dependency pinning.*
 
 ## Usage
 
