@@ -27,8 +27,10 @@ module Aptible
               ENV['APTIBLE_APP'] = app.href
 
               opts = options[:force_tty] ? '-t -t' : ''
-              opts << " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                      '-o UserKnownHostsFile=/dev/null'
+              opts << " -o 'SendEnv=APTIBLE*'" \
+                      ' -o SendEnv=ACCESS_TOKEN' \
+                      ' -o StrictHostKeyChecking=no' \
+                      ' -o UserKnownHostsFile=/dev/null'
               Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
             end
 
