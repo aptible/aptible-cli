@@ -28,6 +28,9 @@ PerceivedComplexity:
 AbcSize:
   Enabled: false
 
+SignalException:
+  Enabled: false
+
 AllCops:
   Include:
     - !ruby/regexp /\.rb$/

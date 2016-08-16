@@ -12,7 +12,7 @@ module Aptible
 
         def start(desired_port = 0)
           @local_port = desired_port
-          @local_port = random_local_port if @local_port == 0
+          @local_port = random_local_port if @local_port.zero?
 
           # First, grab a remote port
           out, err, status = Open3.capture3(@env, *@ssh_cmd)
