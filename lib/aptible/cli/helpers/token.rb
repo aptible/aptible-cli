@@ -4,7 +4,7 @@ module Aptible
   module CLI
     module Helpers
       module Token
-        TOKEN_ENV_VAR = 'APTIBLE_ACCESS_TOKEN'
+        TOKEN_ENV_VAR = 'APTIBLE_ACCESS_TOKEN'.freeze
 
         def fetch_token
           @token ||= ENV[TOKEN_ENV_VAR] ||
