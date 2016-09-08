@@ -16,6 +16,7 @@ require 'json'
 File.open(ENV.fetch('SSH_MOCK_OUTFILE'), 'w') do |f|
   f.write({
     'argc' => ARGV.size,
-    'argv' => ARGV
+    'argv' => ARGV,
+    'env' => ENV.to_hash
   }.to_json)
 end

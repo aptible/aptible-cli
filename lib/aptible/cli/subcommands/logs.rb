@@ -18,16 +18,17 @@ module Aptible
                                   "Have you deployed #{app.handle} yet?"
               end
 
-              host = app.account.bastion_host
-              port = app.account.dumptruck_port
-
               ENV['ACCESS_TOKEN'] = fetch_token
               ENV['APTIBLE_APP'] = app.href
               ENV['APTIBLE_CLI_COMMAND'] = 'logs'
 
-              opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                     '-o UserKnownHostsFile=/dev/null'
-              Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
+              cmd = dumptruck_ssh_command(app.account) + [
+                '-o', 'SendEnv=ACCESS_TOKEN',
+                '-o', 'SendEnv=APTIBLE_APP',
+                '-o', 'SendEnv=APTIBLE_CLI_COMMAND'
+              ]
+
+              Kernel.exec(*cmd)
             end
           end
         end
