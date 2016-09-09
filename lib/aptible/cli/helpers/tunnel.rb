@@ -49,8 +49,8 @@ module Aptible
           rescue EOFError
             stop
             e = 'Tunnel did not come up, is something else listening on port ' \
-                "#{@local_port}?"
-            raise "#{e}\n#{err_read.read}"
+                "#{@local_port}?\n#{err_read.read}"
+            raise e
           ensure
             [out_read, err_read].map(&:close)
           end

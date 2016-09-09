@@ -13,6 +13,8 @@ module Aptible
         private
 
         def base_ssh_command(account, port_method)
+          log_level = ENV['APTIBLE_SSH_VERBOSE'] ? 'VERBOSE' : 'ERROR'
+
           [
             'ssh',
             "root@#{account.bastion_host}",
@@ -22,8 +24,7 @@ module Aptible
             '-o', 'TCPKeepAlive=yes',
             '-o', 'KeepAlive=yes',
             '-o', 'ServerAliveInterval=60',
-            # TODO: Test whether this LogLevel affects open port fail
-            '-o', 'LogLevel=quiet'
+            '-o', "LogLevel=#{log_level}"
           ]
         end
       end
