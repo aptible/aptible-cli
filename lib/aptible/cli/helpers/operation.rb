@@ -4,6 +4,8 @@ module Aptible
   module CLI
     module Helpers
       module Operation
+        include Helpers::Ssh
+
         POLL_INTERVAL = 1
 
         def poll_for_success(operation)
@@ -21,20 +23,22 @@ module Aptible
         end
 
         def attach_to_operation_logs(operation)
-          host = operation.resource.account.bastion_host
-          port = operation.resource.account.dumptruck_port
+          ENV['ACCESS_TOKEN'] = fetch_token
+          ENV['APTIBLE_OPERATION'] = operation.id.to_s
+          ENV['APTIBLE_CLI_COMMAND'] = 'oplog'
 
-          set_env('ACCESS_TOKEN', fetch_token)
-          set_env('APTIBLE_OPERATION', operation.id.to_s)
-          set_env('APTIBLE_CLI_COMMAND', 'oplog')
+          cmd = dumptruck_ssh_command(operation.resource.account) + [
+            '-o', 'SendEnv=ACCESS_TOKEN',
+            '-o', 'SendEnv=APTIBLE_OPERATION',
+            '-o', 'SendEnv=APTIBLE_CLI_COMMAND'
+          ]
 
-          opts = " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                 '-o UserKnownHostsFile=/dev/null -o LogLevel=quiet'
-          result = Kernel.system "ssh #{opts} -p #{port} root@#{host}"
+          success = Kernel.system(*cmd)
+
           # If Dumptruck is down, fall back to polling for success. If the
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
-          poll_for_success(operation) unless result
+          poll_for_success(operation) unless success
         end
       end
     end

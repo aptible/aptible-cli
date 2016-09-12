@@ -8,6 +8,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Ssh
 
             desc 'ssh [COMMAND]', 'Run a command against an app'
             long_desc <<-LONGDESC
@@ -19,17 +20,19 @@ module Aptible
             option :force_tty, type: :boolean
             def ssh(*args)
               app = ensure_app(options)
-              host = app.account.bastion_host
-              port = app.account.bastion_port
 
               ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_COMMAND'] = command_from_args(*args)
               ENV['APTIBLE_APP'] = app.href
+              ENV['APTIBLE_COMMAND'] = command_from_args(*args)
 
-              opts = options[:force_tty] ? '-t -t' : ''
-              opts << " -o 'SendEnv=*' -o StrictHostKeyChecking=no " \
-                      '-o UserKnownHostsFile=/dev/null'
-              Kernel.exec "ssh #{opts} -p #{port} root@#{host}"
+              cmd = broadwayjoe_ssh_command(app.account) + [
+                '-o', 'SendEnv=ACCESS_TOKEN',
+                '-o', 'SendEnv=APTIBLE_APP',
+                '-o', 'SendEnv=APTIBLE_COMMAND'
+              ]
+              cmd << '-tt' if options[:force_tty]
+
+              Kernel.exec(*cmd)
             end
 
             private

@@ -6,6 +6,7 @@ module Aptible
       module Database
         include Helpers::Token
         include Helpers::Environment
+        include Helpers::Ssh
 
         def ensure_database(options = {})
           db_handle = options[:db]
@@ -86,24 +87,15 @@ module Aptible
 
         def ssh_env(database)
           {
-            'APTIBLE_DATABASE' => database.href,
-            'ACCESS_TOKEN' => fetch_token
+            'ACCESS_TOKEN' => fetch_token,
+            'APTIBLE_DATABASE' => database.href
           }
         end
 
         def ssh_args(database)
-          host = database.account.bastion_host
-          port = database.account.bastion_port
-
-          # TODO: Dynamically compose SendEnv from ssh_env
-          [
-            'ssh',
-            '-o', 'SendEnv=APTIBLE_DATABASE',
+          broadwayjoe_ssh_command(database.account) + [
             '-o', 'SendEnv=ACCESS_TOKEN',
-            '-o', 'StrictHostKeyChecking=no',
-            '-o', 'UserKnownHostsFile=/dev/null',
-            '-p', port.to_s,
-            "root@#{host}"
+            '-o', 'SendEnv=APTIBLE_DATABASE'
           ]
         end
       end

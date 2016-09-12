@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe Aptible::CLI::Agent do
+  include_context 'mock ssh'
+
   let(:account) do
     Fabricate(:account, bastion_host: 'bastion.com', dumptruck_port: 45022)
   end
@@ -10,21 +12,25 @@ describe Aptible::CLI::Agent do
   before { subject.stub(:save_token) }
   before { subject.stub(:fetch_token) { double 'token' } }
   before { subject.stub(:ensure_app) { app } }
-  before { subject.stub(:set_env) }
-  before { Kernel.stub(:exec) }
+
+  before do
+    allow(Kernel).to receive(:exec) do |*args|
+      Kernel.system(*args)
+    end
+  end
 
   describe '#ps' do
     it 'should set ENV["APTIBLE_CLI_COMMAND"]' do
-      expect(subject).to receive(:set_env).with('APTIBLE_CLI_COMMAND', 'ps')
       subject.send('ps')
+      expect(read_mock_env['APTIBLE_CLI_COMMAND']).to eq('ps')
     end
 
     it 'should construct a proper SSH call' do
-      expect(Kernel).to receive(:exec) do |*args|
-        cmd = args.first
-        expect(cmd).to match(/ssh.*-p 45022 root@bastion.com/)
-      end
       subject.send('ps')
+
+      mock_argv = read_mock_argv
+      expect(mock_argv).to include('root@bastion.com')
+      expect(mock_argv).to include('45022')
     end
   end
 end
