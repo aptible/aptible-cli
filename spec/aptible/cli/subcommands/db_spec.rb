@@ -22,7 +22,7 @@ describe Aptible::CLI::Agent do
 
     it 'should print a message about how to connect' do
       allow(Aptible::Api::Database).to receive(:all) { [database] }
-      local_url = 'postgresql://aptible:password@127.0.0.1:4242/db'
+      local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
 
       expect(subject).to receive(:with_local_tunnel).with(database, 0)
         .and_yield(socat_helper)
