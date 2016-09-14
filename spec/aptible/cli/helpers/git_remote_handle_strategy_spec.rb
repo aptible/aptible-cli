@@ -1,9 +1,11 @@
 require 'spec_helper'
 
 describe Aptible::CLI::Helpers::App::GitRemoteHandleStrategy do
-  let!(:work_dir) { Dir.mktmpdir }
-  after { FileUtils.remove_entry work_dir }
-  around { |example| Dir.chdir(work_dir) { example.run } }
+  around do |example|
+    Dir.mktmpdir do |work_dir|
+      Dir.chdir(work_dir) { example.run }
+    end
+  end
 
   context 'with git repo' do
     before { `git init` }
