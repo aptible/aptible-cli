@@ -58,12 +58,18 @@ module Aptible
 
         def stop
           fail 'You must call #start before calling #stop' if @pid.nil?
-          Process.kill('HUP', @pid)
+          begin
+            Process.kill('HUP', @pid)
+          rescue Errno::ESRCH
+            nil # Dear Rubocop: I know what I'm doing.
+          end
           wait
         end
 
         def wait
           Process.wait @pid
+        rescue Errno::ECHILD
+          nil
         end
 
         def port
