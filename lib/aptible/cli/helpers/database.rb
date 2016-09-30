@@ -72,7 +72,7 @@ module Aptible
 
           with_local_tunnel(database) do |tunnel_helper|
             auth = "aptible:#{database.passphrase}"
-            host = "localhost:#{tunnel_helper.port}"
+            host = "localhost.aptible.in:#{tunnel_helper.port}"
             yield "postgresql://#{auth}@#{host}/db"
           end
         end
@@ -82,7 +82,7 @@ module Aptible
           uri = URI.parse(remote_url)
 
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
-          "127.0.0.1:#{local_port}#{uri.path}"
+          "localhost.aptible.in:#{local_port}#{uri.path}"
         end
 
         def ssh_env(database)
