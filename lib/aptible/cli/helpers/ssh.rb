@@ -24,7 +24,9 @@ module Aptible
             '-o', 'TCPKeepAlive=yes',
             '-o', 'KeepAlive=yes',
             '-o', 'ServerAliveInterval=60',
-            '-o', "LogLevel=#{log_level}"
+            '-o', "LogLevel=#{log_level}",
+            '-o', 'ControlMaster=no',
+            '-o', 'ControlPath=none'
           ]
         end
       end
