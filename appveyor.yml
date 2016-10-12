@@ -4,7 +4,6 @@ environment:
   matrix:
     - RUBY_VERSION: 22
     - RUBY_VERSION: 21
-    - RUBY_VERSION: 200
 
 install:
   - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%

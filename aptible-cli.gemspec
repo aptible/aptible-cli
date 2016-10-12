@@ -30,7 +30,7 @@ Gem::Specification.new do |spec|
 
   if RUBY_PLATFORM =~ /mswin|mingw/i
     spec.add_dependency 'win32-process'
-    spec.add_development_dependency 'appveyor-worker'
+    # spec.add_development_dependency 'appveyor-worker'
   end
 
   spec.add_development_dependency 'bundler', '~> 1.3'
