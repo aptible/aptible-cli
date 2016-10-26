@@ -47,7 +47,7 @@ module Aptible
 
         def clone_database(source, dest_handle)
           op = source.create_operation!(type: 'clone', handle: dest_handle)
-          poll_for_success(op)
+          attach_to_operation_logs(op)
 
           databases_from_handle(dest_handle, source.account).first
         end
