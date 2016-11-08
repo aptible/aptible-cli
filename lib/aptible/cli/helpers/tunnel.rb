@@ -1,5 +1,6 @@
 require 'socket'
 require 'open3'
+require 'win32-process' if Gem.win_platform?
 
 module Aptible
   module CLI

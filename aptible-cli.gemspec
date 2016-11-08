@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'git'
   spec.add_dependency 'term-ansicolor'
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
+  spec.add_dependency 'win32-process' if Gem.win_platform?
   spec.add_development_dependency 'bundler', '~> 1.3'
   spec.add_development_dependency 'aptible-tasks', '>= 0.2.0'
   spec.add_development_dependency 'rake'
