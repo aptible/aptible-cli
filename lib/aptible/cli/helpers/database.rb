@@ -55,12 +55,19 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(database, port = 0)
-          tunnel_helper = Helpers::Tunnel.new(ssh_env(database),
-                                              ssh_args(database))
+          op = database.create_operation!(type: 'tunnel', status: 'succeeded')
 
-          tunnel_helper.start(port)
-          yield tunnel_helper if block_given?
-          tunnel_helper.stop
+          with_ssh_cmd(op) do |base_ssh_cmd, credential|
+            ssh_cmd = base_ssh_cmd + ['-o', 'SendEnv=ACCESS_TOKEN']
+            ssh_env = { 'ACCESS_TOKEN' => fetch_token }
+
+            socket_path = credential.ssh_port_forward_socket
+            tunnel_helper = Helpers::Tunnel.new(ssh_env, ssh_cmd, socket_path)
+
+            tunnel_helper.start(port)
+            yield tunnel_helper if block_given?
+            tunnel_helper.stop
+          end
         end
 
         # Creates a local PG tunnel and yields the url to it
@@ -83,20 +90,6 @@ module Aptible
 
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.aptible.in:#{local_port}#{uri.path}"
-        end
-
-        def ssh_env(database)
-          {
-            'ACCESS_TOKEN' => fetch_token,
-            'APTIBLE_DATABASE' => database.href
-          }
-        end
-
-        def ssh_args(database)
-          broadwayjoe_ssh_command(database.account) + [
-            '-o', 'SendEnv=ACCESS_TOKEN',
-            '-o', 'SendEnv=APTIBLE_DATABASE'
-          ]
         end
       end
     end

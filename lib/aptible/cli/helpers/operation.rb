@@ -23,19 +23,17 @@ module Aptible
         end
 
         def attach_to_operation_logs(operation)
+          # TODO: This isn't actually guaranteed to connect to the operation
+          # logs, since the action will depend on what operation we're actually
+          # connecting for. There might be ways to make this better.
           ENV['ACCESS_TOKEN'] = fetch_token
-          ENV['APTIBLE_OPERATION'] = operation.id.to_s
-          ENV['APTIBLE_CLI_COMMAND'] = 'oplog'
 
-          cmd = dumptruck_ssh_command(operation.resource.account) + [
-            '-o', 'SendEnv=ACCESS_TOKEN',
-            '-o', 'SendEnv=APTIBLE_OPERATION',
-            '-o', 'SendEnv=APTIBLE_CLI_COMMAND'
-          ]
+          success = connect_to_ssh_portal(
+            operation,
+            '-o', 'SendEnv=ACCESS_TOKEN'
+          )
 
-          success = Kernel.system(*cmd)
-
-          # If Dumptruck is down, fall back to polling for success. If the
+          # If the portal is down, fall back to polling for success. If the
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
           poll_for_success(operation) unless success

@@ -28,6 +28,7 @@ module Aptible
       include Thor::Actions
 
       include Helpers::Token
+      include Helpers::Ssh
       include Subcommands::Apps
       include Subcommands::Config
       include Subcommands::DB
