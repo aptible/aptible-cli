@@ -4,7 +4,7 @@ describe Aptible::CLI::Helpers::Tunnel do
   include_context 'mock ssh'
 
   it 'forwards traffic to the remote port given by the server (1234)' do
-    helper = described_class.new({}, ['ssh_mock.rb'])
+    helper = described_class.new({}, ['ssh'])
 
     helper.start(0)
     helper.stop
@@ -23,7 +23,7 @@ describe Aptible::CLI::Helpers::Tunnel do
   end
 
   it 'accepts a desired local port' do
-    helper = described_class.new({}, ['ssh_mock.rb'])
+    helper = described_class.new({}, ['ssh'])
     helper.start(5678)
     helper.stop
 
@@ -35,13 +35,13 @@ describe Aptible::CLI::Helpers::Tunnel do
   end
 
   it 'captures and displays port discovery errors' do
-    helper = described_class.new({ 'FAIL_PORT' => '1' }, ['ssh_mock.rb'])
+    helper = described_class.new({ 'FAIL_PORT' => '1' }, ['ssh'])
     expect { helper.start }
       .to raise_error(/Failed to request.*Something went wrong/m)
   end
 
   it 'captures and displays tunnel errors' do
-    helper = described_class.new({ 'FAIL_TUNNEL' => '1' }, ['ssh_mock.rb'])
+    helper = described_class.new({ 'FAIL_TUNNEL' => '1' }, ['ssh'])
     expect { helper.start(0) }
       .to raise_error(/Tunnel did not come up.*Something went wrong/m)
   end

@@ -162,7 +162,8 @@ describe Aptible::CLI::Agent do
     it 'loads without git' do
       mocks = File.expand_path('../../../mock', __FILE__)
       bins =  File.expand_path('../../../../bin', __FILE__)
-      ClimateControl.modify PATH: [mocks, bins, ENV['PATH']].join(':') do
+      sep = File::PATH_SEPARATOR
+      ClimateControl.modify PATH: [mocks, bins, ENV['PATH']].join(sep) do
         _, _, status = Open3.capture3('aptible version')
         expect(status).to eq(0)
       end

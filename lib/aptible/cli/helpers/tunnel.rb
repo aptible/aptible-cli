@@ -1,9 +1,27 @@
 require 'socket'
 require 'open3'
+require 'win32-process' if Gem.win_platform?
 
 module Aptible
   module CLI
     module Helpers
+      # The :new_pgroup key specifies the CREATE_NEW_PROCESS_GROUP flag for
+      # CreateProcessW() in the Windows API. This is a Windows only option.
+      # true means the new process is the root process of the new process
+      # group.
+      # This flag is necessary for Process.kill(:SIGINT, pid) on the
+      # subprocess.
+      STOP_SIGNAL = if Gem.win_platform?
+                      :SIGINT
+                    else
+                      :SIGHUP
+                    end
+      SPAWN_OPTS =  if Gem.win_platform?
+                      { new_pgroup: true }
+                    else
+                      {}
+                    end
+
       class Tunnel
         def initialize(env, ssh_cmd)
           @env = env
@@ -37,9 +55,9 @@ module Aptible
 
           out_read, out_write = IO.pipe
           err_read, err_write = IO.pipe
-          @pid = Process.spawn(tunnel_env, *tunnel_cmd, in: :close,
-                                                        out: out_write,
-                                                        err: err_write)
+
+          @pid = Process.spawn(tunnel_env, *tunnel_cmd, SPAWN_OPTS
+            .merge(in: :close, out: out_write, err: err_write))
 
           # Wait for the tunnel to come up before returning. The other end
           # will send a message on stdout to indicate that the tunnel is ready.
@@ -59,7 +77,7 @@ module Aptible
         def stop
           fail 'You must call #start before calling #stop' if @pid.nil?
           begin
-            Process.kill('HUP', @pid)
+            Process.kill(STOP_SIGNAL, @pid)
           rescue Errno::ESRCH
             nil # Dear Rubocop: I know what I'm doing.
           end

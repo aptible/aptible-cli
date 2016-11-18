@@ -9,7 +9,7 @@ shared_context 'mock ssh' do
   around do |example|
     mocks_path = File.expand_path('../../mock', __FILE__)
     env = {
-      PATH: "#{mocks_path}:#{ENV['PATH']}",
+      PATH: "#{mocks_path}#{File::PATH_SEPARATOR}#{ENV['PATH']}",
       SSH_MOCK_OUTFILE: ssh_mock_outfile.path
     }
 
