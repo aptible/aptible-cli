@@ -40,6 +40,19 @@ module Aptible
           # the error message.
           poll_for_success(operation) unless success
         end
+
+        def cancel_operation(operation)
+          puts "Cancelling #{prettify_operation(operation)}..."
+          operation.update!(cancelled: true)
+        end
+
+        def prettify_operation(o)
+          bits = [o.status, o.type, "##{o.id}"]
+          if o.resource.respond_to?(:handle)
+            bits.concat ['on', o.resource.handle]
+          end
+          bits.join ' '
+        end
       end
     end
   end

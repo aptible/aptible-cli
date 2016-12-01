@@ -21,6 +21,7 @@ require_relative 'subcommands/rebuild'
 require_relative 'subcommands/restart'
 require_relative 'subcommands/ssh'
 require_relative 'subcommands/backup'
+require_relative 'subcommands/operation'
 
 module Aptible
   module CLI
@@ -38,6 +39,7 @@ module Aptible
       include Subcommands::Restart
       include Subcommands::SSH
       include Subcommands::Backup
+      include Subcommands::Operation
 
       # Forward return codes on failures.
       def self.exit_on_failure?
