@@ -44,6 +44,11 @@ module Aptible
         true
       end
 
+      def initialize(*)
+        nag_toolbelt unless ENV['APTIBLE_TOOLBELT']
+        super
+      end
+
       desc 'version', 'Print Aptible CLI version'
       def version
         puts "aptible-cli v#{Aptible::CLI::VERSION}"
@@ -103,6 +108,36 @@ module Aptible
       def deprecated(msg)
         say "DEPRECATION NOTICE: #{msg}"
         say 'Please contact support@aptible.com with any questions.'
+      end
+
+      def nag_toolbelt
+        # If you're reading this, it's possible you decided to not use the
+        # toolbelt and are a looking for a way to disable this warning. Look no
+        # further: to do so, edit the file `.aptible/nag_toolbelt` and put a
+        # timestamp far into the future. For example, writing 1577836800 will
+        # disable the warning until 2020.
+        nag_file = File.join ENV['HOME'], '.aptible', 'nag_toolbelt'
+        nag_frequency = 12.hours
+
+        last_nag = begin
+                     Integer(File.read(nag_file))
+                   rescue Errno::ENOENT, ArgumentError
+                     0
+                   end
+
+        now = Time.now.utc.to_i
+
+        if last_nag < now - nag_frequency
+          $stderr.puts yellow([
+            'You have installed the Aptible CLI from source.',
+            'This is not recommended: some functionality may not work!',
+            'Review this support topic for more information:',
+            'https://www.aptible.com/support/topics/cli/how-to-install-cli/'
+          ].join("\n"))
+
+          FileUtils.mkdir_p(File.dirname(nag_file))
+          File.open(nag_file, 'w', 0o600) { |f| f.write(now.to_s) }
+        end
       end
     end
   end

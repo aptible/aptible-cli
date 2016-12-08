@@ -21,4 +21,10 @@ require 'aptible/cli'
 
 RSpec.configure do |config|
   config.before {}
+
+  # We make the CLI believe it's running in a toolbelt context to avoid running
+  # the toolbelt nag every time it initializes.
+  config.around(:each) do |example|
+    ClimateControl.modify(APTIBLE_TOOLBELT: '1') { example.run }
+  end
 end

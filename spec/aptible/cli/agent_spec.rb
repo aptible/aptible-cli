@@ -158,6 +158,66 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#nag_toolbelt' do
+    let!(:work_dir) { Dir.mktmpdir }
+    after { FileUtils.remove_entry work_dir }
+    around { |example| ClimateControl.modify(HOME: work_dir) { example.run } }
+
+    let(:nag_dir) { File.join(work_dir, '.aptible') }
+    let(:nag_file) { File.join(nag_dir, 'nag_toolbelt') }
+
+    it 'warns if the nag file is not present' do
+      expect($stderr).to receive(:puts).at_least(:once)
+      subject.send(:nag_toolbelt)
+      expect(Integer(File.read(nag_file))).to be_within(5).of(Time.now.utc.to_i)
+    end
+
+    it 'warns if the nag file contains an old timestamp' do
+      Dir.mkdir(nag_dir)
+      File.open(nag_file, 'w') do |f|
+        f.write((Time.now.utc.to_i - 1.day).to_i.to_s)
+      end
+
+      expect($stderr).to receive(:puts).at_least(:once)
+      subject.send(:nag_toolbelt)
+    end
+
+    it 'does not warn if the nag file contains a recent timestamp' do
+      Dir.mkdir(nag_dir)
+      File.open(nag_file, 'w') do |f|
+        f.write((Time.now.utc.to_i - 3.hours).to_i.to_s)
+      end
+
+      expect($stderr).not_to receive(:puts)
+      subject.send(:nag_toolbelt)
+    end
+
+    it 'does not warn if the nag file contains a recent timestamp (newline)' do
+      # In case a customer writes to the nag file to disable the nag, they're
+      # likely to add a trailing newline. Let's just make sure we support that.
+      Dir.mkdir(nag_dir)
+      File.open(nag_file, 'w') do |f|
+        f.write("#{(Time.now.utc.to_i - 3.hours).to_i}\n")
+      end
+
+      expect($stderr).not_to receive(:puts)
+      subject.send(:nag_toolbelt)
+    end
+
+    it 'warns if the nag file contains an invalid timestamp' do
+      Dir.mkdir(nag_dir)
+      File.open(nag_file, 'w') { |f| f.write('foobar') }
+
+      expect($stderr).to receive(:puts).at_least(:once)
+      subject.send(:nag_toolbelt)
+    end
+
+    it 'is compatible with itself' do
+      expect($stderr).to receive(:puts).once
+      2.times { subject.send(:nag_toolbelt) }
+    end
+  end
+
   context 'load' do
     it 'loads without git' do
       mocks = File.expand_path('../../../mock', __FILE__)
