@@ -45,13 +45,18 @@ module Aptible
       end
 
       def initialize(*)
-        nag_toolbelt unless ENV['APTIBLE_TOOLBELT']
+        nag_toolbelt unless toolbelt?
         super
       end
 
       desc 'version', 'Print Aptible CLI version'
       def version
-        puts "aptible-cli v#{Aptible::CLI::VERSION}"
+        bits = [
+          'aptible-cli',
+          "v#{Aptible::CLI::VERSION}"
+        ]
+        bits << 'toolbelt' if toolbelt?
+        puts bits.join ' '
       end
 
       desc 'login', 'Log in to Aptible'
@@ -138,6 +143,10 @@ module Aptible
           FileUtils.mkdir_p(File.dirname(nag_file))
           File.open(nag_file, 'w', 0o600) { |f| f.write(now.to_s) }
         end
+      end
+
+      def toolbelt?
+        ENV['APTIBLE_TOOLBELT']
       end
     end
   end

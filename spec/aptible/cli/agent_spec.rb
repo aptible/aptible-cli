@@ -7,9 +7,19 @@ describe Aptible::CLI::Agent do
 
   describe '#version' do
     it 'should print the version' do
-      version = Aptible::CLI::VERSION
-      expect(STDOUT).to receive(:puts).with "aptible-cli v#{version}"
-      subject.version
+      ClimateControl.modify(APTIBLE_TOOLBELT: nil) do
+        version = Aptible::CLI::VERSION
+        expect(STDOUT).to receive(:puts).with "aptible-cli v#{version}"
+        subject.version
+      end
+    end
+
+    it 'should print the version (with toolbelt)' do
+      ClimateControl.modify(APTIBLE_TOOLBELT: '1') do
+        version = Aptible::CLI::VERSION
+        expect(STDOUT).to receive(:puts).with "aptible-cli v#{version} toolbelt"
+        subject.version
+      end
     end
   end
 
