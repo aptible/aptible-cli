@@ -11,6 +11,8 @@ module Aptible
         end
 
         def with_ssh_cmd(operation)
+          ensure_ssh_dir!
+          ensure_config!
           ensure_key!
 
           operation.with_ssh_cmd(private_key_file) do |cmd, connection|
@@ -20,16 +22,20 @@ module Aptible
 
         private
 
+        def ensure_ssh_dir!
+          FileUtils.mkdir_p(ssh_dir, mode: 0o700)
+        end
+
+        def ensure_config!
+          return if File.exist?(ssh_config_file)
+          File.open(ssh_config_file, 'w', 0o600) { |f| f.write('') }
+        end
+
         def ensure_key!
           key_files = [private_key_file, public_key_file]
           return if key_files.all? { |f| File.exist?(f) }
 
-          # If we don't have all the files, we may either not have the
-          # directory (and any files), have the directory but no files,
-          # or the directory but some files. We need to converge to the
-          # known good state where we can create them: the directory exists
-          # and none of the files do.
-          FileUtils.mkdir_p(ssh_keydir)
+          # If we're missing *some* files, then we should clean them up.
 
           # rubocop:disable Lint/HandleExceptions
           key_files.each do |key_file|
@@ -50,12 +56,16 @@ module Aptible
           end
         end
 
-        def ssh_keydir
+        def ssh_dir
           File.join ENV['HOME'], '.aptible', 'ssh'
         end
 
+        def ssh_config_file
+          File.join ssh_dir, 'config'
+        end
+
         def private_key_file
-          File.join ssh_keydir, 'id_rsa'
+          File.join ssh_dir, 'id_rsa'
         end
 
         def public_key_file
@@ -73,7 +83,8 @@ module Aptible
             '-o', 'ServerAliveInterval=60',
             '-o', "LogLevel=#{log_level}",
             '-o', 'ControlMaster=no',
-            '-o', 'ControlPath=none'
+            '-o', 'ControlPath=none',
+            '-F', ssh_config_file
           ]
         end
       end
