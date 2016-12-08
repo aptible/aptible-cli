@@ -22,7 +22,7 @@ module Aptible
 
             desc 'db:create HANDLE', 'Create a new database'
             option :type, default: 'postgresql'
-            option :size, default: 10
+            option :size, default: 10, type: :numeric
             option :environment
             define_method 'db:create' do |handle|
               environment = ensure_environment(options)
