@@ -11,8 +11,8 @@ module Aptible
         def poll_for_success(operation)
           wait_for_completion operation
           return if operation.status == 'succeeded'
-          fail Thor::Error,
-               'Operation failed. Please contact support@aptible.com'
+
+          fail Thor::Error, "Operation ##{operation.id} failed."
         end
 
         def wait_for_completion(operation)
@@ -39,6 +39,19 @@ module Aptible
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
           poll_for_success(operation) unless success
+        end
+
+        def cancel_operation(operation)
+          puts "Cancelling #{prettify_operation(operation)}..."
+          operation.update!(cancelled: true)
+        end
+
+        def prettify_operation(o)
+          bits = [o.status, o.type, "##{o.id}"]
+          if o.resource.respond_to?(:handle)
+            bits.concat ['on', o.resource.handle]
+          end
+          bits.join ' '
         end
       end
     end
