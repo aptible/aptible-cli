@@ -8,7 +8,6 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
-            include Helpers::Ssh
 
             desc 'ssh [COMMAND]', 'Run a command against an app'
             long_desc <<-LONGDESC
@@ -21,18 +20,14 @@ module Aptible
             def ssh(*args)
               app = ensure_app(options)
 
+              op = app.create_operation!(type: 'execute',
+                                         command: command_from_args(*args),
+                                         status: 'succeeded')
+
               ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_APP'] = app.href
-              ENV['APTIBLE_COMMAND'] = command_from_args(*args)
-
-              cmd = broadwayjoe_ssh_command(app.account) + [
-                '-o', 'SendEnv=ACCESS_TOKEN',
-                '-o', 'SendEnv=APTIBLE_APP',
-                '-o', 'SendEnv=APTIBLE_COMMAND'
-              ]
-              cmd << '-tt' if options[:force_tty]
-
-              Kernel.exec(*cmd)
+              opts = ['-o', 'SendEnv=ACCESS_TOKEN']
+              opts << '-tt' if options[:force_tty]
+              connect_to_ssh_portal(op, *opts)
             end
 
             private

@@ -8,27 +8,33 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Database
 
-            desc 'logs', 'Follows logs from a running app'
+            desc 'logs', 'Follows logs from a running app or database'
             app_options
+            option :database
             def logs
-              app = ensure_app(options)
-              unless app.status == 'provisioned' && app.services.any?
-                fail Thor::Error, 'Unable to retrieve logs. ' \
-                                  "Have you deployed #{app.handle} yet?"
+              if options[:app] && options[:database]
+                m = 'You must specify only one of --app and --database'
+                fail Thor::Error, m
               end
 
+              resource = \
+                if options[:database]
+                  ensure_database(options.merge(db: options[:database]))
+                else
+                  ensure_app(options)
+                end
+
+              unless resource.status == 'provisioned'
+                fail Thor::Error, 'Unable to retrieve logs. ' \
+                                  "Have you deployed #{resource.handle} yet?"
+              end
+
+              op = resource.create_operation!(type: 'logs', status: 'succeeded')
+
               ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_APP'] = app.href
-              ENV['APTIBLE_CLI_COMMAND'] = 'logs'
-
-              cmd = dumptruck_ssh_command(app.account) + [
-                '-o', 'SendEnv=ACCESS_TOKEN',
-                '-o', 'SendEnv=APTIBLE_APP',
-                '-o', 'SendEnv=APTIBLE_CLI_COMMAND'
-              ]
-
-              Kernel.exec(*cmd)
+              connect_to_ssh_portal(op, '-o', 'SendEnv=ACCESS_TOKEN', '-T')
             end
           end
         end

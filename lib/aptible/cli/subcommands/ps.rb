@@ -12,20 +12,15 @@ module Aptible
             desc 'ps', 'Display running processes for an app - DEPRECATED'
             app_options
             def ps
-              app = ensure_app(options)
               deprecated('This command is deprecated on Aptible v2 stacks.')
 
+              app = ensure_app(options)
+
+              op = app.create_operation!(type: 'ps', status: 'succeeded')
+
               ENV['ACCESS_TOKEN'] = fetch_token
-              ENV['APTIBLE_APP'] = app.href
-              ENV['APTIBLE_CLI_COMMAND'] = 'ps'
-
-              cmd = dumptruck_ssh_command(app.account) + [
-                '-o', 'SendEnv=ACCESS_TOKEN',
-                '-o', 'SendEnv=APTIBLE_APP',
-                '-o', 'SendEnv=APTIBLE_CLI_COMMAND'
-              ]
-
-              Kernel.exec(*cmd)
+              opts = ['-o', 'SendEnv=ACCESS_TOKEN']
+              connect_to_ssh_portal(op, *opts)
             end
           end
         end

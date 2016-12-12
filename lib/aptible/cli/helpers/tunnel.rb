@@ -23,40 +23,25 @@ module Aptible
                     end
 
       class Tunnel
-        def initialize(env, ssh_cmd)
+        def initialize(env, ssh_cmd, socket_path)
           @env = env
           @ssh_cmd = ssh_cmd
+          @socket_path = socket_path
         end
 
         def start(desired_port = 0)
           @local_port = desired_port
           @local_port = random_local_port if @local_port.zero?
 
-          # First, grab a remote port
-          out, err, status = Open3.capture3(@env, *@ssh_cmd)
-          fail "Failed to request remote port: #{err}" unless status.success?
-          remote_port = out.chomp
-
-          # Then, spin up a SSH session using that port and port forwarding.
-          # Pass ExitOnForwardFailure to ensure nothing else can be listening
-          # on this port (thanks to Diego Argueta for reporting this issue).
-          tunnel_env = @env.merge(
-            'TUNNEL_PORT' => remote_port, # Request a specific port
-            'TUNNEL_SIGNAL_OPEN' => '1'   # Request signal when tunnel is up
-          )
-
-          # TODO: Dynamically compose SendEnv from tunnel_env
           tunnel_cmd = @ssh_cmd + [
-            '-L', "#{@local_port}:localhost:#{remote_port}",
-            '-o', 'SendEnv=TUNNEL_PORT',
-            '-o', 'SendEnv=TUNNEL_SIGNAL_OPEN',
+            '-L', "#{@local_port}:#{@socket_path}",
             '-o', 'ExitOnForwardFailure=yes'
           ]
 
           out_read, out_write = IO.pipe
           err_read, err_write = IO.pipe
 
-          @pid = Process.spawn(tunnel_env, *tunnel_cmd, SPAWN_OPTS
+          @pid = Process.spawn(@env, *tunnel_cmd, SPAWN_OPTS
             .merge(in: :close, out: out_write, err: err_write))
 
           # Wait for the tunnel to come up before returning. The other end
