@@ -73,7 +73,7 @@ module Aptible
         end
 
         def common_ssh_args
-          log_level = ENV['APTIBLE_SSH_VERBOSE'] ? 'VERBOSE' : 'ERROR'
+          log_level = ENV['APTIBLE_SSH_DEBUG'] ? 'DEBUG3' : 'ERROR'
 
           [
             '-o', 'StrictHostKeyChecking=no',
