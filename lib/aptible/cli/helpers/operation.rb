@@ -12,7 +12,7 @@ module Aptible
           wait_for_completion operation
           return if operation.status == 'succeeded'
 
-          fail Thor::Error, "Operation ##{operation.id} failed."
+          raise Thor::Error, "Operation ##{operation.id} failed."
         end
 
         def wait_for_completion(operation)

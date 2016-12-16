@@ -30,7 +30,7 @@ module Aptible
                                                      type: options[:type])
 
               if database.errors.any?
-                fail Thor::Error, database.errors.full_messages.first
+                raise Thor::Error, database.errors.full_messages.first
               else
                 op = database.create_operation!(type: 'provision',
                                                 disk_size: options[:size])

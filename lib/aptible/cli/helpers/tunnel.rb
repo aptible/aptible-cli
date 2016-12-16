@@ -60,7 +60,7 @@ module Aptible
         end
 
         def stop
-          fail 'You must call #start before calling #stop' if @pid.nil?
+          raise 'You must call #start before calling #stop' if @pid.nil?
           begin
             Process.kill(STOP_SIGNAL, @pid)
           rescue Errno::ESRCH
@@ -76,7 +76,7 @@ module Aptible
         end
 
         def port
-          fail 'You must call #start before calling #port!' if @local_port.nil?
+          raise 'You must call #start before calling #port!' if @local_port.nil?
           @local_port
         end
 

@@ -31,7 +31,7 @@ module Aptible
                       "but #{app.handle} is deployed in a production " \
                       'environment. Are you sure you want to do this? If ' \
                       'so, use the --force flag.'
-                  fail Thor::Error, e
+                  raise Thor::Error, e
                 end
               end
 

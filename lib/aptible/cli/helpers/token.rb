@@ -10,8 +10,8 @@ module Aptible
           @token ||= ENV[TOKEN_ENV_VAR] ||
                      current_token_hash[Aptible::Auth.configuration.root_url]
           return @token if @token
-          fail Thor::Error, 'Could not read token: please run aptible login ' \
-                            "or set #{TOKEN_ENV_VAR}"
+          raise Thor::Error, 'Could not read token: please run aptible login ' \
+                             "or set #{TOKEN_ENV_VAR}"
         end
 
         def save_token(token)

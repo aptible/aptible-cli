@@ -16,7 +16,7 @@ module Aptible
             def logs
               if options[:app] && options[:database]
                 m = 'You must specify only one of --app and --database'
-                fail Thor::Error, m
+                raise Thor::Error, m
               end
 
               resource = \
@@ -27,8 +27,8 @@ module Aptible
                 end
 
               unless resource.status == 'provisioned'
-                fail Thor::Error, 'Unable to retrieve logs. ' \
-                                  "Have you deployed #{resource.handle} yet?"
+                raise Thor::Error, 'Unable to retrieve logs. ' \
+                                   "Have you deployed #{resource.handle} yet?"
               end
 
               op = resource.create_operation!(type: 'logs', status: 'succeeded')

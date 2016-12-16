@@ -97,7 +97,7 @@ module Aptible
           if s.nil?
             err = 'Could not find app in current working directory, please ' \
                   'specify with --app'
-            fail Thor::Error, err
+            raise Thor::Error, err
           end
 
           environment = nil
@@ -106,7 +106,7 @@ module Aptible
             if environment.nil?
               err_bits = ['Could not find environment', s.env_handle]
               err_bits << s.explain
-              fail Thor::Error, err_bits.join(' ')
+              raise Thor::Error, err_bits.join(' ')
             end
           end
 
@@ -124,11 +124,11 @@ module Aptible
               err_bits << 'in any environment'
             end
             err_bits << s.explain
-            fail Thor::Error, err_bits.join(' ')
+            raise Thor::Error, err_bits.join(' ')
           else
             err = "Multiple apps named #{s.app_handle} exist, please specify " \
                   'with --environment'
-            fail Thor::Error, err
+            raise Thor::Error, err
           end
         end
 

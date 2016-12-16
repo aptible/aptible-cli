@@ -27,7 +27,7 @@ module Aptible
               app = environment.create_app(handle: handle)
 
               if app.errors.any?
-                fail Thor::Error, app.errors.full_messages.first
+                raise Thor::Error, app.errors.full_messages.first
               else
                 say "App #{handle} created!"
                 say "Git remote: #{app.git_repo}"
@@ -54,9 +54,9 @@ module Aptible
                               else
                                 app.services.map(&:process_type).join(', ')
                               end
-                fail Thor::Error, "Service with type #{type} does not " \
-                                  "exist for app #{app.handle}. Valid " \
-                                  "types: #{valid_types}."
+                raise Thor::Error, "Service with type #{type} does not " \
+                                   "exist for app #{app.handle}. Valid " \
+                                   "types: #{valid_types}."
               end
               op = service.create_operation!(type: 'scale',
                                              container_count: num,

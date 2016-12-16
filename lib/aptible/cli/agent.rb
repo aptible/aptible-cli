@@ -81,7 +81,7 @@ module Aptible
 
           duration = ChronicDuration.parse(lifetime)
           if duration.nil?
-            fail Thor::Error, "Invalid token lifetime requested: #{lifetime}"
+            raise Thor::Error, "Invalid token lifetime requested: #{lifetime}"
           end
 
           token_options[:expires_in] = duration
