@@ -11,7 +11,7 @@ module Aptible
             if (environment = environment_from_handle(options[:environment]))
               [environment]
             else
-              fail Thor::Error, 'Specified account does not exist'
+              raise Thor::Error, 'Specified account does not exist'
             end
           else
             Aptible::Api::Account.all(token: fetch_token)
@@ -22,7 +22,7 @@ module Aptible
           if (handle = options[:environment])
             environment = environment_from_handle(handle)
             return environment if environment
-            fail Thor::Error, "Could not find environment #{handle}"
+            raise Thor::Error, "Could not find environment #{handle}"
           else
             ensure_default_environment
           end
@@ -39,7 +39,7 @@ module Aptible
           environments = Aptible::Api::Account.all(token: fetch_token)
           return environments.first if environments.count == 1
 
-          fail Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
+          raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
             Multiple environments available, please specify with --environment
           ERR
         end

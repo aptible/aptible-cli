@@ -12,21 +12,22 @@ module Aptible
           db_handle = options[:db]
           environment_handle = options[:environment]
 
-          fail Thor::Error, 'Database handle not specified' unless db_handle
+          raise Thor::Error, 'Database handle not specified' unless db_handle
 
           environment = environment_from_handle(environment_handle)
           if environment_handle && !environment
-            fail Thor::Error, "Could not find environment #{environment_handle}"
+            raise Thor::Error,
+                  "Could not find environment #{environment_handle}"
           end
           databases = databases_from_handle(db_handle, environment)
           case databases.count
           when 1
             return databases.first
           when 0
-            fail Thor::Error, "Could not find database #{db_handle}"
+            raise Thor::Error, "Could not find database #{db_handle}"
           else
             err = 'Multiple databases exist, please specify with --environment'
-            fail Thor::Error, err
+            raise Thor::Error, err
           end
         end
 
@@ -74,7 +75,7 @@ module Aptible
 
         def with_postgres_tunnel(database)
           if database.type != 'postgresql'
-            fail Thor::Error, 'This command only works for PostgreSQL'
+            raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
           with_local_tunnel(database) do |tunnel_helper|

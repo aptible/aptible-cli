@@ -37,7 +37,6 @@ module Aptible
 
           # If we're missing *some* files, then we should clean them up.
 
-          # rubocop:disable Lint/HandleExceptions
           key_files.each do |key_file|
             begin
               File.delete(key_file)
@@ -45,7 +44,6 @@ module Aptible
               # We don't care, that's what we want.
             end
           end
-          # rubocop:enable Lint/HandleExceptions
 
           begin
             cmd = ['ssh-keygen', '-t', 'rsa', '-N', '', '-f', private_key_file]

@@ -49,17 +49,13 @@ module Aptible
 
       def initialize(*)
         nag_toolbelt unless toolbelt?
+        Aptible::Resource.configure { |conf| conf.user_agent = version_string }
         super
       end
 
       desc 'version', 'Print Aptible CLI version'
       def version
-        bits = [
-          'aptible-cli',
-          "v#{Aptible::CLI::VERSION}"
-        ]
-        bits << 'toolbelt' if toolbelt?
-        puts bits.join ' '
+        puts version_string
       end
 
       desc 'login', 'Log in to Aptible'
@@ -85,7 +81,7 @@ module Aptible
 
           duration = ChronicDuration.parse(lifetime)
           if duration.nil?
-            fail Thor::Error, "Invalid token lifetime requested: #{lifetime}"
+            raise Thor::Error, "Invalid token lifetime requested: #{lifetime}"
           end
 
           token_options[:expires_in] = duration
@@ -146,6 +142,15 @@ module Aptible
           FileUtils.mkdir_p(File.dirname(nag_file))
           File.open(nag_file, 'w', 0o600) { |f| f.write(now.to_s) }
         end
+      end
+
+      def version_string
+        bits = [
+          'aptible-cli',
+          "v#{Aptible::CLI::VERSION}"
+        ]
+        bits << 'toolbelt' if toolbelt?
+        bits.join ' '
       end
 
       def toolbelt?

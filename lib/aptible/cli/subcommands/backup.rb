@@ -13,7 +13,7 @@ module Aptible
             option :size, type: :numeric
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
-              fail Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
+              raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
               handle = options[:handle]
               unless handle
                 ts_suffix = backup.created_at.getgm.strftime '%Y-%m-%d-%H-%M-%S'
@@ -38,7 +38,7 @@ module Aptible
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
               age = ChronicDuration.parse(options[:max_age])
-              fail Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
+              raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
 
               database = ensure_database(options.merge(db: handle))
