@@ -74,8 +74,6 @@ module Aptible
           log_level = ENV['APTIBLE_SSH_DEBUG'] ? 'DEBUG3' : 'ERROR'
 
           [
-            '-o', 'StrictHostKeyChecking=no',
-            '-o', 'UserKnownHostsFile=/dev/null',
             '-o', 'TCPKeepAlive=yes',
             '-o', 'KeepAlive=yes',
             '-o', 'ServerAliveInterval=60',
