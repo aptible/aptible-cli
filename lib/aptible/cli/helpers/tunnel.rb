@@ -5,17 +5,17 @@ require 'win32-process' if Gem.win_platform?
 module Aptible
   module CLI
     module Helpers
-      # The :new_pgroup key specifies the CREATE_NEW_PROCESS_GROUP flag for
-      # CreateProcessW() in the Windows API. This is a Windows only option.
-      # true means the new process is the root process of the new process
-      # group.
-      # This flag is necessary for Process.kill(:SIGINT, pid) on the
-      # subprocess.
       STOP_SIGNAL = if Gem.win_platform?
-                      :SIGINT
+                      :SIGBRK
                     else
                       :SIGHUP
                     end
+
+      # The :new_pgroup key specifies the CREATE_NEW_PROCESS_GROUP flag for
+      # CreateProcessW() in the Windows API. This is a Windows only option.
+      # true means the new process is the root process of the new process
+      # group. This flag is necessary to be able to signal the subprocess on
+      # Windows.
       SPAWN_OPTS =  if Gem.win_platform?
                       { new_pgroup: true }
                     else
