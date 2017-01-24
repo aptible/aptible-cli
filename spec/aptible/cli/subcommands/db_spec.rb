@@ -92,6 +92,42 @@ describe Aptible::CLI::Agent do
         expect { subject.send('db:tunnel', handle) }
           .to raise_error(/foobar is not provisioned/im)
       end
+
+      context 'v1 stack' do
+        before { database.account.stack.stub(version: 'v1') }
+        before { allow(subject).to receive(:say) }
+
+        it 'falls back to the database itself if no type is given' do
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+          subject.send('db:tunnel', handle)
+        end
+
+        it 'falls back to the database itself if type matches' do
+          subject.options = { type: 'bar' }
+          database.stub(type: 'bar')
+
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+          subject.send('db:tunnel', handle)
+        end
+
+        it 'does not fall back to the database itself if type mismatches' do
+          subject.options = { type: 'bar' }
+          database.stub(type: 'foo')
+
+          expect { subject.send('db:tunnel', handle) }
+            .to raise_error(/no credential with type bar/im)
+        end
+
+        it 'does not suggest other types that do not exist' do
+          messages = []
+          allow(subject).to receive(:say) { |m, *| messages << m }
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+
+          subject.send('db:tunnel', handle)
+
+          expect(messages.grep(/use --type type/im)).to be_empty
+        end
+      end
     end
   end
 

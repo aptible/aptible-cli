@@ -82,9 +82,12 @@ module Aptible
                   :green
 
               if options[:type].nil?
-                types = database.database_credentials.map(&:type).join(', ')
-                say 'Use --type TYPE to specify a tunnel type', :green
-                say "Valid types for #{database.handle}: #{types}", :green
+                types = database.database_credentials.map(&:type)
+                unless types.empty?
+                  valid = types.join(', ')
+                  say 'Use --type TYPE to specify a tunnel type', :green
+                  say "Valid types for #{database.handle}: #{valid}", :green
+                end
               end
 
               with_local_tunnel(credential, desired_port) do |tunnel_helper|

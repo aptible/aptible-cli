@@ -104,7 +104,17 @@ module Aptible
 
           return credential if credential
 
-          valid = database.database_credentials.map(&:type).join(', ')
+          types = database.database_credentials.map(&:type)
+
+          # On v1, we fallback to the DB. We make sure to make --type work, to
+          # avoid a confusing experience for customers.
+          if database.account.stack.version == 'v1'
+            types << database.type
+            types.uniq!
+            return database if type.nil? || type == database.type
+          end
+
+          valid = types.join(', ')
 
           err = 'No default credential for database'
           err = "No credential with type #{type} for database" if type
