@@ -71,16 +71,27 @@ module Aptible
             desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
             option :environment
             option :port, type: :numeric
+            option :type, type: :string
             define_method 'db:tunnel' do |handle|
               desired_port = Integer(options[:port] || 0)
               database = ensure_database(options.merge(db: handle))
-              say 'Creating tunnel...', :green
 
-              with_local_tunnel(database, desired_port) do |tunnel_helper|
+              credential = find_tunnel_credential(database, options[:type])
+
+              say "Creating #{credential.type} tunnel to #{database.handle}...",
+                  :green
+
+              if options[:type].nil?
+                types = database.database_credentials.map(&:type).join(', ')
+                say 'Use --type TYPE to specify a tunnel type', :green
+                say "Valid types for #{database.handle}: #{types}", :green
+              end
+
+              with_local_tunnel(credential, desired_port) do |tunnel_helper|
                 port = tunnel_helper.port
-                say "Connect at #{local_url(database, port)}", :green
+                say "Connect at #{local_url(credential, port)}", :green
 
-                uri = URI(local_url(database, port))
+                uri = URI(local_url(credential, port))
                 db = uri.path.gsub(%r{^/}, '')
                 say 'Or, use the following arguments:', :green
                 say("* Host: #{uri.host}", :green)
