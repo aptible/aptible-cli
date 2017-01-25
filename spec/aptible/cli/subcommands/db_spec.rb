@@ -20,18 +20,114 @@ describe Aptible::CLI::Agent do
       end.to raise_error("Could not find database #{handle}")
     end
 
-    it 'should print a message about how to connect' do
-      allow(Aptible::Api::Database).to receive(:all) { [database] }
-      local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
+    context 'valid database' do
+      before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
-      expect(subject).to receive(:with_local_tunnel).with(database, 0)
-        .and_yield(socat_helper)
-      expect(subject).to receive(:say).with('Creating tunnel...', :green)
-      expect(subject).to receive(:say).with("Connect at #{local_url}", :green)
+      it 'prints a message explaining how to connect' do
+        cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                               database: database)
 
-      # db:tunnel should also explain each component of the URL:
-      expect(subject).to receive(:say).exactly(7).times
-      subject.send('db:tunnel', handle)
+        expect(subject).to receive(:with_local_tunnel).with(cred, 0)
+          .and_yield(socat_helper)
+
+        expect(subject).to receive(:say)
+          .with('Creating foo tunnel to foobar...', :green)
+
+        local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
+        expect(subject).to receive(:say)
+          .with("Connect at #{local_url}", :green)
+
+        # db:tunnel should also explain each component of the URL and suggest
+        # the --type argument:
+        expect(subject).to receive(:say).exactly(9).times
+        subject.send('db:tunnel', handle)
+      end
+
+      it 'defaults to a default credential' do
+        ok = Fabricate(:database_credential, default: true, database: database)
+        Fabricate(:database_credential, database: database, type: 'foo')
+        Fabricate(:database_credential, database: database, type: 'bar')
+
+        messages = []
+        allow(subject).to receive(:say) { |m, *| messages << m }
+        expect(subject).to receive(:with_local_tunnel).with(ok, 0)
+
+        subject.send('db:tunnel', handle)
+
+        expect(messages.grep(/use --type type/im)).not_to be_empty
+        expect(messages.grep(/valid types.*foo.*bar/im)).not_to be_empty
+      end
+
+      it 'supports --type' do
+        subject.options = { type: 'foo' }
+
+        Fabricate(:database_credential, default: true, database: database)
+        ok = Fabricate(:database_credential, type: 'foo', database: database)
+        Fabricate(:database_credential, type: 'bar', database: database)
+
+        allow(subject).to receive(:say)
+        expect(subject).to receive(:with_local_tunnel).with(ok, 0)
+        subject.send('db:tunnel', handle)
+      end
+
+      it 'fails when there is no default database credential nor type' do
+        Fabricate(:database_credential, default: false, database: database)
+
+        expect { subject.send('db:tunnel', handle) }
+          .to raise_error(/no default credential/im)
+      end
+
+      it 'fails when the type is incorrect' do
+        subject.options = { type: 'bar' }
+
+        Fabricate(:database_credential, type: 'foo', database: database)
+
+        expect { subject.send('db:tunnel', handle) }
+          .to raise_error(/no credential with type bar/im)
+      end
+
+      it 'fails when the database is not provisioned' do
+        database.stub(status: 'pending')
+
+        expect { subject.send('db:tunnel', handle) }
+          .to raise_error(/foobar is not provisioned/im)
+      end
+
+      context 'v1 stack' do
+        before { database.account.stack.stub(version: 'v1') }
+        before { allow(subject).to receive(:say) }
+
+        it 'falls back to the database itself if no type is given' do
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+          subject.send('db:tunnel', handle)
+        end
+
+        it 'falls back to the database itself if type matches' do
+          subject.options = { type: 'bar' }
+          database.stub(type: 'bar')
+
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+          subject.send('db:tunnel', handle)
+        end
+
+        it 'does not fall back to the database itself if type mismatches' do
+          subject.options = { type: 'bar' }
+          database.stub(type: 'foo')
+
+          expect { subject.send('db:tunnel', handle) }
+            .to raise_error(/no credential with type bar/im)
+        end
+
+        it 'does not suggest other types that do not exist' do
+          messages = []
+          allow(subject).to receive(:say) { |m, *| messages << m }
+          expect(subject).to receive(:with_local_tunnel).with(database, 0)
+
+          subject.send('db:tunnel', handle)
+
+          expect(messages.grep(/use --type type/im)).to be_empty
+        end
+      end
     end
   end
 

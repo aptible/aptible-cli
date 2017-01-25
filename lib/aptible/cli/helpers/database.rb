@@ -55,14 +55,14 @@ module Aptible
 
         # Creates a local tunnel and yields the helper
 
-        def with_local_tunnel(database, port = 0)
-          op = database.create_operation!(type: 'tunnel', status: 'succeeded')
+        def with_local_tunnel(credential, port = 0)
+          op = credential.create_operation!(type: 'tunnel', status: 'succeeded')
 
-          with_ssh_cmd(op) do |base_ssh_cmd, credential|
+          with_ssh_cmd(op) do |base_ssh_cmd, ssh_credential|
             ssh_cmd = base_ssh_cmd + ['-o', 'SendEnv=ACCESS_TOKEN']
             ssh_env = { 'ACCESS_TOKEN' => fetch_token }
 
-            socket_path = credential.ssh_port_forward_socket
+            socket_path = ssh_credential.ssh_port_forward_socket
             tunnel_helper = Helpers::Tunnel.new(ssh_env, ssh_cmd, socket_path)
 
             tunnel_helper.start(port)
@@ -78,19 +78,47 @@ module Aptible
             raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
-          with_local_tunnel(database) do |tunnel_helper|
-            auth = "aptible:#{database.passphrase}"
-            host = "localhost.aptible.in:#{tunnel_helper.port}"
-            yield "postgresql://#{auth}@#{host}/db"
+          credential = find_tunnel_credential(database)
+
+          with_local_tunnel(credential) do |tunnel_helper|
+            yield local_url(credential, tunnel_helper.port)
           end
         end
 
-        def local_url(database, local_port)
-          remote_url = database.connection_url
+        def local_url(credential, local_port)
+          remote_url = credential.connection_url
           uri = URI.parse(remote_url)
 
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.aptible.in:#{local_port}#{uri.path}"
+        end
+
+        def find_tunnel_credential(database, type = nil)
+          unless database.provisioned?
+            raise Thor::Error, "Database #{database.handle} is not provisioned"
+          end
+
+          finder = proc { |c| c.default }
+          finder = proc { |c| c.type == type } if type
+          credential = database.database_credentials.find(&finder)
+
+          return credential if credential
+
+          types = database.database_credentials.map(&:type)
+
+          # On v1, we fallback to the DB. We make sure to make --type work, to
+          # avoid a confusing experience for customers.
+          if database.account.stack.version == 'v1'
+            types << database.type
+            types.uniq!
+            return database if type.nil? || type == database.type
+          end
+
+          valid = types.join(', ')
+
+          err = 'No default credential for database'
+          err = "No credential with type #{type} for database" if type
+          raise Thor::Error, "#{err}, valid credential types: #{valid}"
         end
       end
     end
