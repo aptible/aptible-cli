@@ -3,10 +3,30 @@ module Aptible
     module Helpers
       module Ssh
         def connect_to_ssh_portal(operation, *extra_ssh_args)
-          # TODO: Should we rescue Interrupt here?
           with_ssh_cmd(operation) do |base_ssh_cmd|
             ssh_cmd = base_ssh_cmd + extra_ssh_args
-            Kernel.system(*ssh_cmd)
+            begin
+              Kernel.system(*ssh_cmd)
+            rescue Interrupt
+              # Assuming we have a TTY, there are two cases here. Either SSH
+              # itself has a TTY, in which case it is controlling the TTY and
+              # the CLI won't be receiving SIGINT when CTRL+C is pressed, or
+              # SSH has no TTY, in which case the CLI and SSH are sharing the
+              # same process group, and will both receive SIGINT when CTRL+C
+              # is pressed and exit accordingly.
+              #
+              # I'm not sure how this *should* work on Windows, but it appears
+              # to work pretty much the same way, except that we'll get an ugly
+              # "Terminate batch job (Y/N)?" prompt in the no-TTY-for-SSH case,
+              # which we're likely to have a hard time handling.
+              #
+              # Note that this DOES NOT handle the case where the CLI is sent
+              # SIGINT by another process (as opposed to the line discipline).
+              # In this case, SSH will continue running in the background. This
+              # is something we should fix, but for now this 'simple' fix is
+              # enough to addresses the ugly stack trace we show when
+              # CTRL+C'ing out of logs.
+            end
           end
         end
 
