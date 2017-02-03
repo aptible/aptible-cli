@@ -16,6 +16,12 @@ shared_context 'mock ssh' do
     ClimateControl.modify(env) { example.run }
   end
 
+  def read_mock_pid
+    File.open(ssh_mock_outfile) do |f|
+      return JSON.load(f.read).fetch('pid')
+    end
+  end
+
   def read_mock_argv
     File.open(ssh_mock_outfile) do |f|
       return JSON.load(f.read).fetch('argv')

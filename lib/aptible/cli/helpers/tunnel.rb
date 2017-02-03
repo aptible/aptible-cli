@@ -11,16 +11,18 @@ module Aptible
                       :SIGHUP
                     end
 
+      STOP_TIMEOUT = 5
+
       # The :new_pgroup key specifies the CREATE_NEW_PROCESS_GROUP flag for
       # CreateProcessW() in the Windows API. This is a Windows only option.
       # true means the new process is the root process of the new process
       # group. This flag is necessary to be able to signal the subprocess on
       # Windows.
-      SPAWN_OPTS =  if Gem.win_platform?
-                      { new_pgroup: true }
-                    else
-                      {}
-                    end
+      SPAWN_OPTS = if Gem.win_platform?
+                     { new_pgroup: true }
+                   else
+                     {}
+                   end
 
       class Tunnel
         def initialize(env, ssh_cmd, socket_path)
@@ -70,8 +72,12 @@ module Aptible
         end
 
         def wait
-          Process.wait @pid
-        rescue Errno::ECHILD
+          STOP_TIMEOUT.times do
+            return if Process.wait(@pid, Process::WNOHANG)
+            sleep 1
+          end
+          Process.kill(:SIGKILL, @pid)
+        rescue Errno::ECHILD, Errno::ESRCH
           nil
         end
 
