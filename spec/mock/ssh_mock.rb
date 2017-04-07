@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'json'
 
-raise 'Something went wrong!' if ENV['FAIL_TUNNEL']
+raise 'Something went wrong!' if ENV['SSH_MOCK_FAIL_TUNNEL']
 
 # Log arguments to SSH_MOCK_OUTFILE
 File.open(ENV.fetch('SSH_MOCK_OUTFILE'), 'w') do |f|
@@ -14,3 +14,5 @@ File.open(ENV.fetch('SSH_MOCK_OUTFILE'), 'w') do |f|
 end
 
 puts 'TUNNEL READY'
+
+exit Integer(ENV.fetch('SSH_MOCK_EXITCODE', 0))
