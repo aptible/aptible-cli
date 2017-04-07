@@ -63,22 +63,40 @@ module Aptible
 
         def stop
           raise 'You must call #start before calling #stop' if @pid.nil?
+
           begin
             Process.kill(STOP_SIGNAL, @pid)
           rescue Errno::ESRCH
-            nil # Dear Rubocop: I know what I'm doing.
+            # Already dead.
+            return
           end
-          wait
+
+          begin
+            STOP_TIMEOUT.times do
+              return if Process.wait(@pid, Process::WNOHANG)
+              sleep 1
+            end
+            Process.kill(:SIGKILL, @pid)
+          rescue Errno::ECHILD, Errno::ESRCH
+            # Died at some point, that's fine.
+          end
         end
 
         def wait
-          STOP_TIMEOUT.times do
-            return if Process.wait(@pid, Process::WNOHANG)
-            sleep 1
+          # NOTE: Ruby is kind enough to retry when EINTR is thrown, so we
+          # don't need to retry or anything here.
+          _, status = Process.wait2(@pid)
+
+          code = status.exitstatus
+
+          case code
+          when 0
+            # No-op: we're happy with this.
+          when 124
+            raise Thor::Error, 'Tunnel timed out'
+          else
+            raise Thor::Error, "Tunnel crashed (#{code})"
           end
-          Process.kill(:SIGKILL, @pid)
-        rescue Errno::ECHILD, Errno::ESRCH
-          nil
         end
 
         def port
