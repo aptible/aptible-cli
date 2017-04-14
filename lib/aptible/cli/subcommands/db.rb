@@ -129,6 +129,15 @@ module Aptible
               op = database.create_operation!(type: 'backup')
               attach_to_operation_logs(op)
             end
+
+            desc 'db:reload HANDLE', 'Reload a database'
+            option :environment
+            define_method 'db:reload' do |handle|
+              database = ensure_database(options.merge(db: handle))
+              say "Reloading #{database.handle}..."
+              op = database.create_operation!(type: 'reload')
+              attach_to_operation_logs(op)
+            end
           end
         end
       end
