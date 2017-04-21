@@ -26,7 +26,37 @@ module Aptible
 
               ENV['ACCESS_TOKEN'] = fetch_token
               opts = ['-o', 'SendEnv=ACCESS_TOKEN']
-              opts << '-tt' if options[:force_tty]
+
+              # SSH's default behavior is as follows:
+              #
+              # - If a TTY is forced, one is allocated.
+              # - If there is no command, then a TTY is allocated.
+              # - If no-TTY is forced, then none is allocated.
+              # - No TTY is allocated if stdin isn't a TTY.
+              #
+              # Unfortunately, in our case, this breaks, because we use a
+              # forced-command, so we don't *ever* send a command, which causes
+              # SSH to *always* allocate TTY, which causes a variety of
+              # problems, not least of which is that stdout and stderr end up
+              # merged.
+              #
+              # Now, it's pretty common for Aptible users to run commands in
+              # their container with the intention of using a TTY (by e.g.
+              # running `aptible ssh bash`), so we use a slightly different
+              # heuristic from SSH: we allocate TTY iif there's no input or
+              # output redirection going on.
+              #
+              # End users can always override this behavior with the
+              # --force-tty option.
+              tty_mode = if options[:force_tty]
+                           '-tt'
+                         elsif [STDIN, STDOUT].all?(&:tty?)
+                           '-t'
+                         else
+                           '-T'
+                         end
+              opts << tty_mode
+
               connect_to_ssh_portal(op, *opts)
             end
 
