@@ -1,3 +1,5 @@
+require 'uri'
+
 require 'aptible/auth'
 require 'thor'
 require 'json'
@@ -22,6 +24,7 @@ require_relative 'subcommands/restart'
 require_relative 'subcommands/ssh'
 require_relative 'subcommands/backup'
 require_relative 'subcommands/operation'
+require_relative 'subcommands/inspect'
 
 module Aptible
   module CLI
@@ -41,6 +44,7 @@ module Aptible
       include Subcommands::SSH
       include Subcommands::Backup
       include Subcommands::Operation
+      include Subcommands::Inspect
 
       # Forward return codes on failures.
       def self.exit_on_failure?
