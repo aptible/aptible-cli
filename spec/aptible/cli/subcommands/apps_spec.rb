@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 def dummy_strategy_factory(app_handle, env_handle, usable,
                            options_receiver = [])
   Class.new do
@@ -31,89 +33,135 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all) { [account] }
     end
 
-    it 'should pass given correct parameters' do
-      allow(subject).to receive(:options) do
-        { app: 'hello', environment: 'foobar' }
-      end
-      expect(service).to receive(:create_operation!) { op }
-      expect(subject).to receive(:environment_from_handle)
-        .with('foobar')
-        .and_return(account)
-      expect(subject).to receive(:apps_from_handle).and_return([app])
-      subject.send('apps:scale', 'web', 3)
-    end
+    context 'with environment and app' do
+      let(:base_options) { { app: 'hello', environment: 'foobar' } }
 
-    it 'should pass container size param to operation if given' do
-      allow(subject).to receive(:options) do
-        { app: 'hello', size: 90210, environment: 'foobar' }
+      before do
+        expect(subject).to receive(:environment_from_handle)
+          .with('foobar')
+          .and_return(account)
+
+        expect(subject).to receive(:apps_from_handle)
+          .with('hello', account)
+          .and_return([app])
       end
-      expect(service).to receive(:create_operation!)
-        .with(type: 'scale', container_count: 3, container_size: 90210)
-        .and_return(op)
-      expect(subject).to receive(:environment_from_handle)
-        .with('foobar')
-        .and_return(account)
-      expect(subject).to receive(:apps_from_handle).and_return([app])
-      subject.send('apps:scale', 'web', 3)
+
+      def stub_options(**opts)
+        allow(subject).to receive(:options).and_return(base_options.merge(opts))
+      end
+
+      it 'should scale container size and count together' do
+        stub_options(container_count: 3, container_size: 1024)
+        expect($stderr).not_to receive(:puts)
+        expect(service).to receive(:create_operation!)
+          .with(type: 'scale', container_count: 3, container_size: 1024)
+          .and_return(op)
+        subject.send('apps:scale', 'web')
+      end
+
+      it 'should scale container count alone' do
+        stub_options(container_count: 3)
+        expect($stderr).not_to receive(:puts)
+        expect(service).to receive(:create_operation!)
+          .with(type: 'scale', container_count: 3)
+          .and_return(op)
+        subject.send('apps:scale', 'web')
+      end
+
+      it 'should scale container size alone' do
+        stub_options(container_size: 1024)
+        expect($stderr).not_to receive(:puts)
+        expect(service).to receive(:create_operation!)
+          .with(type: 'scale', container_size: 1024)
+          .and_return(op)
+        subject.send('apps:scale', 'web')
+      end
+
+      it 'should fail if neither container_count nor container_size is set' do
+        stub_options
+        expect { subject.send('apps:scale', 'web') }
+          .to raise_error(/provide at least/im)
+      end
+
+      it 'should scale container count (legacy)' do
+        stub_options
+        expect($stderr).to receive(:puts).once
+        expect(service).to receive(:create_operation!)
+          .with(type: 'scale', container_count: 3)
+          .and_return(op)
+        subject.send('apps:scale', 'web', '3')
+      end
+
+      it 'should scale container size (legacy)' do
+        stub_options(size: 90210)
+        expect($stderr).to receive(:puts).once
+        expect(service).to receive(:create_operation!)
+          .with(type: 'scale', container_size: 90210)
+          .and_return(op)
+        subject.send('apps:scale', 'web')
+      end
+
+      it 'should fail when using both current and legacy count' do
+        stub_options(container_count: 2)
+        expect { subject.send('apps:scale', 'web', '3') }
+          .to raise_error(/count was passed via both/im)
+      end
+
+      it 'should fail when using both current and legacy size' do
+        stub_options(container_size: 1024, size: 512)
+        expect { subject.send('apps:scale', 'web') }
+          .to raise_error(/size was passed via both/im)
+      end
+
+      it 'should fail when using too many arguments' do
+        stub_options
+        expect { subject.send('apps:scale', 'web', '3', '4') }
+          .to raise_error(/usage:.*apps:scale/im)
+      end
+
+      it 'should fail if the service does not exist' do
+        stub_options(container_count: 2)
+
+        expect { subject.send('apps:scale', 'potato') }
+          .to raise_error(Thor::Error, /Service.* potato.* does not exist/)
+      end
+
+      it 'should fail if the app has no services' do
+        app.services = []
+        stub_options(container_count: 2)
+
+        expect { subject.send('apps:scale', 'web') }
+          .to raise_error(Thor::Error, /deploy the app first/)
+      end
     end
 
     it 'should fail if environment is non-existent' do
       allow(subject).to receive(:options) do
-        { environment: 'foo', app: 'web' }
+        { environment: 'foo', app: 'web', container_count: 2 }
       end
       allow(Aptible::Api::Account).to receive(:all) { [] }
       allow(service).to receive(:create_operation!) { op }
 
       expect do
-        subject.send('apps:scale', 'web', 3)
+        subject.send('apps:scale', 'web')
       end.to raise_error(Thor::Error)
     end
 
     it 'should fail if app is non-existent' do
+      allow(subject).to receive(:options) { { container_count: 2 } }
       expect do
-        subject.send('apps:scale', 'web', 3)
+        subject.send('apps:scale', 'web')
       end.to raise_error(Thor::Error)
     end
 
-    it 'should fail if number is not a valid number' do
+    it 'should fail if number is not a valid number (legacy)' do
+      expect($stderr).to receive(:puts).once
       allow(subject).to receive(:options) { { app: 'hello' } }
       allow(service).to receive(:create_operation) { op }
 
       expect do
         subject.send('apps:scale', 'web', 'potato')
       end.to raise_error(ArgumentError)
-    end
-
-    it 'should fail if the service does not exist' do
-      allow(subject).to receive(:options) do
-        { app: 'hello', environment: 'foobar' }
-      end
-      expect(subject).to receive(:environment_from_handle)
-        .with('foobar')
-        .and_return(account)
-      expect(subject).to receive(:apps_from_handle).and_return([app])
-
-      expect do
-        subject.send('apps:scale', 'potato', 1)
-      end.to raise_error(Thor::Error, /Service.* potato.* does not exist/)
-    end
-
-    context 'no service' do
-      before { app.services = [] }
-
-      it 'should fail if the app has no services' do
-        allow(subject).to receive(:options) do
-          { app: 'hello', environment: 'foobar' }
-        end
-        expect(subject).to receive(:environment_from_handle)
-          .with('foobar')
-          .and_return(account)
-        expect(subject).to receive(:apps_from_handle).and_return([app])
-
-        expect do
-          subject.send('apps:scale', 'web', 1)
-        end.to raise_error(Thor::Error, /deploy the app first/)
-      end
     end
   end
 
