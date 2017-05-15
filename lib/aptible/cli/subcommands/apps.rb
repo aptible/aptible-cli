@@ -35,7 +35,7 @@ module Aptible
             end
 
             desc 'apps:scale SERVICE ' \
-                 '[--container-count COUNT] [--container-size SIZE]',
+                 '[--container-count COUNT] [--container-size SIZE_MB]',
                  'Scale a service'
             app_options
             option :container_count, type: :numeric

@@ -12,6 +12,82 @@ describe Aptible::CLI::Agent do
   let(:database) { Fabricate(:database, handle: handle) }
   let(:socat_helper) { SocatHelperMock.new(port: 4242) }
 
+  describe '#db:create' do
+    let(:db) { Fabricate(:database) }
+    let(:op) { Fabricate(:operation) }
+    let(:account) { Fabricate(:account) }
+
+    before do
+      allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      allow(db).to receive(:reload).and_return(db)
+      op.stub(errors: Aptible::Resource::Errors.new)
+    end
+
+    it 'creates a new DB' do
+      expect(account).to receive(:create_database!)
+        .with(handle: 'foo', type: 'postgresql')
+        .and_return(db)
+
+      expect(db).to receive(:create_operation)
+        .with(type: 'provision')
+        .and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(op)
+
+      subject.options = { type: 'postgresql' }
+      subject.send('db:create', 'foo')
+    end
+
+    it 'creates a new DB with a container size' do
+      expect(account).to receive(:create_database!)
+        .with(handle: 'foo', type: 'postgresql', initial_container_size: 1024)
+        .and_return(db)
+
+      expect(db).to receive(:create_operation)
+        .with(type: 'provision', container_size: 1024)
+        .and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(op)
+
+      subject.options = { type: 'postgresql', container_size: 1024 }
+      subject.send('db:create', 'foo')
+    end
+
+    it 'creates a new DB with a disk size' do
+      expect(account).to receive(:create_database!)
+        .with(handle: 'foo', type: 'postgresql', initial_disk_size: 200)
+        .and_return(db)
+
+      expect(db).to receive(:create_operation)
+        .with(type: 'provision', disk_size: 200)
+        .and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(op)
+
+      subject.options = { type: 'postgresql', size: 200 }
+      subject.send('db:create', 'foo')
+    end
+
+    it 'deprovisions the database if the operation cannot be created' do
+      op.errors.full_messages << 'oops!'
+
+      expect(account).to receive(:create_database!).and_return(db)
+
+      expect(db).to receive(:create_operation)
+        .with(type: 'provision')
+        .once.ordered.and_return(op)
+
+      expect(db).to receive(:create_operation!)
+        .with(type: 'deprovision')
+        .once.ordered
+
+      expect { subject.send('db:create', 'foo') }.to raise_error(/oops/im)
+    end
+  end
+
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
       allow(Aptible::Api::Database).to receive(:all) { [] }
@@ -230,6 +306,50 @@ describe Aptible::CLI::Agent do
 
     it 'fails if the DB is not found' do
       expect { subject.send('db:reload', 'nope') }
+        .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+  end
+
+  describe '#db:restart' do
+    before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
+    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
+
+    let(:op) { Fabricate(:operation) }
+
+    it 'allows restarting a database' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'restart').and_return(op)
+
+      expect(subject).to receive(:say).with('Restarting foobar...')
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.send('db:restart', handle)
+    end
+
+    it 'allows restarting a database with a container size' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'restart', container_size: 40).and_return(op)
+
+      expect(subject).to receive(:say).with('Restarting foobar...')
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.options = { container_size: 40 }
+      subject.send('db:restart', handle)
+    end
+
+    it 'allows restarting a database with a disk size' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'restart', disk_size: 40).and_return(op)
+
+      expect(subject).to receive(:say).with('Restarting foobar...')
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.options = { size: 40 }
+      subject.send('db:restart', handle)
+    end
+
+    it 'fails if the DB is not found' do
+      expect { subject.send('db:restart', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
   end

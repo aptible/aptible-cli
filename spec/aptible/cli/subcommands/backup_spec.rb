@@ -47,19 +47,47 @@ describe Aptible::CLI::Agent do
         expect(messages).to eq(["Restoring backup into #{h}"])
       end
 
-      it 'accepts a custom handle and disk size' do
+      it 'accepts a handle' do
         h = 'some-handle'
-        s = 40
 
         expect(backup).to receive(:create_operation!) do |options|
           expect(options[:handle]).to eq(h)
+          expect(options[:container_size]).to be_nil
+          expect(options[:disk_size]).to be_nil
+          op
+        end
+
+        subject.options = { handle: h }
+        subject.send('backup:restore', 1)
+        expect(messages).to eq(["Restoring backup into #{h}"])
+      end
+
+      it 'accepts a container size' do
+        s = 40
+
+        expect(backup).to receive(:create_operation!) do |options|
+          expect(options[:handle]).to be_present
+          expect(options[:container_size]).to eq(s)
+          expect(options[:disk_size]).to be_nil
+          op
+        end
+
+        subject.options = { container_size: s }
+        subject.send('backup:restore', 1)
+      end
+
+      it 'accepts a disk size' do
+        s = 40
+
+        expect(backup).to receive(:create_operation!) do |options|
+          expect(options[:handle]).to be_present
+          expect(options[:container_size]).to be_nil
           expect(options[:disk_size]).to eq(s)
           op
         end
 
-        subject.options = { handle: h, size: s }
+        subject.options = { size: s }
         subject.send('backup:restore', 1)
-        expect(messages).to eq(["Restoring backup into #{h}"])
       end
     end
   end
