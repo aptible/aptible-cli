@@ -7,9 +7,11 @@ module Aptible
             include Helpers::Token
             include Helpers::Database
 
-            desc 'backup:restore [--handle HANDLE] [--size SIZE_GB]',
+            desc 'backup:restore BACKUP_ID [--handle HANDLE] ' \
+                 '[--container-size SIZE_MB] [--size SIZE_GB]',
                  'Restore a backup'
             option :handle
+            option :container_size, type: :numeric
             option :size, type: :numeric
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
@@ -23,6 +25,7 @@ module Aptible
               opts = {
                 type: 'restore',
                 handle: handle,
+                container_size: options[:container_size],
                 disk_size: options[:size]
               }.delete_if { |_, v| v.nil? }
 

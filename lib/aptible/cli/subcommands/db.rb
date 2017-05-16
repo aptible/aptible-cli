@@ -20,23 +20,42 @@ module Aptible
               end
             end
 
-            desc 'db:create HANDLE', 'Create a new database'
+            desc 'db:create HANDLE' \
+                 '[--type TYPE] [--container-size SIZE_MB] [--size SIZE_GB]',
+                 'Create a new database'
             option :type, default: 'postgresql'
+            option :container_size, type: :numeric
             option :size, default: 10, type: :numeric
             option :environment
             define_method 'db:create' do |handle|
               environment = ensure_environment(options)
-              database = environment.create_database(handle: handle,
-                                                     type: options[:type])
 
-              if database.errors.any?
-                raise Thor::Error, database.errors.full_messages.first
-              else
-                op = database.create_operation!(type: 'provision',
-                                                disk_size: options[:size])
-                attach_to_operation_logs(op)
-                say database.reload.connection_url
+              db_opts = {
+                handle: handle,
+                type: options[:type],
+                initial_container_size: options[:container_size],
+                initial_disk_size: options[:size]
+              }.delete_if { |_, v| v.nil? }
+              database = environment.create_database!(db_opts)
+
+              op_opts = {
+                type: 'provision',
+                container_size: options[:container_size],
+                disk_size: options[:size]
+              }.delete_if { |_, v| v.nil? }
+              op = database.create_operation(op_opts)
+
+              if op.errors.any?
+                # NOTE: If we fail to provision the database, we should try and
+                # clean it up immediately. Note that this will not be possible
+                # if we have an account that's not activated, but that's
+                # arguably the desired UX here.
+                database.create_operation!(type: 'deprovision')
+                raise Thor::Error, op.errors.full_messages.first
               end
+
+              attach_to_operation_logs(op)
+              say database.reload.connection_url
             end
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
@@ -136,6 +155,26 @@ module Aptible
               database = ensure_database(options.merge(db: handle))
               say "Reloading #{database.handle}..."
               op = database.create_operation!(type: 'reload')
+              attach_to_operation_logs(op)
+            end
+
+            desc 'db:restart HANDLE ' \
+                 '[--container-size SIZE_MB] [--size SIZE_GB]',
+                 'Restart a database'
+            option :environment
+            option :container_size, type: :numeric
+            option :disk_size, type: :numeric
+            define_method 'db:restart' do |handle|
+              database = ensure_database(options.merge(db: handle))
+
+              opts = {
+                type: 'restart',
+                container_size: options[:container_size],
+                disk_size: options[:size]
+              }.delete_if { |_, v| v.nil? }
+
+              say "Restarting #{database.handle}..."
+              op = database.create_operation!(opts)
               attach_to_operation_logs(op)
             end
           end
