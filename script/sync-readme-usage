@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+require 'open3'
+
+USAGE = ARGV.fetch(0)
+
+puts "Sync CLI usage in #{USAGE}"
+
+txt, err, status = Open3.capture3(
+  { 'THOR_COLUMNS' => '1000' },
+  'aptible', 'help'
+)
+
+raise "Failed to extract usage: #{err}" unless status.success?
+
+usage = "```\n#{txt.gsub(/^$\n/, '')}```\n"
+
+bits = []
+
+File.open(USAGE) do |f|
+  in_usage = false
+
+  f.each_line do |l|
+    in_usage = false if l.include?('END USAGE')
+
+    bits << l unless in_usage
+
+    if l.include?('BEGIN USAGE')
+      in_usage = true
+      bits << usage
+    end
+  end
+end
+
+File.write(USAGE, bits.join(''))

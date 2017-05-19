@@ -26,39 +26,42 @@ And then run `bundle install`.
 
 From `aptible help`:
 
+<!-- BEGIN USAGE -->
 ```
 Commands:
-  aptible apps                                                                  # List all applications
-  aptible apps:create HANDLE                                                    # Create a new application
-  aptible apps:deprovision                                                      # Deprovision an app
-  aptible apps:scale SERVICE [--container-count COUNT] [--container-size SIZE]  # Scale a service
-  aptible backup:list DB_HANDLE                                                 # List backups for a database
-  aptible backup:restore [--handle HANDLE] [--size SIZE_GB]                     # Restore a backup
-  aptible config                                                                # Print an app's current configuration
-  aptible config:add                                                            # Add an ENV variable to an app
-  aptible config:rm                                                             # Remove an ENV variable from an app
-  aptible config:set                                                            # Alias for config:add
-  aptible config:unset                                                          # Alias for config:rm
-  aptible db:backup HANDLE                                                      # Backup a database
-  aptible db:clone SOURCE DEST                                                  # Clone a database to create a new one
-  aptible db:create HANDLE                                                      # Create a new database
-  aptible db:deprovision HANDLE                                                 # Deprovision a database
-  aptible db:dump HANDLE                                                        # Dump a remote database to file
-  aptible db:execute HANDLE SQL_FILE                                            # Executes sql against a database
-  aptible db:list                                                               # List all databases
-  aptible db:reload HANDLE                                                      # Reload a database
-  aptible db:tunnel HANDLE                                                      # Create a local tunnel to a database
-  aptible domains                                                               # Print an app's current virtual domains
-  aptible help [COMMAND]                                                        # Describe available commands or one specific command
-  aptible login                                                                 # Log in to Aptible
-  aptible logs                                                                  # Follows logs from a running app or database
-  aptible operation:cancel OPERATION_ID                                         # Cancel a running operation
-  aptible ps                                                                    # Display running processes for an app - DEPRECATED
-  aptible rebuild                                                               # Rebuild an app, and restart its services
-  aptible restart                                                               # Restart all services associated with an app
-  aptible ssh [COMMAND]                                                         # Run a command against an app
-  aptible version                                                               # Print Aptible CLI version
+  aptible apps                                                                                    # List all applications
+  aptible apps:create HANDLE                                                                      # Create a new application
+  aptible apps:deprovision                                                                        # Deprovision an app
+  aptible apps:scale SERVICE [--container-count COUNT] [--container-size SIZE_MB]                 # Scale a service
+  aptible backup:list DB_HANDLE                                                                   # List backups for a database
+  aptible backup:restore BACKUP_ID [--handle HANDLE] [--container-size SIZE_MB] [--size SIZE_GB]  # Restore a backup
+  aptible config                                                                                  # Print an app's current configuration
+  aptible config:add                                                                              # Add an ENV variable to an app
+  aptible config:rm                                                                               # Remove an ENV variable from an app
+  aptible config:set                                                                              # Alias for config:add
+  aptible config:unset                                                                            # Alias for config:rm
+  aptible db:backup HANDLE                                                                        # Backup a database
+  aptible db:clone SOURCE DEST                                                                    # Clone a database to create a new one
+  aptible db:create HANDLE[--type TYPE] [--container-size SIZE_MB] [--size SIZE_GB]               # Create a new database
+  aptible db:deprovision HANDLE                                                                   # Deprovision a database
+  aptible db:dump HANDLE                                                                          # Dump a remote database to file
+  aptible db:execute HANDLE SQL_FILE                                                              # Executes sql against a database
+  aptible db:list                                                                                 # List all databases
+  aptible db:reload HANDLE                                                                        # Reload a database
+  aptible db:restart HANDLE [--container-size SIZE_MB] [--size SIZE_GB]                           # Restart a database
+  aptible db:tunnel HANDLE                                                                        # Create a local tunnel to a database
+  aptible domains                                                                                 # Print an app's current virtual domains
+  aptible help [COMMAND]                                                                          # Describe available commands or one specific command
+  aptible login                                                                                   # Log in to Aptible
+  aptible logs                                                                                    # Follows logs from a running app or database
+  aptible operation:cancel OPERATION_ID                                                           # Cancel a running operation
+  aptible ps                                                                                      # Display running processes for an app - DEPRECATED
+  aptible rebuild                                                                                 # Rebuild an app, and restart its services
+  aptible restart                                                                                 # Restart all services associated with an app
+  aptible ssh [COMMAND]                                                                           # Run a command against an app
+  aptible version                                                                                 # Print Aptible CLI version
 ```
+<!-- END USAGE -->
 
 ## Contributing
 
