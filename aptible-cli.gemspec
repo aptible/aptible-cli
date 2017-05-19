@@ -20,9 +20,9 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{spec/})
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'aptible-api', '~> 0.9.20'
-  spec.add_dependency 'aptible-auth', '~> 0.11.12'
-  spec.add_dependency 'aptible-resource', '~> 0.3.6'
+  spec.add_dependency 'aptible-resource', '~> 0.4.0'
+  spec.add_dependency 'aptible-api', '~> 0.9.27'
+  spec.add_dependency 'aptible-auth', '~> 0.11.13'
   spec.add_dependency 'thor', '~> 0.19.1'
   spec.add_dependency 'git'
   spec.add_dependency 'term-ansicolor'
