@@ -23,7 +23,7 @@ module Aptible
             define_method 'config:add' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
-              env = Hash[args.map { |arg| arg.split('=', 2) }]
+              env = extract_env(args)
               operation = app.create_operation!(type: 'configure', env: env)
               puts 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
@@ -40,7 +40,10 @@ module Aptible
             define_method 'config:rm' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
-              env = Hash[args.map { |arg| [arg, ''] }]
+              env = Hash[args.map do |arg|
+                validate_env_key!(arg)
+                [arg, '']
+              end]
               operation = app.create_operation!(type: 'configure', env: env)
               puts 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
