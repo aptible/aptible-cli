@@ -57,7 +57,7 @@ module Aptible
                          end
               opts << tty_mode
 
-              connect_to_ssh_portal(op, *opts)
+              exit_with_ssh_portal(op, *opts)
             end
 
             private

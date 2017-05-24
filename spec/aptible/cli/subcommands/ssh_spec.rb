@@ -19,7 +19,7 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(true)
         allow(STDOUT).to receive(:tty?).and_return(true)
 
-        expect(subject).to receive(:connect_to_ssh_portal).with(
+        expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-t'
         )
         subject.ssh
@@ -30,7 +30,7 @@ describe Aptible::CLI::Agent do
         allow(STDOUT).to receive(:tty?).and_return(true)
         allow(STDERR).to receive(:tty?).and_return(false)
 
-        expect(subject).to receive(:connect_to_ssh_portal).with(
+        expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-t'
         )
         subject.ssh
@@ -40,7 +40,7 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(false)
         allow(STDOUT).to receive(:tty?).and_return(true)
 
-        expect(subject).to receive(:connect_to_ssh_portal).with(
+        expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-T'
         )
         subject.ssh
@@ -50,7 +50,7 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(true)
         allow(STDOUT).to receive(:tty?).and_return(false)
 
-        expect(subject).to receive(:connect_to_ssh_portal).with(
+        expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-T'
         )
         subject.ssh
@@ -62,7 +62,7 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(false)
         allow(STDOUT).to receive(:tty?).and_return(false)
 
-        expect(subject).to receive(:connect_to_ssh_portal).with(
+        expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-tt'
         )
         subject.ssh

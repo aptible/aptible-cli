@@ -34,7 +34,7 @@ module Aptible
               op = resource.create_operation!(type: 'logs', status: 'succeeded')
 
               ENV['ACCESS_TOKEN'] = fetch_token
-              connect_to_ssh_portal(op, '-o', 'SendEnv=ACCESS_TOKEN', '-T')
+              exit_with_ssh_portal(op, '-o', 'SendEnv=ACCESS_TOKEN', '-T')
             end
           end
         end

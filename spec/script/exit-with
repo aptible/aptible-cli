@@ -1,0 +1,2 @@
+#!/usr/bin/env ruby
+exit Integer(ARGV.fetch(0))

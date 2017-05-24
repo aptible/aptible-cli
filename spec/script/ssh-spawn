@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require 'aptible/cli/helpers/ssh'
+include Aptible::CLI::Helpers::Ssh
+exit spawn_passthrough(ARGV)

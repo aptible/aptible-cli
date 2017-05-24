@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+File.write(ARGV.fetch(0), Process.pid.to_s)
+Signal.trap('INT', 'SYSTEM_DEFAULT')
+sleep 30
