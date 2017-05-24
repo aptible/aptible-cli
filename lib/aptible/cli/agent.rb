@@ -20,6 +20,7 @@ require_relative 'subcommands/domains'
 require_relative 'subcommands/logs'
 require_relative 'subcommands/ps'
 require_relative 'subcommands/rebuild'
+require_relative 'subcommands/deploy'
 require_relative 'subcommands/restart'
 require_relative 'subcommands/ssh'
 require_relative 'subcommands/backup'
@@ -40,6 +41,7 @@ module Aptible
       include Subcommands::Logs
       include Subcommands::Ps
       include Subcommands::Rebuild
+      include Subcommands::Deploy
       include Subcommands::Restart
       include Subcommands::SSH
       include Subcommands::Backup
