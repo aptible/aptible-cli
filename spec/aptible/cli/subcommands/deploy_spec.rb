@@ -144,6 +144,15 @@ describe Aptible::CLI::Agent do
         expect { subject.deploy('APTIBLE_DOCKER_IMAGE=qux') }
           .to raise_error(/different values/im)
       end
+
+      it 'does not allow deploying nothing on an unprovisioned app' do
+        stub_options
+
+        app.stub(status: 'pending')
+
+        expect { subject.deploy }
+          .to raise_error(/either from git.*docker/im)
+      end
     end
   end
 end

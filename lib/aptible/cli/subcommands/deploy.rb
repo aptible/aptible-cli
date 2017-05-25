@@ -54,7 +54,7 @@ module Aptible
                 if env[var] && env[var] != val
                   dasherized = "--#{opt.to_s.tr('_', '-')}"
                   raise Thor::Error, "The options #{dasherized} and #{var} " \
-                                     'to different values'
+                                     'cannot be set to different values'
                 end
                 env[var] = val
               end
@@ -64,6 +64,17 @@ module Aptible
                 env: env,
                 git_ref: git_ref
               }.delete_if { |_, v| v.nil? || v.empty? }
+
+              allow_it = [
+                opts[:git_ref],
+                opts[:env].try(:[], 'APTIBLE_DOCKER_IMAGE'),
+                app.status == 'provisioned'
+              ].any? { |x| x }
+
+              unless allow_it
+                m = 'You need to deploy either from git or a Docker image'
+                raise Thor::Error, m
+              end
 
               operation = app.create_operation!(opts)
 
