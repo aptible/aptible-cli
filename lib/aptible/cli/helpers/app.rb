@@ -140,6 +140,21 @@ module Aptible
           end.select { |a| a.handle == handle }
         end
 
+        def extract_env(args)
+          Hash[args.map do |arg|
+            k, v = arg.split('=', 2)
+            validate_env_key!(k)
+            [k, v]
+          end]
+        end
+
+        def validate_env_key!(k)
+          # Keys that start with '-' are likely to be mispelled options. As of
+          # May 2017 (> 3 years of Aptible!), there are only 2 such cases, both
+          # of which are indeed mispelled options.
+          raise Thor::Error, "Invalid argument: #{k}" if k.start_with?('-')
+        end
+
         private
 
         def handle_strategies

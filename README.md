@@ -50,6 +50,7 @@ Commands:
   aptible db:reload HANDLE                                                                        # Reload a database
   aptible db:restart HANDLE [--container-size SIZE_MB] [--size SIZE_GB]                           # Restart a database
   aptible db:tunnel HANDLE                                                                        # Create a local tunnel to a database
+  aptible deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...                                             # Deploy an app
   aptible domains                                                                                 # Print an app's current virtual domains
   aptible help [COMMAND]                                                                          # Describe available commands or one specific command
   aptible login                                                                                   # Log in to Aptible

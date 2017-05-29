@@ -165,6 +165,34 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#config:set' do
+    before do
+      allow(Aptible::Api::App).to receive(:all) { [app] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+    end
+
+    it 'should reject environment variables that start with -' do
+      allow(subject).to receive(:options) { { app: 'hello' } }
+
+      expect { subject.send('config:set', '-foo=bar') }
+        .to raise_error(/invalid argument/im)
+    end
+  end
+
+  describe '#config:rm' do
+    before do
+      allow(Aptible::Api::App).to receive(:all) { [app] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+    end
+
+    it 'should reject environment variables that start with -' do
+      allow(subject).to receive(:options) { { app: 'hello' } }
+
+      expect { subject.send('config:rm', '-foo') }
+        .to raise_error(/invalid argument/im)
+    end
+  end
+
   describe '#ensure_app' do
     it 'fails if no usable strategy is found' do
       strategies = [dummy_strategy_factory(nil, nil, false)]
