@@ -20,7 +20,7 @@ module Aptible
 
               ENV['ACCESS_TOKEN'] = fetch_token
               opts = ['-o', 'SendEnv=ACCESS_TOKEN']
-              connect_to_ssh_portal(op, *opts)
+              exit_with_ssh_portal(op, *opts)
             end
           end
         end

@@ -28,7 +28,7 @@ module Aptible
           # connecting for. There might be ways to make this better.
           ENV['ACCESS_TOKEN'] = fetch_token
 
-          success = connect_to_ssh_portal(
+          code = connect_to_ssh_portal(
             operation,
             '-o', 'SendEnv=ACCESS_TOKEN'
           )
@@ -36,7 +36,10 @@ module Aptible
           # If the portal is down, fall back to polling for success. If the
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
-          poll_for_success(operation) unless success
+          unless code == 0
+            puts 'Disconnected from logs, waiting for operation to complete'
+            poll_for_success(operation)
+          end
         end
 
         def cancel_operation(operation)

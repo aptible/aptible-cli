@@ -27,7 +27,7 @@ describe Aptible::CLI::Agent do
         expect(app).to receive(:create_operation!).with(
           type: 'logs', status: 'succeeded'
         ).and_return(op)
-        expect(subject).to receive(:connect_to_ssh_portal).with(op, any_args)
+        expect(subject).to receive(:exit_with_ssh_portal).with(op, any_args)
         subject.send('logs')
       end
     end
@@ -47,7 +47,7 @@ describe Aptible::CLI::Agent do
         expect(database).to receive(:create_operation!).with(
           type: 'logs', status: 'succeeded'
         ).and_return(op)
-        expect(subject).to receive(:connect_to_ssh_portal).with(op, any_args)
+        expect(subject).to receive(:exit_with_ssh_portal).with(op, any_args)
         subject.send('logs')
       end
     end
