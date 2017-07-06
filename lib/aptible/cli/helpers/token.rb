@@ -20,17 +20,20 @@ module Aptible
           )
 
           FileUtils.mkdir_p(File.dirname(token_file))
-          File.open(token_file, 'w') do |file|
+
+          File.open(token_file, 'w', 0o600) do |file|
             file.puts hash.to_json
           end
-        rescue
-          raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
-            Could not write token to #{token_file}, please check filesystem
-            permissions
-          ERR
+        rescue StandardError => e
+          m = "Could not write token to #{token_file}: #{e}. " \
+              'Check filesystem permissions.'
+          raise Thor::Error, m
         end
 
         def current_token_hash
+          # NOTE: older versions of the CLI did not properly create the
+          # token_file with mode 600, which is why we update it when reading.
+          File.chmod(0o600, token_file)
           JSON.parse(File.read(token_file))
         rescue
           {}
