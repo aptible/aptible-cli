@@ -1,9 +1,11 @@
 require 'spec_helper'
 
 describe Aptible::CLI::Agent do
-  before { subject.stub(:ask) }
-  before { subject.stub(:save_token) }
-  before { allow(subject).to receive(:token_file).and_return 'some.json' }
+  before do
+    allow(subject).to receive(:ask)
+    allow(subject).to receive(:save_token)
+    allow(subject).to receive(:token_file).and_return 'some.json'
+  end
 
   describe '#version' do
     it 'should print the version' do
@@ -32,20 +34,21 @@ describe Aptible::CLI::Agent do
     before do
       m = -> (code) { @code = code }
       OAuth2::Error.send :define_method, :initialize, m
+
+      allow(token).to receive(:access_token).and_return 'access_token'
+      allow(token).to receive(:created_at).and_return created_at
+      allow(token).to receive(:expires_at).and_return expires_at
+      allow(subject).to receive(:puts) { |v| output << v }
     end
-    before { token.stub(:access_token) { 'access_token' } }
-    before { token.stub(:created_at) { created_at } }
-    before { token.stub(:expires_at) { expires_at } }
-    before { allow(subject).to receive(:puts) { |m| output << m } }
 
     it 'should save a token to ~/.aptible/tokens' do
-      Aptible::Auth::Token.stub(:create) { token }
+      allow(Aptible::Auth::Token).to receive(:create).and_return token
       expect(subject).to receive(:save_token).with('access_token')
       subject.login
     end
 
     it 'should output the token location and token lifetime' do
-      Aptible::Auth::Token.stub(:create) { token }
+      allow(Aptible::Auth::Token).to receive(:create).and_return token
       subject.login
       expect(output.size).to eq(3)
       expect(output[0]).to eq('')
@@ -54,7 +57,8 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should raise an error if authentication fails' do
-      Aptible::Auth::Token.stub(:create).and_raise(OAuth2::Error, 'foo')
+      allow(Aptible::Auth::Token).to receive(:create)
+        .and_raise(OAuth2::Error, 'foo')
       expect do
         subject.login
       end.to raise_error 'Could not authenticate with given credentials: foo'
@@ -63,7 +67,7 @@ describe Aptible::CLI::Agent do
     it 'should use command line arguments if passed' do
       options = { email: 'test@example.com', password: 'password',
                   lifetime: '30 minutes' }
-      subject.stub(:options) { options }
+      allow(subject).to receive(:options).and_return options
       args = { email: options[:email], password: options[:password],
                expires_in: 30.minutes.seconds }
       expect(Aptible::Auth::Token).to receive(:create).with(args) { token }
@@ -72,7 +76,7 @@ describe Aptible::CLI::Agent do
 
     it 'should default to 1 week expiry when OTP is disabled' do
       options = { email: 'test@example.com', password: 'password' }
-      subject.stub(:options) { options }
+      allow(subject).to receive(:options).and_return options
       args = options.dup.merge(expires_in: 1.week.seconds)
       expect(Aptible::Auth::Token).to receive(:create).with(args) { token }
       subject.login
@@ -81,7 +85,7 @@ describe Aptible::CLI::Agent do
     it 'should fail if the lifetime is invalid' do
       options = { email: 'test@example.com', password: 'password',
                   lifetime: 'this is sparta' }
-      subject.stub(:options) { options }
+      allow(subject).to receive(:options).and_return options
 
       expect { subject.login }.to raise_error(/Invalid token lifetime/)
     end

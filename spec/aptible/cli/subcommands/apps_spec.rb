@@ -17,10 +17,12 @@ def dummy_strategy_factory(app_handle, env_handle, usable,
 end
 
 describe Aptible::CLI::Agent do
-  before { subject.stub(:ask) }
-  before { subject.stub(:save_token) }
-  before { subject.stub(:fetch_token) { double 'token' } }
-  before { subject.stub(:attach_to_operation_logs) }
+  before do
+    allow(subject).to receive(:ask)
+    allow(subject).to receive(:save_token)
+    allow(subject).to receive(:attach_to_operation_logs)
+    allow(subject).to receive(:fetch_token) { double 'token' }
+  end
 
   let!(:account) { Fabricate(:account) }
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
@@ -196,14 +198,14 @@ describe Aptible::CLI::Agent do
   describe '#ensure_app' do
     it 'fails if no usable strategy is found' do
       strategies = [dummy_strategy_factory(nil, nil, false)]
-      subject.stub(:handle_strategies) { strategies }
+      allow(subject).to receive(:handle_strategies) { strategies }
 
       expect { subject.ensure_app }.to raise_error(/Could not find app/)
     end
 
     it 'fails if an environment is specified but not found' do
       strategies = [dummy_strategy_factory('hello', 'aptible', true)]
-      subject.stub(:handle_strategies) { strategies }
+      allow(subject).to receive(:handle_strategies) { strategies }
 
       expect(subject).to receive(:environment_from_handle).and_return(nil)
 
@@ -220,7 +222,7 @@ describe Aptible::CLI::Agent do
 
       it 'scopes the app search to an environment if provided' do
         strategies = [dummy_strategy_factory('hello', 'aptible', true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect(subject).to receive(:environment_from_handle).with('aptible')
           .and_return(account)
@@ -230,7 +232,7 @@ describe Aptible::CLI::Agent do
 
       it 'does not scope the app search to an environment if not provided' do
         strategies = [dummy_strategy_factory('hello', nil, true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect(subject.ensure_app).to eq(apps.first)
       end
@@ -239,7 +241,7 @@ describe Aptible::CLI::Agent do
         apps.pop
 
         strategies = [dummy_strategy_factory('hello', nil, true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect { subject.ensure_app }.to raise_error(/not find app hello/)
       end
@@ -248,7 +250,7 @@ describe Aptible::CLI::Agent do
         apps.pop
 
         strategies = [dummy_strategy_factory('hello', nil, true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect { subject.ensure_app }.to raise_error(/from dummy/)
       end
@@ -257,7 +259,7 @@ describe Aptible::CLI::Agent do
         apps.pop
 
         strategies = [dummy_strategy_factory('hello', 'aptible', true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect(subject).to receive(:environment_from_handle).with('aptible')
           .and_return(account)
@@ -269,7 +271,7 @@ describe Aptible::CLI::Agent do
         apps << Fabricate(:app, handle: 'hello')
 
         strategies = [dummy_strategy_factory('hello', nil, true)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect { subject.ensure_app }.to raise_error(/Multiple apps/)
       end
@@ -279,7 +281,7 @@ describe Aptible::CLI::Agent do
           dummy_strategy_factory('hello', nil, false),
           dummy_strategy_factory('hello', nil, true)
         ]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         expect(subject.ensure_app).to eq(apps.first)
       end
@@ -287,7 +289,7 @@ describe Aptible::CLI::Agent do
       it 'passes options to the strategy' do
         receiver = []
         strategies = [dummy_strategy_factory('hello', nil, false, receiver)]
-        subject.stub(:handle_strategies) { strategies }
+        allow(subject).to receive(:handle_strategies) { strategies }
 
         options = { app: 'foo', environment: 'bar' }
         expect { subject.ensure_app options }.to raise_error(/not find app/)

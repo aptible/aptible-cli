@@ -9,7 +9,7 @@ describe Aptible::CLI::Agent do
     before do
       allow(Aptible::Api::App).to receive(:all) { [app] }
       allow(Aptible::Api::Account).to receive(:all) { [account] }
-      subject.stub(:fetch_token) { double 'token' }
+      allow(subject).to receive(:fetch_token) { double'token' }
     end
 
     context 'with app' do
@@ -148,7 +148,7 @@ describe Aptible::CLI::Agent do
       it 'does not allow deploying nothing on an unprovisioned app' do
         stub_options
 
-        app.stub(status: 'pending')
+        allow(app).to receive(:status) { 'pending' }
 
         expect { subject.deploy }
           .to raise_error(/either from git.*docker/im)

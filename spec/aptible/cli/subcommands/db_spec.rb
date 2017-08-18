@@ -4,9 +4,11 @@ class SocatHelperMock < OpenStruct
 end
 
 describe Aptible::CLI::Agent do
-  before { subject.stub(:ask) }
-  before { subject.stub(:save_token) }
-  before { subject.stub(:fetch_token) { double 'token' } }
+  before do
+    allow(subject).to receive(:ask)
+    allow(subject).to receive(:save_token)
+    allow(subject).to receive(:fetch_token) { double 'token' }
+  end
 
   let(:handle) { 'foobar' }
   let(:database) { Fabricate(:database, handle: handle) }
@@ -20,7 +22,7 @@ describe Aptible::CLI::Agent do
     before do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
       allow(db).to receive(:reload).and_return(db)
-      op.stub(errors: Aptible::Resource::Errors.new)
+      allow(op).to receive(:errors).and_return(Aptible::Resource::Errors.new)
     end
 
     it 'creates a new DB' do
@@ -163,15 +165,17 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails when the database is not provisioned' do
-        database.stub(status: 'pending')
+        allow(database).to receive(:status) { 'pending' }
 
         expect { subject.send('db:tunnel', handle) }
           .to raise_error(/foobar is not provisioned/im)
       end
 
       context 'v1 stack' do
-        before { database.account.stack.stub(version: 'v1') }
-        before { allow(subject).to receive(:say) }
+        before do
+          allow(database.account.stack).to receive(:version) { 'v1' }
+          allow(subject).to receive(:say)
+        end
 
         it 'falls back to the database itself if no type is given' do
           expect(subject).to receive(:with_local_tunnel).with(database, 0)
@@ -180,7 +184,7 @@ describe Aptible::CLI::Agent do
 
         it 'falls back to the database itself if type matches' do
           subject.options = { type: 'bar' }
-          database.stub(type: 'bar')
+          allow(database).to receive(:type) { 'bar' }
 
           expect(subject).to receive(:with_local_tunnel).with(database, 0)
           subject.send('db:tunnel', handle)
@@ -188,7 +192,7 @@ describe Aptible::CLI::Agent do
 
         it 'does not fall back to the database itself if type mismatches' do
           subject.options = { type: 'bar' }
-          database.stub(type: 'foo')
+          allow(database).to receive(:type) { 'foo' }
 
           expect { subject.send('db:tunnel', handle) }
             .to raise_error(/no credential with type bar/im)
@@ -218,7 +222,7 @@ describe Aptible::CLI::Agent do
       end
 
       token = 'the-token'
-      allow(subject).to receive(:fetch_token).and_return(token)
+      allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all).with(token: token)
         .and_return([staging, prod])
     end
