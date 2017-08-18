@@ -177,6 +177,13 @@ module Aptible
               op = database.create_operation!(opts)
               attach_to_operation_logs(op)
             end
+
+            desc 'db:url HANDLE', 'Display a database URL'
+            option :environment
+            define_method 'db:url' do |handle|
+              database = ensure_database(options.merge(db: handle))
+              say(database.connection_url)
+            end
           end
         end
       end
