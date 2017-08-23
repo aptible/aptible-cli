@@ -163,7 +163,7 @@ module Aptible
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
-            option :disk_size, type: :numeric
+            option :size, type: :numeric
             define_method 'db:restart' do |handle|
               database = ensure_database(options.merge(db: handle))
 
