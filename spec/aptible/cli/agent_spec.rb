@@ -31,15 +31,18 @@ describe Aptible::CLI::Agent do
     let(:expires_at) { created_at + 1.week }
     let(:output) { [] }
 
-    before do
-      m = -> (code) { @code = code }
-      OAuth2::Error.send :define_method, :initialize, m
-
-      allow(token).to receive(:access_token).and_return 'access_token'
-      allow(token).to receive(:created_at).and_return created_at
-      allow(token).to receive(:expires_at).and_return expires_at
-      allow(subject).to receive(:puts) { |v| output << v }
+    def make_oauth2_error(code, ctx = nil)
+      parsed = { 'error' => code }
+      parsed['exception_context'] = ctx if ctx
+      response = double('response', parsed: parsed, body: "error #{code}")
+      allow(response).to receive(:error=)
+      OAuth2::Error.new(response)
     end
+
+    before { allow(token).to receive(:access_token).and_return 'access_token' }
+    before { allow(token).to receive(:created_at).and_return created_at }
+    before { allow(token).to receive(:expires_at).and_return expires_at }
+    before { allow(subject).to receive(:puts) { |m| output << m } }
 
     it 'should save a token to ~/.aptible/tokens' do
       allow(Aptible::Auth::Token).to receive(:create).and_return token
@@ -50,15 +53,16 @@ describe Aptible::CLI::Agent do
     it 'should output the token location and token lifetime' do
       allow(Aptible::Auth::Token).to receive(:create).and_return token
       subject.login
-      expect(output.size).to eq(3)
+      expect(output.size).to eq(4)
       expect(output[0]).to eq('')
-      expect(output[1]).to match(/written to some\.json/)
-      expect(output[2]).to match(/will expire after 7 days/)
+      expect(output[1]).to eq('')
+      expect(output[2]).to match(/written to some\.json/)
+      expect(output[3]).to match(/will expire after 7 days/)
     end
 
     it 'should raise an error if authentication fails' do
       allow(Aptible::Auth::Token).to receive(:create)
-        .and_raise(OAuth2::Error, 'foo')
+        .and_raise(make_oauth2_error('foo'))
       expect do
         subject.login
       end.to raise_error 'Could not authenticate with given credentials: foo'
@@ -90,7 +94,7 @@ describe Aptible::CLI::Agent do
       expect { subject.login }.to raise_error(/Invalid token lifetime/)
     end
 
-    context 'with OTP' do
+    context 'with 2FA' do
       let(:email) { 'foo@example.org' }
       let(:password) { 'bar' }
       let(:token) { '123456' }
@@ -127,7 +131,7 @@ describe Aptible::CLI::Agent do
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, expires_in: 1.week.seconds)
             .once
-            .and_raise(OAuth2::Error, 'otp_token_required')
+            .and_raise(make_oauth2_error('otp_token_required'))
 
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, otp_token: token,
@@ -142,7 +146,7 @@ describe Aptible::CLI::Agent do
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, expires_in: 1.day.seconds)
             .once
-            .and_raise(OAuth2::Error, 'otp_token_required')
+            .and_raise(make_oauth2_error('otp_token_required'))
 
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, otp_token: token,
@@ -158,15 +162,61 @@ describe Aptible::CLI::Agent do
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, expires_in: 1.week.seconds)
             .once
-            .and_raise(OAuth2::Error, 'otp_token_required')
+            .and_raise(make_oauth2_error('otp_token_required'))
 
           expect(Aptible::Auth::Token).to receive(:create)
             .with(email: email, password: password, otp_token: token,
                   expires_in: 12.hours.seconds)
             .once
-            .and_raise(OAuth2::Error, 'foo')
+            .and_raise(make_oauth2_error('foo'))
 
           expect { subject.login }.to raise_error(/Could not authenticate/)
+        end
+      end
+
+      context 'with U2F' do
+        before do
+          allow(subject).to receive(:options)
+            .and_return(email: email, password: password, security_key: true)
+        end
+
+        it 'should call into U2F if enabled and supported by the server' do
+          e = make_oauth2_error(
+            'otp_token_required',
+            'u2f' => {
+              'challenge' => 'some 123',
+              'devices' => [
+                { 'version' => 'U2F_V2', 'key_handle' => '123' },
+                { 'version' => 'U2F_V2', 'key_handle' => '456' }
+              ]
+            }
+          )
+
+          u2f = double('u2f response')
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, expires_in: 1.week.seconds)
+            .once
+            .and_raise(e)
+
+          expect(Aptible::CLI::Helpers::SecurityKey).to receive(:authenticate)
+            .with(
+              'https://auth.aptible.com/',
+              'https://auth.aptible.com/u2f/trusted_facets',
+              'some 123',
+              array_including(
+                instance_of(Aptible::CLI::Helpers::SecurityKey::Device),
+                instance_of(Aptible::CLI::Helpers::SecurityKey::Device)
+              )
+            ).and_return(u2f)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, u2f: u2f,
+                  expires_in: 12.hours.seconds)
+            .once
+            .and_return(token)
+
+          subject.login
         end
       end
     end
