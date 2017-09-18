@@ -20,13 +20,6 @@ module Aptible
             def ssh(*args)
               app = ensure_app(options)
 
-              op = app.create_operation!(type: 'execute',
-                                         command: command_from_args(*args),
-                                         status: 'succeeded')
-
-              ENV['ACCESS_TOKEN'] = fetch_token
-              opts = ['-o', 'SendEnv=ACCESS_TOKEN']
-
               # SSH's default behavior is as follows:
               #
               # - If a TTY is forced, one is allocated.
@@ -48,15 +41,22 @@ module Aptible
               #
               # End users can always override this behavior with the
               # --force-tty option.
-              tty_mode = if options[:force_tty]
-                           '-tt'
-                         elsif [STDIN, STDOUT].all?(&:tty?)
-                           '-t'
-                         else
-                           '-T'
-                         end
-              opts << tty_mode
+              tty_mode, interactive = if options[:force_tty]
+                                        ['-tt', true]
+                                      elsif [STDIN, STDOUT].all?(&:tty?)
+                                        ['-t', true]
+                                      else
+                                        ['-T', false]
+                                      end
 
+              op = app.create_operation!(
+                type: 'execute',
+                command: command_from_args(*args),
+                interactive: interactive
+              )
+
+              ENV['ACCESS_TOKEN'] = fetch_token
+              opts = ['-o', 'SendEnv=ACCESS_TOKEN', tty_mode]
               exit_with_ssh_portal(op, *opts)
             end
 

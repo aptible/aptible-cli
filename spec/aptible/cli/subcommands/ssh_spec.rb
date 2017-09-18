@@ -6,22 +6,25 @@ describe Aptible::CLI::Agent do
     let(:operation) { double('operation') }
 
     context 'TTY control' do
+      let(:args) { { type: 'execute', command: '/bin/bash' } }
+
       before do
         expect(subject).to receive(:ensure_app).and_return(app)
         expect(subject).to receive(:fetch_token).and_return('some token')
-
-        expect(app).to receive(:create_operation!).with(
-          type: 'execute', command: '/bin/bash', status: 'succeeded'
-        ).and_return(operation)
       end
 
       it 'allocates a TTY if STDIN and STDOUT are TTYs' do
         allow(STDIN).to receive(:tty?).and_return(true)
         allow(STDOUT).to receive(:tty?).and_return(true)
 
+        expect(app).to receive(:create_operation!).with(
+          **args, interactive: true
+        ).and_return(operation)
+
         expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-t'
         )
+
         subject.ssh
       end
 
@@ -30,9 +33,14 @@ describe Aptible::CLI::Agent do
         allow(STDOUT).to receive(:tty?).and_return(true)
         allow(STDERR).to receive(:tty?).and_return(false)
 
+        expect(app).to receive(:create_operation!).with(
+          **args, interactive: true
+        ).and_return(operation)
+
         expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-t'
         )
+
         subject.ssh
       end
 
@@ -40,9 +48,14 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(false)
         allow(STDOUT).to receive(:tty?).and_return(true)
 
+        expect(app).to receive(:create_operation!).with(
+          **args, interactive: false
+        ).and_return(operation)
+
         expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-T'
         )
+
         subject.ssh
       end
 
@@ -50,9 +63,14 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(true)
         allow(STDOUT).to receive(:tty?).and_return(false)
 
+        expect(app).to receive(:create_operation!).with(
+          **args, interactive: false
+        ).and_return(operation)
+
         expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-T'
         )
+
         subject.ssh
       end
 
@@ -62,9 +80,14 @@ describe Aptible::CLI::Agent do
         allow(STDIN).to receive(:tty?).and_return(false)
         allow(STDOUT).to receive(:tty?).and_return(false)
 
+        expect(app).to receive(:create_operation!).with(
+          **args, interactive: true
+        ).and_return(operation)
+
         expect(subject).to receive(:exit_with_ssh_portal).with(
           operation, '-o', 'SendEnv=ACCESS_TOKEN', '-tt'
         )
+
         subject.ssh
       end
     end
