@@ -78,7 +78,7 @@ module Aptible
             raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
-          credential = find_tunnel_credential(database)
+          credential = find_credential(database)
 
           with_local_tunnel(credential) do |tunnel_helper|
             yield local_url(credential, tunnel_helper.port)
@@ -93,7 +93,7 @@ module Aptible
           "localhost.aptible.in:#{local_port}#{uri.path}"
         end
 
-        def find_tunnel_credential(database, type = nil)
+        def find_credential(database, type = nil)
           unless database.provisioned?
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end

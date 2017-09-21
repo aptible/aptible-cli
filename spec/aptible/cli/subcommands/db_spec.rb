@@ -362,21 +362,45 @@ describe Aptible::CLI::Agent do
     let(:databases) { [database] }
     before { expect(Aptible::Api::Database).to receive(:all) { databases } }
 
-    it 'returns the URL of a specified DB' do
-      expect(subject).to receive(:say).with(database.connection_url)
-      subject.send('db:url', handle)
-    end
-
     it 'fails if the DB is not found' do
       expect { subject.send('db:url', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
 
-    it 'fails if multiple DBs are found' do
-      databases << database
+    context 'valid database' do
+      it 'returns the URL of a specified DB' do
+        cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                               database: database)
 
-      expect { subject.send('db:url', handle) }
-        .to raise_error(/Multiple databases/)
+        expect(subject).to receive(:say).with(cred.connection_url)
+        expect(database).not_to receive(:connection_url)
+
+        subject.send('db:url', handle)
+      end
+
+      it 'fails if multiple DBs are found' do
+        databases << database
+
+        expect { subject.send('db:url', handle) }
+          .to raise_error(/Multiple databases/)
+      end
+
+      context 'v1 stack' do
+        before do
+          allow(database.account.stack).to receive(:version) { 'v1' }
+          allow(subject).to receive(:say)
+        end
+
+        it 'returns the URL of a specified DB' do
+          connection_url = 'postgresql://aptible-v1:password@lega.cy:4242/db'
+
+          expect(subject).to receive(:say).with(connection_url)
+          expect(database).to receive(:connection_url)
+            .and_return(connection_url)
+
+          subject.send('db:url', handle)
+        end
+      end
     end
   end
 end

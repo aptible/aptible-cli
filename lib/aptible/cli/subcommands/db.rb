@@ -95,7 +95,7 @@ module Aptible
               desired_port = Integer(options[:port] || 0)
               database = ensure_database(options.merge(db: handle))
 
-              credential = find_tunnel_credential(database, options[:type])
+              credential = find_credential(database, options[:type])
 
               say "Creating #{credential.type} tunnel to #{database.handle}...",
                   :green
@@ -180,9 +180,12 @@ module Aptible
 
             desc 'db:url HANDLE', 'Display a database URL'
             option :environment
+            option :type, type: :string
             define_method 'db:url' do |handle|
               database = ensure_database(options.merge(db: handle))
-              say(database.connection_url)
+              credential = find_credential(database, options[:type])
+
+              say(credential.connection_url)
             end
           end
         end
