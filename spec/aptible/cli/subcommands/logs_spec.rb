@@ -1,9 +1,11 @@
 require 'spec_helper'
 
 describe Aptible::CLI::Agent do
-  before { subject.stub(:ask) }
-  before { subject.stub(:save_token) }
-  before { subject.stub(:fetch_token) { 'some token' } }
+  before do
+    allow(subject).to receive(:ask)
+    allow(subject).to receive(:save_token)
+    allow(subject).to receive(:fetch_token) { 'some token' }
+  end
 
   let(:app) { Fabricate(:app, handle: 'foo') }
   let(:database) { Fabricate(:database, handle: 'bar', status: 'provisioned') }
