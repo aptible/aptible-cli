@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'open3'
 
-USAGE = ARGV.fetch(0)
+USAGE = ARGV.fetch(0, 'README.md')
 
 puts "Sync CLI usage in #{USAGE}"
 

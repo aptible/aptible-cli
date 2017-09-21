@@ -70,7 +70,7 @@ Commands:
 1. Fork the project.
 1. Commit your changes, with specs.
 1. Ensure that your code passes specs (`rake spec`) and meets Aptible's Ruby style guide (`rake rubocop`).
-1. If you add a command, update this README with the output of `aptible help | grep -v help`.
+1. If you add a command, sync this README (`bundle exec script/sync-readme-usage`).
 1. Create a new pull request on GitHub.
 
 ## Contributors
@@ -82,6 +82,7 @@ Commands:
 * Daniel Levenson ([@dleve123](https://github.com/dleve123))
 * Ryan Aipperspach ([@ryanaip](https://github.com/ryanaip))
 * Chas Ballew ([@chasballew](https://github.com/chasballew))
+* Chet Bortz ([@cbortz](https://github.com/cbortz))
 
 ## Copyright and License
 
