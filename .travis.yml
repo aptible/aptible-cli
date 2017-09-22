@@ -8,5 +8,5 @@ rvm:
 
 script:
   - bundle exec rake
-  - bundle exec script/sync-readme-usage README.md
+  - bundle exec script/sync-readme-usage
   - git diff --exit-code
