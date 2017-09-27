@@ -7,26 +7,36 @@ module Aptible
             include Helpers::Token
             include Helpers::Database
 
-            desc 'backup:restore BACKUP_ID [--handle HANDLE] ' \
+            desc 'backup:restore BACKUP_ID ' \
+                 '[--environment ENVIRONMENT_HANDLE] [--handle HANDLE] ' \
                  '[--container-size SIZE_MB] [--size SIZE_GB]',
                  'Restore a backup'
-            option :handle
+            option :handle, desc: 'a name to use for the new database'
+            option :environment, desc: 'a different environment to restore to'
             option :container_size, type: :numeric
             option :size, type: :numeric
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
+
               handle = options[:handle]
               unless handle
                 ts_suffix = backup.created_at.getgm.strftime '%Y-%m-%d-%H-%M-%S'
                 handle = "#{backup.database.handle}-at-#{ts_suffix}"
               end
 
+              destination_account = if options[:environment]
+                                      ensure_environment(
+                                        environment: options[:environment]
+                                      )
+                                    end
+
               opts = {
                 type: 'restore',
                 handle: handle,
                 container_size: options[:container_size],
-                disk_size: options[:size]
+                disk_size: options[:size],
+                destination_account: destination_account
               }.delete_if { |_, v| v.nil? }
 
               operation = backup.create_operation!(opts)
