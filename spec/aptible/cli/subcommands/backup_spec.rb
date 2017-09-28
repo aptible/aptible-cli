@@ -2,7 +2,8 @@ require 'spec_helper'
 
 describe Aptible::CLI::Agent do
   let(:token) { 'some-token' }
-  let(:account) { Fabricate(:account) }
+  let(:account) { Fabricate(:account, handle: 'test') }
+  let(:alt_account) { Fabricate(:account, handle: 'alt') }
   let(:database) { Fabricate(:database, account: account, handle: 'some-db') }
   let!(:backup) do
     # created_at: 2016-06-14 13:24:11 +0000
@@ -14,6 +15,7 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
     allow(subject).to receive(:say) { |m| messages << m }
+    allow(Aptible::Api::Account).to receive(:all) { [account, alt_account] }
   end
 
   describe '#backup:restore' do
@@ -40,6 +42,7 @@ describe Aptible::CLI::Agent do
         expect(backup).to receive(:create_operation!) do |options|
           expect(options[:handle]).to eq(h)
           expect(options[:disk_size]).not_to be_present
+          expect(options[:destination_account]).not_to be_present
           op
         end
 
@@ -54,6 +57,7 @@ describe Aptible::CLI::Agent do
           expect(options[:handle]).to eq(h)
           expect(options[:container_size]).to be_nil
           expect(options[:disk_size]).to be_nil
+          expect(options[:destination_account]).not_to be_present
           op
         end
 
@@ -69,6 +73,7 @@ describe Aptible::CLI::Agent do
           expect(options[:handle]).to be_present
           expect(options[:container_size]).to eq(s)
           expect(options[:disk_size]).to be_nil
+          expect(options[:destination_account]).not_to be_present
           op
         end
 
@@ -83,10 +88,22 @@ describe Aptible::CLI::Agent do
           expect(options[:handle]).to be_present
           expect(options[:container_size]).to be_nil
           expect(options[:disk_size]).to eq(s)
+          expect(options[:destination_account]).not_to be_present
           op
         end
 
         subject.options = { size: s }
+        subject.send('backup:restore', 1)
+      end
+
+      it 'accepts an destination environment' do
+        expect(backup).to receive(:create_operation!) do |options|
+          expect(options[:handle]).to be_present
+          expect(options[:destination_account]).to eq(alt_account)
+          op
+        end
+
+        subject.options = { environment: 'alt' }
         subject.send('backup:restore', 1)
       end
     end
