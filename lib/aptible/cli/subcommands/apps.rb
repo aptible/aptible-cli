@@ -43,8 +43,7 @@ module Aptible
             option :size, type: :numeric,
                           desc: 'DEPRECATED, use --container-size'
             define_method 'apps:scale' do |type, *more|
-              app = ensure_app(options)
-              service = app.services.find { |s| s.process_type == type }
+              service = ensure_service(options, type)
 
               container_count = options[:container_count]
               container_size = options[:container_size]
@@ -92,17 +91,6 @@ module Aptible
               if container_count.nil? && container_size.nil?
                 raise Thor::Error,
                       'Provide at least --container-count or --container-size'
-              end
-
-              if service.nil?
-                valid_types = if app.services.empty?
-                                'NONE (deploy the app first)'
-                              else
-                                app.services.map(&:process_type).join(', ')
-                              end
-                raise Thor::Error, "Service with type #{type} does not " \
-                                   "exist for app #{app.handle}. Valid " \
-                                   "types: #{valid_types}."
               end
 
               # We don't validate any parameters here: API will do that for us.

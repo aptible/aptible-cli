@@ -26,7 +26,7 @@ describe Aptible::CLI::Agent do
 
   let!(:account) { Fabricate(:account) }
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
-  let!(:service) { Fabricate(:service, app: app) }
+  let!(:service) { Fabricate(:service, app: app, process_type: 'web') }
   let(:op) { Fabricate(:operation, status: 'succeeded', resource: app) }
 
   describe '#apps:scale' do

@@ -132,6 +132,25 @@ module Aptible
           end
         end
 
+        def ensure_service(options, type)
+          app = ensure_app(options)
+          service = app.services.find { |s| s.process_type == type }
+
+          if service.nil?
+            valid_types = if app.services.empty?
+                            'NONE (deploy the app first)'
+                          else
+                            app.services.map(&:process_type).join(', ')
+                          end
+
+            raise Thor::Error, "Service with type #{type} does not " \
+                               "exist for app #{app.handle}. Valid " \
+                               "types: #{valid_types}."
+          end
+
+          service
+        end
+
         def apps_from_handle(handle, environment)
           if environment
             environment.apps

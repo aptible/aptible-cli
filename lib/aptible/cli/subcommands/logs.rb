@@ -7,24 +7,13 @@ module Aptible
         def self.included(thor)
           thor.class_eval do
             include Helpers::Operation
-            include Helpers::App
-            include Helpers::Database
+            include Helpers::AppOrDatabase
 
-            desc 'logs', 'Follows logs from a running app or database'
-            app_options
-            option :database
+            desc 'logs [--app APP | --database DATABASE]',
+                 'Follows logs from a running app or database'
+            app_or_database_options
             def logs
-              if options[:app] && options[:database]
-                m = 'You must specify only one of --app and --database'
-                raise Thor::Error, m
-              end
-
-              resource = \
-                if options[:database]
-                  ensure_database(options.merge(db: options[:database]))
-                else
-                  ensure_app(options)
-                end
+              resource = ensure_app_or_database(options)
 
               unless resource.status == 'provisioned'
                 raise Thor::Error, 'Unable to retrieve logs. ' \
