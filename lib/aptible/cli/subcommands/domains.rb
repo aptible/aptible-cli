@@ -9,10 +9,12 @@ module Aptible
             include Helpers::Operation
             include Helpers::App
 
-            desc 'domains', "Print an app's current virtual domains"
+            desc 'domains',
+                 "Print an app's current virtual domains - DEPRECATED"
             app_options
             option :verbose, aliases: '-v'
             def domains
+              deprecated 'This command is deprecated in favor of endpoints:list'
               app = ensure_app(options)
               print_vhosts(app) do |vhost|
                 if options[:verbose]

@@ -121,8 +121,10 @@ module Aptible
       private
 
       def deprecated(msg)
-        say "DEPRECATION NOTICE: #{msg}"
-        say 'Please contact support@aptible.com with any questions.'
+        $stderr.puts yellow([
+          "DEPRECATION NOTICE: #{msg}",
+          'Please contact support@aptible.com with any questions.'
+        ].join("\n"))
       end
 
       def nag_toolbelt

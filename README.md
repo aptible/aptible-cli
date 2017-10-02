@@ -52,7 +52,7 @@ Commands:
   aptible db:tunnel HANDLE                                                                                                           # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                              # Display a database URL
   aptible deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...                                                                                # Deploy an app
-  aptible domains                                                                                                                    # Print an app's current virtual domains
+  aptible domains                                                                                                                    # Print an app's current virtual domains - DEPRECATED
   aptible endpoints:database:create DATABASE                                                                                         # Create a Database Endpoint
   aptible endpoints:deprovision [--app APP | --database DATABASE] ENDPOINT_HOSTNAME                                                  # Deprovision an App or Database Endpoint
   aptible endpoints:https:create [--app APP] SERVICE                                                                                 # Create an App HTTPS Endpoint
