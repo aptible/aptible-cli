@@ -32,6 +32,14 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  def expect_modify_vhost(vhost, options)
+    expect(vhost).to receive(:update!).with(options) do
+      expect_operation(vhost, 'provision')
+      expect(vhost).to receive(:reload).and_return(vhost)
+      expect(subject).to receive(:explain_vhost).with(vhost.service, vhost)
+    end
+  end
+
   def expect_operation(vhost, type)
     expect(vhost).to receive(:create_operation!).with(type: type) do
       Fabricate(:operation).tap do |o|
@@ -141,7 +149,7 @@ describe Aptible::CLI::Agent do
       stub_options
     end
 
-    shared_examples 'shared app vhost examples' do |method|
+    shared_examples 'shared create app vhost examples' do |method|
       context 'App Vhost Options' do
         it 'fails if the app does not exist' do
           stub_options(app: 'foo')
@@ -174,7 +182,7 @@ describe Aptible::CLI::Agent do
       end
     end
 
-    shared_examples 'shared tcp vhost examples' do |method|
+    shared_examples 'shared create tcp vhost examples' do |method|
       context 'TCP VHOST Options' do
         it 'creates an Endpoint with Ports' do
           expect_create_vhost(service, container_ports: [10, 20])
@@ -190,7 +198,7 @@ describe Aptible::CLI::Agent do
       end
     end
 
-    shared_examples 'shared tls vhost examples' do |method|
+    shared_examples 'shared create tls vhost examples' do |method|
       context 'TLS Vhost Options' do
         it 'creates an Endpoint with a new Certificate' do
           expect_create_certificate(
@@ -339,8 +347,9 @@ describe Aptible::CLI::Agent do
     end
 
     describe 'endpoints:tcp:create' do
-      include_examples 'shared app vhost examples', 'endpoints:tcp:create'
-      include_examples 'shared tcp vhost examples', 'endpoints:tcp:create'
+      m = 'endpoints:tcp:create'
+      include_examples 'shared create app vhost examples', m
+      include_examples 'shared create tcp vhost examples', m
 
       it 'creates a TCP Endpoint' do
         expect_create_vhost(
@@ -353,15 +362,15 @@ describe Aptible::CLI::Agent do
           container_ports: []
         )
 
-        subject.send('endpoints:tcp:create', 'web')
+        subject.send(m, 'web')
       end
     end
 
     describe 'endpoints:tls:create' do
       m = 'endpoints:tls:create'
-      include_examples 'shared app vhost examples', m
-      include_examples 'shared tcp vhost examples', m
-      include_examples 'shared tls vhost examples', m
+      include_examples 'shared create app vhost examples', m
+      include_examples 'shared create tcp vhost examples', m
+      include_examples 'shared create tls vhost examples', m
 
       it 'creates a TLS Endpoint' do
         expect_create_vhost(
@@ -379,8 +388,8 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:https:create' do
       m = 'endpoints:https:create'
-      include_examples 'shared app vhost examples', m
-      include_examples 'shared tls vhost examples', m
+      include_examples 'shared create app vhost examples', m
+      include_examples 'shared create tls vhost examples', m
 
       it 'creates a HTTP Endpoint' do
         expect_create_vhost(
@@ -389,8 +398,7 @@ describe Aptible::CLI::Agent do
           platform: 'alb',
           internal: false,
           default: false,
-          ip_whitelist: [],
-          container_port: nil
+          ip_whitelist: []
         )
         subject.send(m, 'web')
       end
@@ -399,6 +407,133 @@ describe Aptible::CLI::Agent do
         expect_create_vhost(service, container_port: 10)
         stub_options(port: 10)
         subject.send(m, 'web')
+      end
+    end
+
+    shared_examples 'shared modify app vhost examples' do |m|
+      it 'does not change anything if no options are passed' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, {})
+        subject.send(m, v.external_host)
+      end
+
+      it 'adds an IP whitelist' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, ip_whitelist: %w(1.1.1.1))
+
+        stub_options(ip_whitelist: %w(1.1.1.1))
+        subject.send(m, v.external_host)
+      end
+
+      it 'removes an IP whitelist' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, ip_whitelist: [])
+
+        stub_options(:'no-ip_whitelist' => true)
+        subject.send(m, v.external_host)
+      end
+
+      it 'does not allow disabling and adding an IP whitelist' do
+        v = Fabricate(:vhost, service: service)
+        stub_options(ip_whitelist: %w(1.1.1.1), :'no-ip_whitelist' => true)
+        expect { subject.send(m, v.external_host) }
+          .to raise_error(/conflicting.*no-ip-whitelist.*ip-whitelist/im)
+      end
+    end
+
+    shared_examples 'shared modify tcp vhost examples' do |m|
+      it 'allows updating Container Ports' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, container_ports: [10, 20])
+
+        stub_options(ports: %w(10 20))
+        subject.send(m, v.external_host)
+      end
+    end
+
+    shared_examples 'shared modify tls vhost examples' do |m|
+      it 'allows enabling Managed TLS' do
+        # NOTE: As-is, this will typically fail in the backend since the
+        # Managed TLS Hostname is required as well.
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, acme: true)
+
+        stub_options(managed_tls: true)
+        subject.send(m, v.external_host)
+      end
+
+      it 'allows disabling Managed TLS' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, acme: false)
+
+        stub_options(managed_tls: false)
+        subject.send(m, v.external_host)
+      end
+
+      it 'allows updating the Managed TLS Domain' do
+        # NOTE: This will usually fail in the backend due to API validations on
+        # the cert / domain matching.
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, user_domain: 'foobar.io')
+
+        stub_options(managed_tls_domain: 'foobar.io')
+        subject.send(m, v.external_host)
+      end
+
+      it 'updates the Endpoint with a new Certificate' do
+        v = Fabricate(:vhost, service: service)
+
+        expect_create_certificate(
+          a1, certificate_body: 'the cert', private_key: 'the key'
+        )
+
+        expect_modify_vhost(v, certificate: an_instance_of(StubCertificate))
+
+        Dir.mktmpdir do |d|
+          cert, key = %w(cert key).map { |f| File.join(d, f) }
+          File.write(cert, 'the cert')
+          File.write(key, 'the key')
+          stub_options(certificate_file: cert, private_key_file: key)
+
+          subject.send(m, v.external_host)
+        end
+      end
+
+      it 'updates an Endpoint with an existing Certificate (exact match)' do
+        v = Fabricate(:vhost, service: service)
+        c = Fabricate(:certificate, account: a1)
+        stub_options(certificate_fingerprint: c.sha256_fingerprint)
+
+        expect_modify_vhost(v, certificate: c)
+
+        subject.send(m, v.external_host)
+      end
+    end
+
+    describe 'endpoints:tcp:modify' do
+      m = 'endpoints:tcp:modify'
+      include_examples 'shared modify app vhost examples', m
+      include_examples 'shared modify tcp vhost examples', m
+    end
+
+    describe 'endpoints:tls:modify' do
+      m = 'endpoints:tls:modify'
+      include_examples 'shared modify app vhost examples', m
+      include_examples 'shared modify tcp vhost examples', m
+      include_examples 'shared modify tls vhost examples', m
+    end
+
+    describe 'endpoints:https:modify' do
+      m = 'endpoints:https:modify'
+      include_examples 'shared modify app vhost examples', m
+      include_examples 'shared modify tls vhost examples', m
+
+      it 'allows updating the Container Port' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, container_port: 10)
+
+        stub_options(port: 10)
+        subject.send(m, v.external_host)
       end
     end
 

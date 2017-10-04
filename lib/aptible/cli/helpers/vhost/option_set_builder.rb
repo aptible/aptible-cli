@@ -7,6 +7,7 @@ module Aptible
             environment
             app
             database
+            create
             tls
             ports
             port
@@ -23,23 +24,26 @@ module Aptible
 
               if builder.app?
                 app_options
-                option(
-                  :default_domain,
-                  type: :boolean,
-                  desc: 'Whether to enable Default Domain on this Endpoint'
-                )
 
-                option(
-                  :internal,
-                  type: :boolean,
-                  desc: 'Whether to restrict this Endpoint to internal traffic'
-                )
+                if builder.create?
+                  option(
+                    :default_domain,
+                    type: :boolean,
+                    desc: 'Enable Default Domain on this Endpoint'
+                  )
+
+                  option(
+                    :internal,
+                    type: :boolean,
+                    desc: 'Restrict this Endpoint to internal traffic'
+                  )
+                end
 
                 if builder.ports?
                   option(
                     :ports,
                     type: :array,
-                    desc: 'Specify a list of ports to expose on this Endpoint'
+                    desc: 'A list of ports to expose on this Endpoint'
                   )
                 end
 
@@ -47,7 +51,7 @@ module Aptible
                   option(
                     :port,
                     type: :numeric,
-                    desc: 'Specify a port to expose on this Endpoint'
+                    desc: 'A port to expose on this Endpoint'
                   )
                 end
               end
@@ -55,9 +59,19 @@ module Aptible
               option(
                 :ip_whitelist,
                 type: :array,
-                desc: 'Restrict traffic to this Endpoint to a list of IP ' \
-                      'sources (addresses or CIDRs)'
+                desc: 'A list of IPv4 sources (addresses or CIDRs) to ' \
+                      'which to restrict traffic to this Endpoint'
               )
+
+              unless builder.create?
+                # Yes, it has to be a dash...
+                # See: https://github.com/erikhuda/thor/pull/551
+                option(
+                  :'no-ip_whitelist',
+                  type: :boolean,
+                  desc: 'Disable IP Whitelist'
+                )
+              end
 
               if builder.tls?
                 option(
@@ -76,12 +90,12 @@ module Aptible
                 option(
                   :managed_tls,
                   type: :boolean,
-                  desc: 'Whether to enable Managed TLS on this Endpoint'
+                  desc: 'Enable Managed TLS on this Endpoint'
                 )
 
                 option(
                   :managed_tls_domain,
-                  desc: 'The domain to use for Managed TLS'
+                  desc: 'A domain to use for Managed TLS'
                 )
 
                 option(
@@ -100,25 +114,42 @@ module Aptible
 
             params = {}
 
-            params[:ip_whitelist] = options.delete(:ip_whitelist) { [] }
+            params[:ip_whitelist] = options.delete(:ip_whitelist) do
+              create? ? [] : nil
+            end
+
+            if options.delete(:'no-ip_whitelist') { false }
+              params[:ip_whitelist] = []
+            end
 
             params[:container_port] = options.delete(:port) if port?
 
             if ports?
-              raw_ports = options.delete(:ports) { [] }
-              params[:container_ports] = raw_ports.map do |p|
-                begin
-                  Integer(p)
-                rescue ArgumentError
-                  m = "Invalid port: #{p}"
-                  raise Thor::Error, m
+              raw_ports = options.delete(:ports) do
+                create? ? [] : nil
+              end
+
+              if raw_ports
+                params[:container_ports] = raw_ports.map do |p|
+                  begin
+                    Integer(p)
+                  rescue ArgumentError
+                    m = "Invalid port: #{p}"
+                    raise Thor::Error, m
+                  end
                 end
               end
             end
 
             if app?
-              params[:internal] = !!options.delete(:internal) { false }
-              params[:default] = !!options.delete(:default_domain) { false }
+              params[:internal] = options.delete(:internal) do
+                create? ? false : nil
+              end
+
+              params[:default] = options.delete(:default_domain) do
+                create? ? false : nil
+              end
+
               options.delete(:app)
             else
               params[:internal] = false
@@ -133,7 +164,7 @@ module Aptible
             # this.
             raise "Unexpected options: #{options}" if options.any?
 
-            params
+            params.delete_if { |_, v| v.nil? }
           end
 
           FLAGS.each do |f|
@@ -180,13 +211,16 @@ module Aptible
             end
 
             # ACME option
-            acme = params_out[:acme] = options_in.delete(:managed_tls) { false }
-            if acme
-              user_domain = options_in.delete(:managed_tls_domain)
+            params_out[:acme] = options_in.delete(:managed_tls) do
+              create? ? false : nil
+            end
+
+            params_out[:user_domain] = options_in.delete(:managed_tls_domain)
+
+            if create? && params_out[:acme] && params_out[:user_domain].nil?
               e = "#{to_flag(:managed_tls_domain)} is required to enable " \
                   'Managed TLS'
-              raise Thor::Error, e if user_domain.nil?
-              params_out[:user_domain] = user_domain
+              raise Thor::Error, e
             end
           end
 
@@ -218,19 +252,27 @@ module Aptible
           end
 
           def verify_option_conflicts(options)
-            certificate_options = [
-              %i(certificate_file private_key_file),
-              %i(certificate_fingerprint),
-              %i(managed_tls managed_tls_domain),
-              %i(default_domain)
+            conflict_groups = [
+              [
+                %i(certificate_file private_key_file),
+                %i(certificate_fingerprint),
+                %i(managed_tls managed_tls_domain),
+                %i(default_domain)
+              ],
+              [
+                %i(no-ip_whitelist),
+                %i(ip_whitelist)
+              ]
             ]
 
-            matches = certificate_options.map do |g|
-              g.any? { |k| !!options[k] }
-            end
+            conflict_groups.each do |group|
+              matches = group.map do |g|
+                g.any? { |k| !!options[k] }
+              end
 
-            if matches.select { |m| !!m }.size > 1
-              selected = certificate_options.flatten.select do |o|
+              next unless matches.select { |m| !!m }.size > 1
+
+              selected = group.flatten.select do |o|
                 !!options[o]
               end
 
