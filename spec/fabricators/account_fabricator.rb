@@ -1,4 +1,9 @@
-class StubAccount < OpenStruct; end
+class StubAccount < OpenStruct
+  def each_certificate(&block)
+    return enum_for(:each_certificate) if block.nil?
+    certificates.each(&block)
+  end
+end
 
 Fabricator(:account, from: :stub_account) do
   bastion_host 'localhost'
@@ -8,4 +13,5 @@ Fabricator(:account, from: :stub_account) do
 
   apps { [] }
   databases { [] }
+  certificates { [] }
 end

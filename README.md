@@ -52,10 +52,20 @@ Commands:
   aptible db:tunnel HANDLE                                                                                                           # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                              # Display a database URL
   aptible deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...                                                                                # Deploy an app
-  aptible domains                                                                                                                    # Print an app's current virtual domains
+  aptible domains                                                                                                                    # Print an app's current virtual domains - DEPRECATED
+  aptible endpoints:database:create DATABASE                                                                                         # Create a Database Endpoint
+  aptible endpoints:deprovision [--app APP | --database DATABASE] ENDPOINT_HOSTNAME                                                  # Deprovision an App or Database Endpoint
+  aptible endpoints:https:create [--app APP] SERVICE                                                                                 # Create an App HTTPS Endpoint
+  aptible endpoints:https:modify [--app APP] ENDPOINT_HOSTNAME                                                                       # Modify an App HTTPS Endpoint
+  aptible endpoints:list [--app APP | --database DATABASE]                                                                           # List Endpoints for an App or Database
+  aptible endpoints:renew [--app APP] ENDPOINT_HOSTNAME                                                                              # Renew an App Managed TLS Endpoint
+  aptible endpoints:tcp:create [--app APP] SERVICE                                                                                   # Create an App TCP Endpoint
+  aptible endpoints:tcp:modify [--app APP] ENDPOINT_HOSTNAME                                                                         # Modify an App TCP Endpoint
+  aptible endpoints:tls:create [--app APP] SERVICE                                                                                   # Create an App TLS Endpoint
+  aptible endpoints:tls:modify [--app APP] ENDPOINT_HOSTNAME                                                                         # Modify an App TLS Endpoint
   aptible help [COMMAND]                                                                                                             # Describe available commands or one specific command
   aptible login                                                                                                                      # Log in to Aptible
-  aptible logs                                                                                                                       # Follows logs from a running app or database
+  aptible logs [--app APP | --database DATABASE]                                                                                     # Follows logs from a running app or database
   aptible operation:cancel OPERATION_ID                                                                                              # Cancel a running operation
   aptible ps                                                                                                                         # Display running processes for an app - DEPRECATED
   aptible rebuild                                                                                                                    # Rebuild an app, and restart its services

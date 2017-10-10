@@ -11,6 +11,9 @@ require_relative 'helpers/operation'
 require_relative 'helpers/environment'
 require_relative 'helpers/app'
 require_relative 'helpers/database'
+require_relative 'helpers/app_or_database'
+require_relative 'helpers/vhost'
+require_relative 'helpers/vhost/option_set_builder'
 require_relative 'helpers/tunnel'
 
 require_relative 'subcommands/apps'
@@ -26,6 +29,7 @@ require_relative 'subcommands/ssh'
 require_relative 'subcommands/backup'
 require_relative 'subcommands/operation'
 require_relative 'subcommands/inspect'
+require_relative 'subcommands/endpoints'
 
 module Aptible
   module CLI
@@ -47,6 +51,7 @@ module Aptible
       include Subcommands::Backup
       include Subcommands::Operation
       include Subcommands::Inspect
+      include Subcommands::Endpoints
 
       # Forward return codes on failures.
       def self.exit_on_failure?
@@ -116,8 +121,10 @@ module Aptible
       private
 
       def deprecated(msg)
-        say "DEPRECATION NOTICE: #{msg}"
-        say 'Please contact support@aptible.com with any questions.'
+        $stderr.puts yellow([
+          "DEPRECATION NOTICE: #{msg}",
+          'Please contact support@aptible.com with any questions.'
+        ].join("\n"))
       end
 
       def nag_toolbelt
