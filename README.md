@@ -70,6 +70,7 @@ Commands:
   aptible ps                                                                                                                         # Display running processes for an app - DEPRECATED
   aptible rebuild                                                                                                                    # Rebuild an app, and restart its services
   aptible restart                                                                                                                    # Restart all services associated with an app
+  aptible services                                                                                                                   # List Services for an App
   aptible ssh [COMMAND]                                                                                                              # Run a command against an app
   aptible version                                                                                                                    # Print Aptible CLI version
 ```

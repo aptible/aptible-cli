@@ -25,6 +25,7 @@ require_relative 'subcommands/ps'
 require_relative 'subcommands/rebuild'
 require_relative 'subcommands/deploy'
 require_relative 'subcommands/restart'
+require_relative 'subcommands/services'
 require_relative 'subcommands/ssh'
 require_relative 'subcommands/backup'
 require_relative 'subcommands/operation'
@@ -47,6 +48,7 @@ module Aptible
       include Subcommands::Rebuild
       include Subcommands::Deploy
       include Subcommands::Restart
+      include Subcommands::Services
       include Subcommands::SSH
       include Subcommands::Backup
       include Subcommands::Operation
