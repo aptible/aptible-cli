@@ -76,6 +76,14 @@ Commands:
 ```
 <!-- END USAGE -->
 
+### Output Format
+
+By default, the Aptible CLI outputs data as unstructured text, designed for human consumption.
+
+If you need to parse the output in another program, set the `APTIBLE_OUTPUT_FORMAT` environment variable to `json` when calling the Aptible CLI for JSON output.
+
+The default format is `text`.
+
 ## Contributing
 
 1. Fork the project.

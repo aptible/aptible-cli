@@ -12,7 +12,8 @@ module Aptible
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
 
-              puts "Requesting cancellation on #{prettify_operation(o)}..."
+              m = "Requesting cancellation on #{prettify_operation(o)}..."
+              CLI.logger.info m
               o.update!(cancelled: true)
             end
           end

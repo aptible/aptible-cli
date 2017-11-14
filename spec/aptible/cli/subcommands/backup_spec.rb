@@ -10,11 +10,8 @@ describe Aptible::CLI::Agent do
     Fabricate(:backup, database: database, created_at: Time.at(1465910651))
   end
 
-  let(:messages) { [] }
-
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(subject).to receive(:say) { |m| messages << m }
     allow(Aptible::Api::Account).to receive(:all) { [account, alt_account] }
   end
 
@@ -47,7 +44,7 @@ describe Aptible::CLI::Agent do
         end
 
         subject.send('backup:restore', 1)
-        expect(messages).to eq(["Restoring backup into #{h}"])
+        expect(captured_logs).to match(/restoring backup into #{h}/im)
       end
 
       it 'accepts a handle' do
@@ -63,7 +60,7 @@ describe Aptible::CLI::Agent do
 
         subject.options = { handle: h }
         subject.send('backup:restore', 1)
-        expect(messages).to eq(["Restoring backup into #{h}"])
+        expect(captured_logs).to match(/restoring backup into #{h}/im)
       end
 
       it 'accepts a container size' do
@@ -131,19 +128,19 @@ describe Aptible::CLI::Agent do
 
     it 'can show a subset of backups' do
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(5)
+      expect(captured_output_text.split("\n").size).to eq(5)
     end
 
     it 'allows scoping via environment' do
       subject.options = { max_age: '1w', environment: database.account.handle }
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(5)
+      expect(captured_output_text.split("\n").size).to eq(5)
     end
 
     it 'shows more backups if requested' do
       subject.options = { max_age: '2y' }
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(9)
+      expect(captured_output_text.split("\n").size).to eq(9)
     end
 
     it 'errors out if max_age is invalid' do

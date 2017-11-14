@@ -18,7 +18,6 @@ end
 
 describe Aptible::CLI::Agent do
   before do
-    allow(subject).to receive(:ask)
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:attach_to_operation_logs)
     allow(subject).to receive(:fetch_token) { double 'token' }
@@ -28,6 +27,115 @@ describe Aptible::CLI::Agent do
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
   let!(:service) { Fabricate(:service, app: app, process_type: 'web') }
   let(:op) { Fabricate(:operation, status: 'succeeded', resource: app) }
+
+  describe '#apps' do
+    it 'lists an app in an account' do
+      allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      subject.send('apps')
+
+      expect(captured_output_text)
+        .to eq("=== #{account.handle}\n#{app.handle}\n")
+    end
+
+    it 'lists multiple apps in an account' do
+      allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      app2 = Fabricate(:app, handle: 'foobar', account: account)
+      subject.send('apps')
+
+      expect(captured_output_text)
+        .to eq("=== #{account.handle}\n#{app.handle}\n#{app2.handle}\n")
+    end
+
+    it 'lists multiple apps, grouped by account in text output' do
+      account1 = Fabricate(:account, handle: 'Aaccount1')
+      app11 = Fabricate(:app, account: account1, handle: 'app11')
+
+      account2 = Fabricate(:account, handle: 'Baccount2')
+      app21 = Fabricate(:app, account: account2, handle: 'app21')
+      app22 = Fabricate(:app, account: account2, handle: 'app21')
+
+      allow(Aptible::Api::Account).to receive(:all)
+        .and_return([account1, account2])
+
+      subject.send('apps')
+
+      expected_text = [
+        "=== #{account1.handle}",
+        app11.handle,
+        '',
+        "=== #{account2.handle}",
+        app21.handle,
+        app22.handle,
+        ''
+      ].join("\n")
+
+      expect(captured_output_text).to eq(expected_text)
+    end
+
+    it 'lists filters down to one account' do
+      account2 = Fabricate(:account, handle: 'account2')
+      app2 = Fabricate(:app, account: account2, handle: 'app2')
+      allow(subject).to receive(:options)
+        .and_return(environment: account2.handle)
+
+      allow(Aptible::Api::Account).to receive(:all)
+        .and_return([account, account2])
+      subject.send('apps')
+
+      expect(captured_output_text)
+        .to eq("=== #{account2.handle}\n#{app2.handle}\n")
+    end
+
+    it 'includes services in JSON' do
+      account = Fabricate(:account, handle: 'account')
+      app = Fabricate(:app, account: account, handle: 'app')
+      allow(Aptible::Api::Account).to receive(:all).and_return([account])
+
+      s1 = Fabricate(
+        :service,
+        app: app, process_type: 's1', command: 'true', container_count: 2
+      )
+      s2 = Fabricate(
+        :service,
+        app: app, process_type: 's2', container_memory_limit_mb: 2048
+      )
+
+      expected_json = [
+        {
+          'environment' => account.handle,
+          'environment_id' => account.id,
+          'app' => app.handle,
+          'id' => app.id,
+          'status' => app.status,
+          'git_remote' => app.git_repo,
+          'services' => [
+            {
+              'app' => app.handle,
+              'app_id' => app.id,
+              'service' => s1.process_type,
+              'id' => s1.id,
+              'command' => s1.command,
+              'container_count' => s1.container_count,
+              'container_size' => s1.container_memory_limit_mb
+            },
+            {
+              'app' => app.handle,
+              'app_id' => app.id,
+              'service' => s2.process_type,
+              'id' => s2.id,
+              'command' => 'CMD',
+              'container_count' => s2.container_count,
+              'container_size' => s2.container_memory_limit_mb
+            }
+          ]
+        }
+      ]
+
+      subject.send('apps')
+
+      expect(captured_output_json).to eq(expected_json)
+    end
+  end
 
   describe '#apps:scale' do
     before do
@@ -54,29 +162,29 @@ describe Aptible::CLI::Agent do
 
       it 'should scale container size and count together' do
         stub_options(container_count: 3, container_size: 1024)
-        expect($stderr).not_to receive(:puts)
         expect(service).to receive(:create_operation!)
           .with(type: 'scale', container_count: 3, container_size: 1024)
           .and_return(op)
         subject.send('apps:scale', 'web')
+        expect(captured_logs).not_to match(/deprecated/i)
       end
 
       it 'should scale container count alone' do
         stub_options(container_count: 3)
-        expect($stderr).not_to receive(:puts)
         expect(service).to receive(:create_operation!)
           .with(type: 'scale', container_count: 3)
           .and_return(op)
         subject.send('apps:scale', 'web')
+        expect(captured_logs).not_to match(/deprecated/i)
       end
 
       it 'should scale container size alone' do
         stub_options(container_size: 1024)
-        expect($stderr).not_to receive(:puts)
         expect(service).to receive(:create_operation!)
           .with(type: 'scale', container_size: 1024)
           .and_return(op)
         subject.send('apps:scale', 'web')
+        expect(captured_logs).not_to match(/deprecated/i)
       end
 
       it 'should fail if neither container_count nor container_size is set' do
@@ -87,20 +195,20 @@ describe Aptible::CLI::Agent do
 
       it 'should scale container count (legacy)' do
         stub_options
-        expect($stderr).to receive(:puts).once
         expect(service).to receive(:create_operation!)
           .with(type: 'scale', container_count: 3)
           .and_return(op)
         subject.send('apps:scale', 'web', '3')
+        expect(captured_logs).to match(/deprecated/i)
       end
 
       it 'should scale container size (legacy)' do
         stub_options(size: 90210)
-        expect($stderr).to receive(:puts).once
         expect(service).to receive(:create_operation!)
           .with(type: 'scale', container_size: 90210)
           .and_return(op)
         subject.send('apps:scale', 'web')
+        expect(captured_logs).to match(/deprecated/i)
       end
 
       it 'should fail when using both current and legacy count' do
@@ -157,41 +265,14 @@ describe Aptible::CLI::Agent do
     end
 
     it 'should fail if number is not a valid number (legacy)' do
-      expect($stderr).to receive(:puts).once
       allow(subject).to receive(:options) { { app: 'hello' } }
       allow(service).to receive(:create_operation) { op }
 
       expect do
         subject.send('apps:scale', 'web', 'potato')
       end.to raise_error(ArgumentError)
-    end
-  end
 
-  describe '#config:set' do
-    before do
-      allow(Aptible::Api::App).to receive(:all) { [app] }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-    end
-
-    it 'should reject environment variables that start with -' do
-      allow(subject).to receive(:options) { { app: 'hello' } }
-
-      expect { subject.send('config:set', '-foo=bar') }
-        .to raise_error(/invalid argument/im)
-    end
-  end
-
-  describe '#config:rm' do
-    before do
-      allow(Aptible::Api::App).to receive(:all) { [app] }
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
-    end
-
-    it 'should reject environment variables that start with -' do
-      allow(subject).to receive(:options) { { app: 'hello' } }
-
-      expect { subject.send('config:rm', '-foo') }
-        .to raise_error(/invalid argument/im)
+      expect(captured_logs).to match(/deprecated/i)
     end
   end
 

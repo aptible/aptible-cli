@@ -27,7 +27,8 @@ describe Aptible::CLI::Agent do
       Fabricate(:vhost, service: service, **args).tap do |v|
         expect_operation(v, 'provision')
         expect(v).to receive(:reload).and_return(v)
-        expect(subject).to receive(:explain_vhost).with(service, v)
+        expect(subject).to receive(:explain_vhost)
+          .with(an_instance_of(Aptible::CLI::Formatter::Object), service, v)
       end
     end
   end
@@ -36,7 +37,10 @@ describe Aptible::CLI::Agent do
     expect(vhost).to receive(:update!).with(options) do
       expect_operation(vhost, 'provision')
       expect(vhost).to receive(:reload).and_return(vhost)
-      expect(subject).to receive(:explain_vhost).with(vhost.service, vhost)
+      expect(subject).to receive(:explain_vhost)
+        .with(
+          an_instance_of(Aptible::CLI::Formatter::Object), vhost.service, vhost
+        )
     end
   end
 
@@ -94,15 +98,14 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:list' do
       it 'lists Endpoints' do
-        lines = []
-        allow(subject).to receive(:say) { |m| lines << m }
-
         s = Fabricate(:service, database: db)
         v1 = Fabricate(:vhost, service: s)
         v2 = Fabricate(:vhost, service: s)
 
         stub_options(database: db.handle)
         subject.send('endpoints:list')
+
+        lines = captured_output_text.split("\n")
 
         expect(lines).to include("Hostname: #{v1.external_host}")
         expect(lines).to include("Hostname: #{v2.external_host}")
@@ -539,9 +542,6 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:list' do
       it 'lists Endpoints across services' do
-        lines = []
-        allow(subject).to receive(:say) { |m| lines << m }
-
         s1 = Fabricate(:service, app: app)
         v1 = Fabricate(:vhost, service: s1)
 
@@ -550,6 +550,8 @@ describe Aptible::CLI::Agent do
         v3 = Fabricate(:vhost, service: s2)
 
         subject.send('endpoints:list')
+
+        lines = captured_output_text.split("\n")
 
         expect(lines).to include("Hostname: #{v1.external_host}")
         expect(lines).to include("Hostname: #{v2.external_host}")

@@ -10,10 +10,14 @@ end
 begin
   Aptible::CLI::Agent.start
 rescue HyperResource::ClientError => e
-  if e.body['error'] == 'invalid_token'
-    STDERR.puts 'API authentication error: please run aptible login'
-  else
-    STDERR.puts "An error occurred: #{e.body['message']}"
-  end
+  m = if e.body['error'] == 'invalid_token'
+        'API authentication error: please run aptible login'
+      else
+        "An error occurred: #{e.body['message']}"
+      end
+  Aptible::CLI.logger.error(m)
+  exit 1
+rescue Aptible::CLI::UserError => e
+  Aptible::CLI.logger.error e.message
   exit 1
 end

@@ -127,12 +127,15 @@ module Aptible
             define_method 'endpoints:list' do
               resource = ensure_app_or_database(options)
 
-              first = true
-              each_vhost(resource) do |service|
-                service.each_vhost do |vhost|
-                  say '' unless first
-                  first = false
-                  explain_vhost(service, vhost)
+              Formatter.render(Renderer.current) do |root|
+                root.list do |list|
+                  each_service(resource) do |service|
+                    service.each_vhost do |vhost|
+                      list.object do |node|
+                        explain_vhost(node, service, vhost)
+                      end
+                    end
+                  end
                 end
               end
             end
@@ -143,7 +146,7 @@ module Aptible
             app_or_database_options
             define_method 'endpoints:deprovision' do |hostname|
               resource = ensure_app_or_database(options)
-              vhost = find_vhost(each_vhost(resource), hostname)
+              vhost = find_vhost(each_service(resource), hostname)
               op = vhost.create_operation!(type: 'deprovision')
               attach_to_operation_logs(op)
             end
@@ -170,7 +173,7 @@ module Aptible
 
               def modify_app_vhost(flags, options, hostname)
                 app = ensure_app(options)
-                vhost = find_vhost(each_vhost(app), hostname)
+                vhost = find_vhost(each_service(app), hostname)
                 vhost.update!(**flags.prepare(vhost.service.account, options))
                 provision_vhost_and_explain(vhost.service, vhost)
               end

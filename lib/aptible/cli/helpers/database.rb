@@ -40,12 +40,6 @@ module Aptible
           databases.select { |a| a.handle == handle }
         end
 
-        def present_environment_databases(environment)
-          say "=== #{environment.handle}"
-          environment.databases.each { |db| say db.handle }
-          say ''
-        end
-
         def clone_database(source, dest_handle)
           op = source.create_operation!(type: 'clone', handle: dest_handle)
           attach_to_operation_logs(op)
@@ -119,6 +113,36 @@ module Aptible
           err = 'No default credential for database'
           err = "No credential with type #{type} for database" if type
           raise Thor::Error, "#{err}, valid credential types: #{valid}"
+        end
+
+        def render_database(account, database)
+          Formatter.render(Renderer.current) do |root|
+            root.keyed_object('connection_url') do |node|
+              explain_database(node, account, database)
+            end
+          end
+        end
+
+        def explain_database(node, account, database)
+          node.value('environment', account.handle)
+          node.value('environment_id', account.id)
+
+          node.value('database', database.handle)
+          node.value('id', database.id)
+
+          node.value('type', database.type)
+          node.value('status', database.status)
+          node.value('connection_url', database.connection_url)
+
+          node.list('credentials') do |creds_list|
+            database.database_credentials.each do |cred|
+              creds_list.object do |cred_node|
+                cred_node.value('type', cred.type)
+                cred_node.value('connection_url', cred.connection_url)
+                cred_node.value('default', cred.default)
+              end
+            end
+          end
         end
       end
     end

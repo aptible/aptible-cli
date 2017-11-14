@@ -11,16 +11,16 @@ describe Aptible::CLI::Agent do
     it 'should print the version' do
       ClimateControl.modify(APTIBLE_TOOLBELT: nil) do
         version = Aptible::CLI::VERSION
-        expect(STDOUT).to receive(:puts).with "aptible-cli v#{version}"
         subject.version
+        expect(captured_output_text).to eq("aptible-cli v#{version}\n")
       end
     end
 
     it 'should print the version (with toolbelt)' do
       ClimateControl.modify(APTIBLE_TOOLBELT: '1') do
         version = Aptible::CLI::VERSION
-        expect(STDOUT).to receive(:puts).with "aptible-cli v#{version} toolbelt"
         subject.version
+        expect(captured_output_text).to eq("aptible-cli v#{version} toolbelt\n")
       end
     end
   end
@@ -29,7 +29,6 @@ describe Aptible::CLI::Agent do
     let(:token) { double('Aptible::Auth::Token') }
     let(:created_at) { Time.now }
     let(:expires_at) { created_at + 1.week }
-    let(:output) { [] }
 
     before do
       m = -> (code) { @code = code }
@@ -38,7 +37,7 @@ describe Aptible::CLI::Agent do
       allow(token).to receive(:access_token).and_return 'access_token'
       allow(token).to receive(:created_at).and_return created_at
       allow(token).to receive(:expires_at).and_return expires_at
-      allow(subject).to receive(:puts) { |v| output << v }
+      allow(subject).to receive(:puts) {}
     end
 
     it 'should save a token to ~/.aptible/tokens' do
@@ -50,10 +49,8 @@ describe Aptible::CLI::Agent do
     it 'should output the token location and token lifetime' do
       allow(Aptible::Auth::Token).to receive(:create).and_return token
       subject.login
-      expect(output.size).to eq(3)
-      expect(output[0]).to eq('')
-      expect(output[1]).to match(/written to some\.json/)
-      expect(output[2]).to match(/will expire after 7 days/)
+      expect(captured_logs).to match(/token written to.*json/i)
+      expect(captured_logs).to match(/expire after 7 days/i)
     end
 
     it 'should raise an error if authentication fails' do
@@ -181,9 +178,9 @@ describe Aptible::CLI::Agent do
     let(:nag_file) { File.join(nag_dir, 'nag_toolbelt') }
 
     it 'warns if the nag file is not present' do
-      expect($stderr).to receive(:puts).at_least(:once)
       subject.send(:nag_toolbelt)
       expect(Integer(File.read(nag_file))).to be_within(5).of(Time.now.utc.to_i)
+      expect(captured_logs).to match(/from source/)
     end
 
     it 'warns if the nag file contains an old timestamp' do
@@ -192,8 +189,8 @@ describe Aptible::CLI::Agent do
         f.write((Time.now.utc.to_i - 1.day).to_i.to_s)
       end
 
-      expect($stderr).to receive(:puts).at_least(:once)
       subject.send(:nag_toolbelt)
+      expect(captured_logs).to match(/from source/)
     end
 
     it 'does not warn if the nag file contains a recent timestamp' do
@@ -202,8 +199,8 @@ describe Aptible::CLI::Agent do
         f.write((Time.now.utc.to_i - 3.hours).to_i.to_s)
       end
 
-      expect($stderr).not_to receive(:puts)
       subject.send(:nag_toolbelt)
+      expect(captured_logs).to eq('')
     end
 
     it 'does not warn if the nag file contains a recent timestamp (newline)' do
@@ -214,21 +211,21 @@ describe Aptible::CLI::Agent do
         f.write("#{(Time.now.utc.to_i - 3.hours).to_i}\n")
       end
 
-      expect($stderr).not_to receive(:puts)
       subject.send(:nag_toolbelt)
+      expect(captured_logs).to eq('')
     end
 
     it 'warns if the nag file contains an invalid timestamp' do
       Dir.mkdir(nag_dir)
       File.open(nag_file, 'w') { |f| f.write('foobar') }
 
-      expect($stderr).to receive(:puts).at_least(:once)
       subject.send(:nag_toolbelt)
+      expect(captured_logs).to match(/from source/)
     end
 
     it 'is compatible with itself' do
-      expect($stderr).to receive(:puts).once
       2.times { subject.send(:nag_toolbelt) }
+      expect(captured_logs.split("\n").grep(/from source/).size).to eq(1)
     end
   end
 
