@@ -115,7 +115,7 @@ module Aptible
           raise Thor::Error, "#{err}, valid credential types: #{valid}"
         end
 
-        def render_database(account, database)
+        def render_database(database, account)
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
               ResourceFormatter.inject_database(node, database, account)

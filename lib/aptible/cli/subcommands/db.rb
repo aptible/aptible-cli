@@ -67,7 +67,7 @@ module Aptible
 
               attach_to_operation_logs(op)
 
-              render_database(account, database.reload)
+              render_database(database.reload, account)
             end
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
@@ -76,7 +76,7 @@ module Aptible
               # TODO: Deprecate + recommend backup
               source = ensure_database(options.merge(db: source_handle))
               database = clone_database(source, dest_handle)
-              render_database(database.account, database)
+              render_database(database, database.account)
             end
 
             desc 'db:dump HANDLE', 'Dump a remote database to file'

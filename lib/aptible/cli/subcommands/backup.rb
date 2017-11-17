@@ -43,7 +43,10 @@ module Aptible
               CLI.logger.info "Restoring backup into #{handle}"
               attach_to_operation_logs(operation)
 
-              # TODO: ensure_database + print URL?
+              account = destination_account || backup.account
+
+              database = databases_from_handle(handle, account).first
+              render_database(database, account)
             end
 
             desc 'backup:list DB_HANDLE', 'List backups for a database'
