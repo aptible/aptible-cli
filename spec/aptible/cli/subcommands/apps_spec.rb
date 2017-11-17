@@ -102,16 +102,16 @@ describe Aptible::CLI::Agent do
 
       expected_json = [
         {
-          'environment' => account.handle,
-          'environment_id' => account.id,
-          'app' => app.handle,
+          'environment' => {
+            'id' => account.id,
+            'handle' => account.handle
+          },
+          'handle' => app.handle,
           'id' => app.id,
           'status' => app.status,
           'git_remote' => app.git_repo,
           'services' => [
             {
-              'app' => app.handle,
-              'app_id' => app.id,
               'service' => s1.process_type,
               'id' => s1.id,
               'command' => s1.command,
@@ -119,8 +119,6 @@ describe Aptible::CLI::Agent do
               'container_size' => s1.container_memory_limit_mb
             },
             {
-              'app' => app.handle,
-              'app_id' => app.id,
               'service' => s2.process_type,
               'id' => s2.id,
               'command' => 'CMD',

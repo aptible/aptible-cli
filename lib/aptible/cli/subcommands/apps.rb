@@ -12,10 +12,15 @@ module Aptible
             option :environment
             def apps
               Formatter.render(Renderer.current) do |root|
-                root.grouped_keyed_list('environment', 'app') do |l|
-                  scoped_environments(options).each do |env|
-                    env.each_app do |app|
-                      l.object { |node| explain_app(node, env, app) }
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
+                  scoped_environments(options).each do |account|
+                    account.each_app do |app|
+                      node.object do |n|
+                        ResourceFormatter.inject_app(n, app, account)
+                      end
                     end
                   end
                 end

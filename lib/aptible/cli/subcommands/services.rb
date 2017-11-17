@@ -14,7 +14,9 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.list do |list|
                   app.each_service do |service|
-                    list.object { |node| explain_service(node, app, service) }
+                    list.object do |node|
+                      ResourceFormatter.inject_service(node, service, app)
+                    end
                   end
                 end
               end

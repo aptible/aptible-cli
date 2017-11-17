@@ -9,21 +9,27 @@ module Aptible
         end
 
         def value(k, v)
-          @children[k] = Value.new(v)
-          nil
+          assign_child(k, Value.new(v)) {}
         end
 
-        def object(k)
-          o = Object.new
-          yield o
-          @children[k] = o
-          nil
+        def object(k, &block)
+          assign_child(k, Object.new, &block)
         end
 
-        def list(k)
-          l = List.new
-          yield l
-          @children[k] = l
+        def keyed_object(k, object_key, &block)
+          assign_child(k, KeyedObject.new(object_key), &block)
+        end
+
+        def list(k, &block)
+          assign_child(k, List.new, &block)
+        end
+
+        private
+
+        def assign_child(k, node)
+          raise "Overwriting keys (#{k}) is not allowed" if @children[k]
+          yield node
+          @children[k] = node
           nil
         end
       end

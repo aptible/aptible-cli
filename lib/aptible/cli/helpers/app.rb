@@ -175,37 +175,6 @@ module Aptible
           raise Thor::Error, "Invalid argument: #{k}" if k.start_with?('-')
         end
 
-        def explain_app(node, account, app)
-          node.value('environment', account.handle)
-          node.value('environment_id', account.id)
-
-          node.value('app', app.handle)
-          node.value('id', app.id)
-
-          node.value('status', app.status)
-          node.value('git_remote', app.git_repo)
-
-          node.list('services') do |services_list|
-            app.each_service do |service|
-              services_list.object do |service_node|
-                explain_service(service_node, app, service)
-              end
-            end
-          end
-        end
-
-        def explain_service(node, app, service)
-          node.value('app', app.handle)
-          node.value('app_id', app.id)
-
-          node.value('service', service.process_type)
-          node.value('id', service.id)
-
-          node.value('command', service.command || 'CMD')
-          node.value('container_count', service.container_count)
-          node.value('container_size', service.container_memory_limit_mb)
-        end
-
         private
 
         def handle_strategies

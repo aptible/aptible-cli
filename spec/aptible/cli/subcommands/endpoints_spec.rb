@@ -27,8 +27,8 @@ describe Aptible::CLI::Agent do
       Fabricate(:vhost, service: service, **args).tap do |v|
         expect_operation(v, 'provision')
         expect(v).to receive(:reload).and_return(v)
-        expect(subject).to receive(:explain_vhost)
-          .with(an_instance_of(Aptible::CLI::Formatter::Object), service, v)
+        expect(Aptible::CLI::ResourceFormatter).to receive(:inject_vhost)
+          .with(an_instance_of(Aptible::CLI::Formatter::Object), v, service)
       end
     end
   end
@@ -37,9 +37,9 @@ describe Aptible::CLI::Agent do
     expect(vhost).to receive(:update!).with(options) do
       expect_operation(vhost, 'provision')
       expect(vhost).to receive(:reload).and_return(vhost)
-      expect(subject).to receive(:explain_vhost)
+      expect(Aptible::CLI::ResourceFormatter).to receive(:inject_vhost)
         .with(
-          an_instance_of(Aptible::CLI::Formatter::Object), vhost.service, vhost
+          an_instance_of(Aptible::CLI::Formatter::Object), vhost, vhost.service
         )
     end
   end

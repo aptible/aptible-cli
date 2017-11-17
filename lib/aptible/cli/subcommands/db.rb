@@ -16,10 +16,15 @@ module Aptible
             option :environment
             define_method 'db:list' do
               Formatter.render(Renderer.current) do |root|
-                root.grouped_keyed_list('environment', 'database') do |l|
-                  scoped_environments(options).each do |env|
-                    env.each_database do |db|
-                      l.object { |node| explain_database(node, env, db) }
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
+                  scoped_environments(options).each do |account|
+                    account.each_database do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database(n, db, account)
+                      end
                     end
                   end
                 end

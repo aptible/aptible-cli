@@ -132,7 +132,7 @@ module Aptible
                   each_service(resource) do |service|
                     service.each_vhost do |vhost|
                       list.object do |node|
-                        explain_vhost(node, service, vhost)
+                        ResourceFormatter.inject_vhost(node, vhost, service)
                       end
                     end
                   end

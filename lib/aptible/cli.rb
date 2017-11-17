@@ -5,6 +5,7 @@ require 'aptible/cli/agent'
 require 'aptible/cli/error'
 require 'aptible/cli/formatter'
 require 'aptible/cli/renderer'
+require 'aptible/cli/resource_formatter'
 
 module Aptible
   module CLI

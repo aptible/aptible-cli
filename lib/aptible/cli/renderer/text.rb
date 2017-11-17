@@ -17,18 +17,32 @@ module Aptible
           when Formatter::KeyedObject
             visit(node.children.fetch(node.key), io)
           when Formatter::Object
+            # TODO: We should have a way to fail in tests if we're going to
+            # nest an object under another object (or at least handle it
+            # decently).
+            #
+            # Right now, it provides unusable output like this:
+            #
+            # Foo: Bar: bar
+            # Qux: qux
+            #
+            # (when rendering { foo => { bar => bar }, qux => qux })
+            #
+            # The solution to this problem is typically to make sure the
+            # children are KeyedObject instances so they can render properly,
+            # but we need to warn in tests that this is required.
             node.children.each_pair do |k, c|
               io.print "#{format_key(k)}: "
               visit(c, io)
             end
           when Formatter::GroupedKeyedList
-            groups = node.children.group_by { |n| n.children.fetch(node.group) }
             enum = spacer_enumerator
-            groups.each_pair.sort_by(&:first).each do |key, group|
+            node.groups.each_pair.sort_by(&:first).each do |key, group|
               io.print enum.next
               io.print '=== '
+              nodes = group.map { |n| n.children.fetch(node.key) }
               visit(key, io)
-              output_list(group.map { |n| n.children.fetch(node.key) }, io)
+              output_list(nodes, io)
             end
           when Formatter::KeyedList
             nodes = node.children.map { |n| n.children.fetch(node.key) }

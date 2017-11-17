@@ -34,7 +34,7 @@ describe Aptible::CLI::Renderer::Text do
     expect(subject.render(root)).to eq("bar\nbar2\n")
   end
 
-  it 'renders the keys in a grouped_keyed_list, grouped' do
+  it 'renders the keys in a grouped_keyed_list, with plain grouping' do
     root.grouped_keyed_list('foo', 'qux') do |l|
       l.object do |n|
         n.value('foo', 'bar')
@@ -46,6 +46,35 @@ describe Aptible::CLI::Renderer::Text do
       end
       l.object do |n|
         n.value('foo', 'bar2')
+        n.value('qux', 'baz3')
+      end
+    end
+
+    expected = [
+      '=== bar',
+      'baz',
+      'baz2',
+      '',
+      '=== bar2',
+      'baz3',
+      ''
+    ].join("\n")
+
+    expect(subject.render(root)).to eq(expected)
+  end
+
+  it 'renders the keys in a grouped_keyed_list, with nested grouping' do
+    root.grouped_keyed_list({ 'foo' => 'nest' }, 'qux') do |l|
+      l.object do |n|
+        n.object('foo') { |nn| nn.value('nest', 'bar') }
+        n.value('qux', 'baz')
+      end
+      l.object do |n|
+        n.object('foo') { |nn| nn.value('nest', 'bar') }
+        n.value('qux', 'baz2')
+      end
+      l.object do |n|
+        n.object('foo') { |nn| nn.value('nest', 'bar2') }
         n.value('qux', 'baz3')
       end
     end

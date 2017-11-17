@@ -118,29 +118,7 @@ module Aptible
         def render_database(account, database)
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
-              explain_database(node, account, database)
-            end
-          end
-        end
-
-        def explain_database(node, account, database)
-          node.value('environment', account.handle)
-          node.value('environment_id', account.id)
-
-          node.value('database', database.handle)
-          node.value('id', database.id)
-
-          node.value('type', database.type)
-          node.value('status', database.status)
-          node.value('connection_url', database.connection_url)
-
-          node.list('credentials') do |creds_list|
-            database.database_credentials.each do |cred|
-              creds_list.object do |cred_node|
-                cred_node.value('type', cred.type)
-                cred_node.value('connection_url', cred.connection_url)
-                cred_node.value('default', cred.default)
-              end
+              ResourceFormatter.inject_database(node, database, account)
             end
           end
         end
