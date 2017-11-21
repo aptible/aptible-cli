@@ -42,7 +42,7 @@ Commands:
   aptible config:unset                                                                                                               # Alias for config:rm
   aptible db:backup HANDLE                                                                                                           # Backup a database
   aptible db:clone SOURCE DEST                                                                                                       # Clone a database to create a new one
-  aptible db:create HANDLE[--type TYPE] [--container-size SIZE_MB] [--size SIZE_GB]                                                  # Create a new database
+  aptible db:create HANDLE [--type TYPE] [--version VERSION] [--container-size SIZE_MB] [--size SIZE_GB]                             # Create a new database
   aptible db:deprovision HANDLE                                                                                                      # Deprovision a database
   aptible db:dump HANDLE                                                                                                             # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE                                                                                                 # Executes sql against a database
@@ -51,6 +51,7 @@ Commands:
   aptible db:restart HANDLE [--container-size SIZE_MB] [--size SIZE_GB]                                                              # Restart a database
   aptible db:tunnel HANDLE                                                                                                           # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                              # Display a database URL
+  aptible db:versions                                                                                                                # List available database versions
   aptible deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...                                                                                # Deploy an app
   aptible domains                                                                                                                    # Print an app's current virtual domains - DEPRECATED
   aptible endpoints:database:create DATABASE                                                                                         # Create a Database Endpoint

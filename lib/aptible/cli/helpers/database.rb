@@ -115,6 +115,20 @@ module Aptible
           raise Thor::Error, "#{err}, valid credential types: #{valid}"
         end
 
+        def find_database_image(type, version)
+          available_versions = []
+
+          Aptible::Api::DatabaseImage.all(token: fetch_token).each do |i|
+            next unless i.type == type
+            return i if i.version == version
+            available_versions << i.version
+          end
+
+          err = "No Database Image of type #{type} with version #{version}"
+          err = "#{err}, valid versions: #{available_versions.join(' ')}"
+          raise Thor::Error, err
+        end
+
         def render_database(database, account)
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
