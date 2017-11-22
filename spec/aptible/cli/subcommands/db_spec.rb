@@ -4,10 +4,12 @@ class SocatHelperMock < OpenStruct
 end
 
 describe Aptible::CLI::Agent do
+  let(:token) { double('token') }
+
   before do
     allow(subject).to receive(:ask)
     allow(subject).to receive(:save_token)
-    allow(subject).to receive(:fetch_token) { double 'token' }
+    allow(subject).to receive(:fetch_token) { token }
   end
 
   let(:handle) { 'foobar' }
@@ -15,78 +17,113 @@ describe Aptible::CLI::Agent do
   let(:socat_helper) { SocatHelperMock.new(port: 4242) }
 
   describe '#db:create' do
-    let(:db) { Fabricate(:database) }
-    let(:op) { Fabricate(:operation) }
-    let(:account) { Fabricate(:account) }
-
     before do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
-      allow(db).to receive(:reload).and_return(db)
-      allow(op).to receive(:errors).and_return(Aptible::Resource::Errors.new)
     end
 
-    it 'creates a new DB' do
+    def expect_provision_database(create_opts, provision_opts = {})
+      db = Fabricate(:database)
+      expect(db).to receive(:reload).and_return(db)
+
+      op = Fabricate(:operation)
+
       expect(account).to receive(:create_database!)
-        .with(handle: 'foo', type: 'postgresql')
-        .and_return(db)
+        .with(**create_opts).and_return(db)
 
       expect(db).to receive(:create_operation)
-        .with(type: 'provision')
-        .and_return(op)
+        .with(type: 'provision', **provision_opts).and_return(op)
 
-      expect(subject).to receive(:attach_to_operation_logs)
-        .with(op)
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+    end
+
+    let(:account) { Fabricate(:account) }
+
+    it 'creates a new DB' do
+      expect_provision_database(handle: 'foo', type: 'postgresql')
 
       subject.options = { type: 'postgresql' }
       subject.send('db:create', 'foo')
     end
 
     it 'creates a new DB with a container size' do
-      expect(account).to receive(:create_database!)
-        .with(handle: 'foo', type: 'postgresql', initial_container_size: 1024)
-        .and_return(db)
-
-      expect(db).to receive(:create_operation)
-        .with(type: 'provision', container_size: 1024)
-        .and_return(op)
-
-      expect(subject).to receive(:attach_to_operation_logs)
-        .with(op)
+      expect_provision_database(
+        { handle: 'foo', type: 'postgresql', initial_container_size: 1024 },
+        { container_size: 1024 }
+      )
 
       subject.options = { type: 'postgresql', container_size: 1024 }
       subject.send('db:create', 'foo')
     end
 
     it 'creates a new DB with a disk size' do
-      expect(account).to receive(:create_database!)
-        .with(handle: 'foo', type: 'postgresql', initial_disk_size: 200)
-        .and_return(db)
-
-      expect(db).to receive(:create_operation)
-        .with(type: 'provision', disk_size: 200)
-        .and_return(op)
-
-      expect(subject).to receive(:attach_to_operation_logs)
-        .with(op)
+      expect_provision_database(
+        { handle: 'foo', type: 'postgresql', initial_disk_size: 200 },
+        { disk_size: 200 }
+      )
 
       subject.options = { type: 'postgresql', size: 200 }
       subject.send('db:create', 'foo')
     end
 
     it 'deprovisions the database if the operation cannot be created' do
-      op.errors.full_messages << 'oops!'
+      db = Fabricate(:database)
+
+      provision_op = Fabricate(:operation)
+      provision_op.errors.full_messages << 'oops'
+
+      deprovision_op = Fabricate(:operation)
 
       expect(account).to receive(:create_database!).and_return(db)
 
       expect(db).to receive(:create_operation)
-        .with(type: 'provision')
-        .once.ordered.and_return(op)
+        .with(type: 'provision').once.ordered.and_return(provision_op)
 
       expect(db).to receive(:create_operation!)
-        .with(type: 'deprovision')
-        .once.ordered
+        .with(type: 'deprovision').once.ordered.and_return(deprovision_op)
 
       expect { subject.send('db:create', 'foo') }.to raise_error(/oops/im)
+    end
+
+    context 'with version' do
+      let(:img) do
+        Fabricate(:database_image, type: 'postgresql', version: '9.4')
+      end
+
+      let(:alt_version) do
+        Fabricate(:database_image, type: 'postgresql', version: '10')
+      end
+
+      let(:alt_type) do
+        Fabricate(:database_image, type: 'redis', version: '9.4')
+      end
+
+      before do
+        allow(Aptible::Api::DatabaseImage).to receive(:all)
+          .with(token: token).and_return([alt_version, alt_type, img])
+      end
+
+      it 'provisions a Database with a matching Database Image' do
+        expect_provision_database(
+          handle: 'foo',
+          type: 'postgresql',
+          database_image: img
+        )
+
+        subject.options = { type: 'postgresql', version: '9.4' }
+        subject.send('db:create', 'foo')
+      end
+
+      it 'fails if the Database Image does not exist' do
+        subject.options = { type: 'postgresql', version: '123' }
+        expect { subject.send('db:create', 'foo') }
+          .to raise_error(Thor::Error, /no database image/i)
+      end
+
+      it 'fails if type is not passed' do
+        subject.options = { version: '123' }
+        expect { subject.send('db:create', 'foo') }
+          .to raise_error(Thor::Error, /type is required/i)
+      end
     end
   end
 
@@ -414,6 +451,48 @@ describe Aptible::CLI::Agent do
       expect(subject).not_to receive(:attach_to_operation_logs)
 
       subject.send('db:deprovision', handle)
+    end
+  end
+
+  describe '#db:versions' do
+    let(:token) { double('token') }
+
+    before do
+      allow(subject).to receive(:save_token)
+      allow(subject).to receive(:fetch_token) { token }
+    end
+
+    let(:i1) do
+      Fabricate(:database_image, type: 'postgresql', version: '9.4')
+    end
+
+    let(:i2) do
+      Fabricate(:database_image, type: 'postgresql', version: '10')
+    end
+
+    let(:i3) do
+      Fabricate(:database_image, type: 'redis', version: '3.0')
+    end
+
+    before do
+      allow(Aptible::Api::DatabaseImage).to receive(:all)
+        .with(token: token).and_return([i1, i2, i3])
+    end
+
+    it 'lists grouped existing Database versions' do
+      subject.send('db:versions')
+
+      expected = [
+        '=== postgresql',
+        '9.4',
+        '10',
+        '',
+        '=== redis',
+        '3.0',
+        ''
+      ].join("\n")
+
+      expect(captured_output_text).to eq(expected)
     end
   end
 end

@@ -31,10 +31,31 @@ module Aptible
               end
             end
 
-            desc 'db:create HANDLE' \
-                 '[--type TYPE] [--container-size SIZE_MB] [--size SIZE_GB]',
+            desc 'db:versions', 'List available database versions'
+            define_method 'db:versions' do
+              Formatter.render(Renderer.current) do |root|
+                root.grouped_keyed_list('type', 'version') do |node|
+                  Aptible::Api::DatabaseImage.all(
+                    token: fetch_token
+                  ).each do |database_image|
+                    node.object do |n|
+                      n.value('type', database_image.type)
+                      n.value('version', database_image.version)
+                      n.value('default', database_image.default)
+                      n.value('description', database_image.description)
+                      n.value('docker_repo', database_image.default)
+                    end
+                  end
+                end
+              end
+            end
+
+            desc 'db:create HANDLE ' \
+                 '[--type TYPE] [--version VERSION] ' \
+                 '[--container-size SIZE_MB] [--size SIZE_GB]',
                  'Create a new database'
-            option :type, default: 'postgresql'
+            option :type, type: :string
+            option :version, type: :string
             option :container_size, type: :numeric
             option :size, default: 10, type: :numeric
             option :environment
@@ -43,10 +64,23 @@ module Aptible
 
               db_opts = {
                 handle: handle,
-                type: options[:type],
                 initial_container_size: options[:container_size],
                 initial_disk_size: options[:size]
               }.delete_if { |_, v| v.nil? }
+
+              type = options[:type]
+              version = options[:version]
+
+              if version && type
+                image = find_database_image(type, version)
+                db_opts[:type] = image.type
+                db_opts[:database_image] = image
+              elsif version
+                raise Thor::Error, '--type is required when passing --version'
+              else
+                db_opts[:type] = type || 'postgresql'
+              end
+
               database = account.create_database!(db_opts)
 
               op_opts = {
