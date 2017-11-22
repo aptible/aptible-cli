@@ -153,6 +153,14 @@ module Aptible
 
             desc 'endpoints:renew [--app APP] ENDPOINT_HOSTNAME', \
                  'Renew an App Managed TLS Endpoint'
+            long_desc <<-LONGDESC
+              Use this command for the initial activation of an App Managed
+              TLS Endpoint.
+
+              WARNING: review the documentation on rate limits before using
+              this command automatically
+              (http://go.aptible.com/managed-tls-rate-limits).
+            LONGDESC
             app_options
             define_method 'endpoints:renew' do |hostname|
               app = ensure_app(options)
