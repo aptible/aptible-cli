@@ -14,8 +14,19 @@ module Aptible
             def config
               app = ensure_app(options)
               config = app.current_configuration
-              env = config ? config.env : nil
-              puts formatted_config(env || {})
+              env = config ? config.env : {}
+
+              Formatter.render(Renderer.current) do |root|
+                root.keyed_list('shell_export') do |list|
+                  env.each_pair do |k, v|
+                    list.object do |node|
+                      node.value('key', k)
+                      node.value('value', v)
+                      node.value('shell_export', "#{k}=#{Shellwords.escape(v)}")
+                    end
+                  end
+                end
+              end
             end
 
             desc 'config:add', 'Add an ENV variable to an app'
@@ -25,7 +36,7 @@ module Aptible
               app = ensure_app(options)
               env = extract_env(args)
               operation = app.create_operation!(type: 'configure', env: env)
-              puts 'Updating configuration and restarting app...'
+              CLI.logger.info 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
             end
 
@@ -45,7 +56,7 @@ module Aptible
                 [arg, '']
               end]
               operation = app.create_operation!(type: 'configure', env: env)
-              puts 'Updating configuration and restarting app...'
+              CLI.logger.info 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
             end
 
@@ -53,13 +64,6 @@ module Aptible
             app_options
             define_method 'config:unset' do |*args|
               send('config:rm', *args)
-            end
-
-            private
-
-            def formatted_config(env)
-              env = Hash[env.sort]
-              env.map { |k, v| "#{k}=#{Shellwords.escape(v)}" }.join("\n")
             end
           end
         end

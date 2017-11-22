@@ -78,7 +78,7 @@ module Aptible
 
               operation = app.create_operation!(opts)
 
-              puts 'Deploying app...'
+              CLI.logger.info 'Deploying app...'
               attach_to_operation_logs(operation)
             end
           end

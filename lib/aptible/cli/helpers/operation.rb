@@ -37,13 +37,14 @@ module Aptible
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
           unless code == 0
-            puts 'Disconnected from logs, waiting for operation to complete'
+            e = 'Disconnected from logs, waiting for operation to complete'
+            CLI.logger.warn e
             poll_for_success(operation)
           end
         end
 
         def cancel_operation(operation)
-          puts "Cancelling #{prettify_operation(operation)}..."
+          CLI.logger.info "Cancelling #{prettify_operation(operation)}..."
           operation.update!(cancelled: true)
         end
 

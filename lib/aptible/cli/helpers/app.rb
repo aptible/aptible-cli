@@ -152,6 +152,7 @@ module Aptible
         end
 
         def apps_from_handle(handle, environment)
+          # TODO: This should probably use each_app for more efficiency.
           if environment
             environment.apps
           else

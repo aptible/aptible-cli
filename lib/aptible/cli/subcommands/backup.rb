@@ -40,8 +40,13 @@ module Aptible
               }.delete_if { |_, v| v.nil? }
 
               operation = backup.create_operation!(opts)
-              say "Restoring backup into #{handle}"
+              CLI.logger.info "Restoring backup into #{handle}"
               attach_to_operation_logs(operation)
+
+              account = destination_account || backup.account
+
+              database = databases_from_handle(handle, account).first
+              render_database(database, account)
             end
 
             desc 'backup:list DB_HANDLE', 'List backups for a database'
@@ -55,9 +60,22 @@ module Aptible
               min_created_at = Time.now - age
 
               database = ensure_database(options.merge(db: handle))
-              database.each_backup do |backup|
-                break if backup.created_at < min_created_at
-                say "#{backup.id}: #{backup.created_at}, #{backup.aws_region}"
+
+              Formatter.render(Renderer.current) do |root|
+                root.keyed_list('description') do |l|
+                  database.each_backup do |backup|
+                    break if backup.created_at < min_created_at
+                    description = "#{backup.id}: #{backup.created_at}, " \
+                      "#{backup.aws_region}"
+
+                    l.object do |o|
+                      o.value('id', backup.id)
+                      o.value('description', description)
+                      o.value('created_at', backup.created_at)
+                      o.value('region', backup.aws_region)
+                    end
+                  end
+                end
               end
             end
           end

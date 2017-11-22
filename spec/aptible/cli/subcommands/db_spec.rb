@@ -108,17 +108,20 @@ describe Aptible::CLI::Agent do
         expect(subject).to receive(:with_local_tunnel).with(cred, 0)
           .and_yield(socat_helper)
 
-        expect(subject).to receive(:say)
-          .with('Creating foo tunnel to foobar...', :green)
+        subject.send('db:tunnel', handle)
 
         local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
-        expect(subject).to receive(:say)
-          .with("Connect at #{local_url}", :green)
 
-        # db:tunnel should also explain each component of the URL and suggest
-        # the --type argument:
-        expect(subject).to receive(:say).exactly(9).times
-        subject.send('db:tunnel', handle)
+        expect(captured_logs)
+          .to match(/creating foo tunnel to foobar/i)
+        expect(captured_logs)
+          .to match(/connect at #{Regexp.escape(local_url)}/i)
+
+        expect(captured_logs).to match(/host: localhost\.aptible\.in/i)
+        expect(captured_logs).to match(/port: 4242/i)
+        expect(captured_logs).to match(/username: aptible/i)
+        expect(captured_logs).to match(/password: password/i)
+        expect(captured_logs).to match(/database: db/i)
       end
 
       it 'defaults to a default credential' do
@@ -126,14 +129,12 @@ describe Aptible::CLI::Agent do
         Fabricate(:database_credential, database: database, type: 'foo')
         Fabricate(:database_credential, database: database, type: 'bar')
 
-        messages = []
-        allow(subject).to receive(:say) { |m, *| messages << m }
         expect(subject).to receive(:with_local_tunnel).with(ok, 0)
 
         subject.send('db:tunnel', handle)
 
-        expect(messages.grep(/use --type type/im)).not_to be_empty
-        expect(messages.grep(/valid types.*foo.*bar/im)).not_to be_empty
+        expect(captured_logs).to match(/use --type type/i)
+        expect(captured_logs).to match(/valid types.*foo.*bar/i)
       end
 
       it 'supports --type' do
@@ -143,7 +144,6 @@ describe Aptible::CLI::Agent do
         ok = Fabricate(:database_credential, type: 'foo', database: database)
         Fabricate(:database_credential, type: 'bar', database: database)
 
-        allow(subject).to receive(:say)
         expect(subject).to receive(:with_local_tunnel).with(ok, 0)
         subject.send('db:tunnel', handle)
       end
@@ -174,7 +174,6 @@ describe Aptible::CLI::Agent do
       context 'v1 stack' do
         before do
           allow(database.account.stack).to receive(:version) { 'v1' }
-          allow(subject).to receive(:say)
         end
 
         it 'falls back to the database itself if no type is given' do
@@ -199,13 +198,11 @@ describe Aptible::CLI::Agent do
         end
 
         it 'does not suggest other types that do not exist' do
-          messages = []
-          allow(subject).to receive(:say) { |m, *| messages << m }
           expect(subject).to receive(:with_local_tunnel).with(database, 0)
 
           subject.send('db:tunnel', handle)
 
-          expect(messages.grep(/use --type type/im)).to be_empty
+          expect(captured_logs).not_to match(/use --type type/i)
         end
       end
     end
@@ -216,9 +213,14 @@ describe Aptible::CLI::Agent do
       staging = Fabricate(:account, handle: 'staging')
       prod = Fabricate(:account, handle: 'production')
 
-      [[staging, 'staging-redis-db'], [staging, 'staging-postgres-db'],
-       [prod, 'prod-elsearch-db'], [prod, 'prod-postgres-db']].each do |a, h|
-        Fabricate(:database, account: a, handle: h)
+      [
+        [staging, 'staging-redis-db'],
+        [staging, 'staging-postgres-db'],
+        [prod, 'prod-elsearch-db'],
+        [prod, 'prod-postgres-db']
+      ].each do |a, h|
+        d = Fabricate(:database, account: a, handle: h)
+        Fabricate(:database_credential, database: d)
       end
 
       token = 'the-token'
@@ -229,45 +231,38 @@ describe Aptible::CLI::Agent do
 
     context 'when no account is specified' do
       it 'prints out the grouped database handles for all accounts' do
-        allow(subject).to receive(:say)
-
         subject.send('db:list')
 
-        expect(subject).to have_received(:say).with('=== staging')
-        expect(subject).to have_received(:say).with('staging-redis-db')
-        expect(subject).to have_received(:say).with('staging-postgres-db')
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('staging-redis-db')
+        expect(captured_output_text).to include('staging-postgres-db')
 
-        expect(subject).to have_received(:say).with('=== production')
-        expect(subject).to have_received(:say).with('prod-elsearch-db')
-        expect(subject).to have_received(:say).with('prod-postgres-db')
+        expect(captured_output_text).to include('=== production')
+        expect(captured_output_text).to include('prod-elsearch-db')
+        expect(captured_output_text).to include('prod-postgres-db')
       end
     end
 
     context 'when a valid account is specified' do
       it 'prints out the database handles for the account' do
-        allow(subject).to receive(:say)
-
         subject.options = { environment: 'staging' }
         subject.send('db:list')
 
-        expect(subject).to have_received(:say).with('=== staging')
-        expect(subject).to have_received(:say).with('staging-redis-db')
-        expect(subject).to have_received(:say).with('staging-postgres-db')
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('staging-redis-db')
+        expect(captured_output_text).to include('staging-postgres-db')
 
-        expect(subject).to_not have_received(:say).with('=== production')
-        expect(subject).to_not have_received(:say).with('prod-elsearch-db')
-        expect(subject).to_not have_received(:say).with('prod-postgres-db')
+        expect(captured_output_text).not_to include('=== production')
+        expect(captured_output_text).not_to include('prod-elsearch-db')
+        expect(captured_output_text).not_to include('prod-postgres-db')
       end
     end
 
     context 'when an invalid account is specified' do
       it 'prints out an error' do
-        allow(subject).to receive(:say)
-
         subject.options = { environment: 'foo' }
-        expect { subject.send('db:list') }.to raise_error(
-          'Specified account does not exist'
-        )
+        expect { subject.send('db:list') }
+          .to raise_error('Specified account does not exist')
       end
     end
   end
@@ -281,10 +276,11 @@ describe Aptible::CLI::Agent do
     it 'allows creating a new backup' do
       expect(database).to receive(:create_operation!)
         .with(type: 'backup').and_return(op)
-      expect(subject).to receive(:say).with('Backing up foobar...')
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
       subject.send('db:backup', handle)
+
+      expect(captured_logs).to match(/backing up foobar/i)
     end
 
     it 'fails if the DB is not found' do
@@ -302,10 +298,11 @@ describe Aptible::CLI::Agent do
     it 'allows reloading a database' do
       expect(database).to receive(:create_operation!)
         .with(type: 'reload').and_return(op)
-      expect(subject).to receive(:say).with('Reloading foobar...')
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
       subject.send('db:reload', handle)
+
+      expect(captured_logs).to match(/reloading foobar/i)
     end
 
     it 'fails if the DB is not found' do
@@ -324,32 +321,35 @@ describe Aptible::CLI::Agent do
       expect(database).to receive(:create_operation!)
         .with(type: 'restart').and_return(op)
 
-      expect(subject).to receive(:say).with('Restarting foobar...')
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
       subject.send('db:restart', handle)
+
+      expect(captured_logs).to match(/restarting foobar/i)
     end
 
     it 'allows restarting a database with a container size' do
       expect(database).to receive(:create_operation!)
         .with(type: 'restart', container_size: 40).and_return(op)
 
-      expect(subject).to receive(:say).with('Restarting foobar...')
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
       subject.options = { container_size: 40 }
       subject.send('db:restart', handle)
+
+      expect(captured_logs).to match(/restarting foobar/i)
     end
 
     it 'allows restarting a database with a disk size' do
       expect(database).to receive(:create_operation!)
         .with(type: 'restart', disk_size: 40).and_return(op)
 
-      expect(subject).to receive(:say).with('Restarting foobar...')
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
       subject.options = { size: 40 }
       subject.send('db:restart', handle)
+
+      expect(captured_logs).to match(/restarting foobar/i)
     end
 
     it 'fails if the DB is not found' do
@@ -369,13 +369,12 @@ describe Aptible::CLI::Agent do
 
     context 'valid database' do
       it 'returns the URL of a specified DB' do
-        cred = Fabricate(:database_credential, default: true, type: 'foo',
-                                               database: database)
-
-        expect(subject).to receive(:say).with(cred.connection_url)
+        cred = Fabricate(
+          :database_credential, default: true, type: 'foo', database: database
+        )
         expect(database).not_to receive(:connection_url)
-
         subject.send('db:url', handle)
+        expect(captured_output_text.chomp).to eq(cred.connection_url)
       end
 
       it 'fails if multiple DBs are found' do
@@ -388,19 +387,33 @@ describe Aptible::CLI::Agent do
       context 'v1 stack' do
         before do
           allow(database.account.stack).to receive(:version) { 'v1' }
-          allow(subject).to receive(:say)
         end
 
         it 'returns the URL of a specified DB' do
           connection_url = 'postgresql://aptible-v1:password@lega.cy:4242/db'
-
-          expect(subject).to receive(:say).with(connection_url)
           expect(database).to receive(:connection_url)
             .and_return(connection_url)
 
           subject.send('db:url', handle)
+
+          expect(captured_output_text.chomp).to eq(connection_url)
         end
       end
+    end
+  end
+
+  describe '#db:deprovision' do
+    before { expect(Aptible::Api::Database).to receive(:all) { [database] } }
+
+    let(:operation) { Fabricate(:operation, resource: database) }
+
+    it 'deprovisions a database' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'deprovision').and_return(operation)
+
+      expect(subject).not_to receive(:attach_to_operation_logs)
+
+      subject.send('db:deprovision', handle)
     end
   end
 end
