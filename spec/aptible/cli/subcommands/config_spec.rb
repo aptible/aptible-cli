@@ -14,6 +14,9 @@ describe Aptible::CLI::Agent do
       .with(token: token).and_return([account])
   end
 
+  before { allow(subject).to receive(:options) { { app: app.handle } } }
+  let(:operation) { Fabricate(:operation, resource: app) }
+
   describe '#config' do
     before { allow(subject).to receive(:options).and_return(app: app.handle) }
 
@@ -55,18 +58,36 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#config:set' do
-    it 'should reject environment variables that start with -' do
-      allow(subject).to receive(:options) { { app: app.handle } }
+    it 'sets environment variables' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => 'BAR' })
+        .and_return(operation)
 
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:set', 'FOO=BAR')
+    end
+
+    it 'rejects environment variables that start with -' do
       expect { subject.send('config:set', '-foo=bar') }
         .to raise_error(/invalid argument/im)
     end
   end
 
   describe '#config:rm' do
-    it 'should reject environment variables that start with -' do
-      allow(subject).to receive(:options) { { app: app.handle } }
+    it 'unsets environment variables' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '' })
+        .and_return(operation)
 
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:unset', 'FOO')
+    end
+
+    it 'rejects environment variables that start with -' do
       expect { subject.send('config:rm', '-foo') }
         .to raise_error(/invalid argument/im)
     end

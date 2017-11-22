@@ -135,6 +135,28 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#apps:create' do
+    before do
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+    end
+
+    it 'creates an app' do
+      expect(account).to receive(:create_app)
+        .with(handle: 'foo').and_return(app)
+
+      subject.send('apps:create', 'foo')
+    end
+
+    it 're-raises errors' do
+      app.errors.full_messages << 'oops'
+      expect(account).to receive(:create_app)
+        .with(handle: 'foo').and_return(app)
+
+      expect { subject.send('apps:create', 'foo') }
+        .to raise_error(Thor::Error, /oops/i)
+    end
+  end
+
   describe '#apps:scale' do
     before do
       allow(Aptible::Api::App).to receive(:all) { [app] }
@@ -271,6 +293,21 @@ describe Aptible::CLI::Agent do
       end.to raise_error(ArgumentError)
 
       expect(captured_logs).to match(/deprecated/i)
+    end
+  end
+
+  describe '#apps:deprovision' do
+    let(:operation) { Fabricate(:operation, resource: app) }
+
+    before { allow(subject).to receive(:ensure_app).and_return(app) }
+
+    it 'deprovisions an app' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'deprovision').and_return(operation)
+
+      expect(subject).not_to receive(:attach_to_operation_logs)
+
+      subject.send('apps:deprovision')
     end
   end
 

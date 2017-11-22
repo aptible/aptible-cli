@@ -213,9 +213,14 @@ describe Aptible::CLI::Agent do
       staging = Fabricate(:account, handle: 'staging')
       prod = Fabricate(:account, handle: 'production')
 
-      [[staging, 'staging-redis-db'], [staging, 'staging-postgres-db'],
-       [prod, 'prod-elsearch-db'], [prod, 'prod-postgres-db']].each do |a, h|
-        Fabricate(:database, account: a, handle: h)
+      [
+        [staging, 'staging-redis-db'],
+        [staging, 'staging-postgres-db'],
+        [prod, 'prod-elsearch-db'],
+        [prod, 'prod-postgres-db']
+      ].each do |a, h|
+        d = Fabricate(:database, account: a, handle: h)
+        Fabricate(:database_credential, database: d)
       end
 
       token = 'the-token'
@@ -394,6 +399,21 @@ describe Aptible::CLI::Agent do
           expect(captured_output_text.chomp).to eq(connection_url)
         end
       end
+    end
+  end
+
+  describe '#db:deprovision' do
+    before { expect(Aptible::Api::Database).to receive(:all) { [database] } }
+
+    let(:operation) { Fabricate(:operation, resource: database) }
+
+    it 'deprovisions a database' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'deprovision').and_return(operation)
+
+      expect(subject).not_to receive(:attach_to_operation_logs)
+
+      subject.send('db:deprovision', handle)
     end
   end
 end
