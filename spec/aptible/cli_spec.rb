@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Aptible::CLI do
-  describe described_class::LogFormatter do
+  describe described_class::TtyLogFormatter do
     subject do
       Logger.new(File.open(File::NULL, 'w')).tap do |l|
         l.formatter = described_class.new
