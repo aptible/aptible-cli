@@ -43,7 +43,7 @@ module Aptible
                       n.value('version', database_image.version)
                       n.value('default', database_image.default)
                       n.value('description', database_image.description)
-                      n.value('docker_repo', database_image.default)
+                      n.value('docker_repo', database_image.docker_repo)
                     end
                   end
                 end
