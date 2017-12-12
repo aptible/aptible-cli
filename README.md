@@ -36,10 +36,10 @@ Commands:
   aptible backup:list DB_HANDLE                                                                                                      # List backups for a database
   aptible backup:restore BACKUP_ID [--environment ENVIRONMENT_HANDLE] [--handle HANDLE] [--container-size SIZE_MB] [--size SIZE_GB]  # Restore a backup
   aptible config                                                                                                                     # Print an app's current configuration
-  aptible config:add                                                                                                                 # Add an ENV variable to an app
-  aptible config:rm                                                                                                                  # Remove an ENV variable from an app
-  aptible config:set                                                                                                                 # Alias for config:add
-  aptible config:unset                                                                                                               # Alias for config:rm
+  aptible config:add [VAR1=VAL1] [VAR2=VAL2] [...]                                                                                   # Add an ENV variable to an app
+  aptible config:rm [VAR1] [VAR2] [...]                                                                                              # Remove an ENV variable from an app
+  aptible config:set [VAR1=VAL1] [VAR2=VAL2] [...]                                                                                   # Add an ENV variable to an app
+  aptible config:unset [VAR1] [VAR2] [...]                                                                                           # Remove an ENV variable from an app
   aptible db:backup HANDLE                                                                                                           # Backup a database
   aptible db:clone SOURCE DEST                                                                                                       # Clone a database to create a new one
   aptible db:create HANDLE [--type TYPE] [--version VERSION] [--container-size SIZE_MB] [--size SIZE_GB]                             # Create a new database
@@ -52,7 +52,7 @@ Commands:
   aptible db:tunnel HANDLE                                                                                                           # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                              # Display a database URL
   aptible db:versions                                                                                                                # List available database versions
-  aptible deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...                                                                                # Deploy an app
+  aptible deploy [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]                                                                             # Deploy an app
   aptible domains                                                                                                                    # Print an app's current virtual domains - DEPRECATED
   aptible endpoints:database:create DATABASE                                                                                         # Create a Database Endpoint
   aptible endpoints:deprovision [--app APP | --database DATABASE] ENDPOINT_HOSTNAME                                                  # Deprovision an App or Database Endpoint
