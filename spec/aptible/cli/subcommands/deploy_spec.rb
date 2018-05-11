@@ -126,6 +126,13 @@ describe Aptible::CLI::Agent do
           .to raise_error(/invalid argument/im)
       end
 
+      it 'rejects arguments without =' do
+        stub_options
+
+        expect { subject.deploy('foobar') }
+          .to raise_error(/invalid argument/im)
+      end
+
       it 'allows redundant command line arguments' do
         stub_options(docker_image: 'foobar')
 
