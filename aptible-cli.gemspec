@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{spec/})
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'aptible-resource', '~> 1.0', '>= 1.0.1'
+  spec.add_dependency 'aptible-resource', '~> 1.1'
   spec.add_dependency 'aptible-api', '~> 1.0'
   spec.add_dependency 'aptible-auth', '~> 1.0'
   spec.add_dependency 'aptible-billing', '~> 1.0'
