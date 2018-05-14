@@ -29,7 +29,8 @@ module Aptible
               end
             end
 
-            desc 'config:add', 'Add an ENV variable to an app'
+            desc 'config:add [VAR1=VAL1] [VAR2=VAL2] [...]',
+                 'Add an ENV variable to an app'
             app_options
             define_method 'config:add' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
@@ -40,13 +41,15 @@ module Aptible
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:set', 'Alias for config:add'
+            desc 'config:set [VAR1=VAL1] [VAR2=VAL2] [...]',
+                 'Add an ENV variable to an app'
             app_options
             define_method 'config:set' do |*args|
               send('config:add', *args)
             end
 
-            desc 'config:rm', 'Remove an ENV variable from an app'
+            desc 'config:rm [VAR1] [VAR2] [...]',
+                 'Remove an ENV variable from an app'
             app_options
             define_method 'config:rm' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
@@ -60,7 +63,8 @@ module Aptible
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:unset', 'Alias for config:rm'
+            desc 'config:unset [VAR1] [VAR2] [...]',
+                 'Remove an ENV variable from an app'
             app_options
             define_method 'config:unset' do |*args|
               send('config:rm', *args)
