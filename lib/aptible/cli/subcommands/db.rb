@@ -191,7 +191,7 @@ module Aptible
                 # A 404 here means that the operation completed successfully,
                 # and was removed faster than attach_to_operation_logs
                 # could attach to the logs.
-                raise if e.response.status_code != 404
+                raise if e.response.status != 404
               end
             end
 

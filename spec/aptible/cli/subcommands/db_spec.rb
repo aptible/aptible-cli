@@ -452,6 +452,17 @@ describe Aptible::CLI::Agent do
 
       subject.send('db:deprovision', handle)
     end
+
+    it 'does not fail if the operation cannot be found' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'deprovision').and_return(operation)
+      response = Faraday::Response.new(status: 404)
+      error = HyperResource::ClientError.new('Not Found', response: response)
+      expect(subject).to receive(:attach_to_operation_logs).with(operation)
+        .and_raise(error)
+
+      subject.send('db:deprovision', handle)
+    end
   end
 
   describe '#db:versions' do
