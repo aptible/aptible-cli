@@ -119,7 +119,15 @@ module Aptible
             define_method 'apps:deprovision' do
               app = ensure_app(options)
               CLI.logger.info "Deprovisioning #{app.handle}..."
-              app.create_operation!(type: 'deprovision')
+              op = app.create_operation!(type: 'deprovision')
+              begin
+                attach_to_operation_logs(op)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status_code != 404
+              end
             end
           end
         end

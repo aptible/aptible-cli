@@ -133,6 +133,41 @@ describe Aptible::CLI::Agent do
 
       expect(captured_output_json).to eq(expected_json)
     end
+
+    it 'includes the last deploy operation in JSON' do
+      account = Fabricate(:account, handle: 'account')
+      op = Fabricate(:operation, type: 'deploy', status: 'succeeded')
+      app = Fabricate(:app, account: account, handle: 'app',
+                            last_deploy_operation: op)
+      allow(Aptible::Api::Account).to receive(:all).and_return([account])
+
+      expected_json = [
+        {
+          'environment' => {
+            'id' => account.id,
+            'handle' => account.handle
+          },
+          'handle' => app.handle,
+          'id' => app.id,
+          'status' => app.status,
+          'git_remote' => app.git_repo,
+          'last_deploy_operation' =>
+            {
+              'id' => op.id,
+              'status' => op.status,
+              'git_ref' => op.git_ref,
+              'docker_ref' => op.docker_ref,
+              'user_email' => op.user_email,
+              'created_at' => op.created_at
+            },
+          'services' => []
+        }
+      ]
+
+      subject.send('apps')
+
+      expect(captured_output_json).to eq(expected_json)
+    end
   end
 
   describe '#apps:create' do
@@ -305,7 +340,7 @@ describe Aptible::CLI::Agent do
       expect(app).to receive(:create_operation!)
         .with(type: 'deprovision').and_return(operation)
 
-      expect(subject).not_to receive(:attach_to_operation_logs)
+      expect(subject).to receive(:attach_to_operation_logs).with(operation)
 
       subject.send('apps:deprovision')
     end

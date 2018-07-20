@@ -448,7 +448,7 @@ describe Aptible::CLI::Agent do
       expect(database).to receive(:create_operation!)
         .with(type: 'deprovision').and_return(operation)
 
-      expect(subject).not_to receive(:attach_to_operation_logs)
+      expect(subject).to receive(:attach_to_operation_logs).with(operation)
 
       subject.send('db:deprovision', handle)
     end
