@@ -156,7 +156,6 @@ describe Aptible::CLI::Agent do
               'id' => op.id,
               'status' => op.status,
               'git_ref' => op.git_ref,
-              'docker_ref' => op.docker_ref,
               'user_email' => op.user_email,
               'created_at' => op.created_at
             },

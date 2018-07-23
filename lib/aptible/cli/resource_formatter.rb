@@ -13,7 +13,6 @@ module Aptible
           node.value('id', operation.id)
           node.value('status', operation.status)
           node.value('git_ref', operation.git_ref)
-          node.value('docker_ref', operation.docker_ref)
           node.value('user_email', operation.user_email)
           node.value('created_at', operation.created_at)
         end
