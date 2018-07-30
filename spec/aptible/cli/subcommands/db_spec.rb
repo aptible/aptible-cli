@@ -439,6 +439,73 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#db:dump' do
+    it 'should fail if database is non-existent' do
+      allow(Aptible::Api::Database).to receive(:all) { [] }
+      expect do
+        subject.send('db:dump', handle)
+      end.to raise_error("Could not find database #{handle}")
+    end
+
+    context 'valid database' do
+      before do
+        allow(Aptible::Api::Database).to receive(:all) { [database] }
+        allow(subject).to receive(:`).with(/pg_dump .*/)
+      end
+
+      it 'prints a message indicating the dump is happening' do
+        cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                               database: database)
+
+        expect(subject).to receive(:with_local_tunnel).with(cred)
+          .and_yield(socat_helper)
+
+        subject.send('db:dump', handle)
+
+        expect(captured_logs)
+          .to match(/Dumping to foobar.dump/i)
+      end
+
+      it 'invokes pg_dump with the tunnel url' do
+        cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                               database: database)
+
+        expect(subject).to receive(:with_local_tunnel).with(cred)
+          .and_yield(socat_helper)
+
+        local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
+
+        expect(subject).to receive(:`)
+          .with(/pg_dump #{local_url}  > foobar.dump/)
+
+        subject.send('db:dump', handle)
+      end
+
+      it 'sends extra options if given' do
+        cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                               database: database)
+
+        expect(subject).to receive(:with_local_tunnel).with(cred)
+          .and_yield(socat_helper)
+
+        pg_dump_options = '--exclude-table-data=events ' \
+                          '--exclude-table-data=versions'
+        allow(subject).to receive(:`).with(/pg_dump .* #{pg_dump_options} .*/)
+
+        subject.send('db:dump', handle,
+                     '--exclude-table-data=events',
+                     '--exclude-table-data=versions')
+      end
+
+      it 'fails when the database is not provisioned' do
+        allow(database).to receive(:status) { 'pending' }
+
+        expect { subject.send('db:dump', handle) }
+          .to raise_error(/foobar is not provisioned/im)
+      end
+    end
+  end
+
   describe '#db:deprovision' do
     before { expect(Aptible::Api::Database).to receive(:all) { [database] } }
 

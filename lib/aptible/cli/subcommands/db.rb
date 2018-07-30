@@ -113,14 +113,15 @@ module Aptible
               render_database(database, database.account)
             end
 
-            desc 'db:dump HANDLE', 'Dump a remote database to file'
+            desc 'db:dump HANDLE [pg_dump options]',
+                 'Dump a remote database to file'
             option :environment
-            define_method 'db:dump' do |handle|
+            define_method 'db:dump' do |handle, *dump_options|
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 filename = "#{handle}.dump"
                 CLI.logger.info "Dumping to #{filename}"
-                `pg_dump #{url} > #{filename}`
+                `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
               end
             end
 

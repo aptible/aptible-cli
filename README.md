@@ -44,7 +44,7 @@ Commands:
   aptible db:clone SOURCE DEST                                                                                                       # Clone a database to create a new one
   aptible db:create HANDLE [--type TYPE] [--version VERSION] [--container-size SIZE_MB] [--size SIZE_GB]                             # Create a new database
   aptible db:deprovision HANDLE                                                                                                      # Deprovision a database
-  aptible db:dump HANDLE                                                                                                             # Dump a remote database to file
+  aptible db:dump HANDLE [pg_dump options]                                                                                           # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE                                                                                                 # Executes sql against a database
   aptible db:list                                                                                                                    # List all databases
   aptible db:reload HANDLE                                                                                                           # Reload a database
