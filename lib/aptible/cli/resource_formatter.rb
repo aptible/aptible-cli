@@ -9,12 +9,26 @@ module Aptible
           node.value('handle', account.handle)
         end
 
+        def inject_operation(node, operation)
+          node.value('id', operation.id)
+          node.value('status', operation.status)
+          node.value('git_ref', operation.git_ref)
+          node.value('user_email', operation.user_email)
+          node.value('created_at', operation.created_at)
+        end
+
         def inject_app(node, app, account)
           node.value('id', app.id)
           node.value('handle', app.handle)
 
           node.value('status', app.status)
           node.value('git_remote', app.git_repo)
+
+          if app.last_deploy_operation
+            node.keyed_object('last_deploy_operation', 'id') do |n|
+              inject_operation(n, app.last_deploy_operation)
+            end
+          end
 
           node.list('services') do |services_list|
             app.each_service do |service|

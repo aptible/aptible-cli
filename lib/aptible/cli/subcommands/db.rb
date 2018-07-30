@@ -184,7 +184,15 @@ module Aptible
             define_method 'db:deprovision' do |handle|
               database = ensure_database(options.merge(db: handle))
               CLI.logger.info "Deprovisioning #{database.handle}..."
-              database.create_operation!(type: 'deprovision')
+              op = database.create_operation!(type: 'deprovision')
+              begin
+                attach_to_operation_logs(op)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status != 404
+              end
             end
 
             desc 'db:backup HANDLE', 'Backup a database'
