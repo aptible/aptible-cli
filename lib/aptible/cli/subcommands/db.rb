@@ -1,5 +1,6 @@
 require 'term/ansicolor'
 require 'uri'
+require 'English'
 
 module Aptible
   module CLI
@@ -122,16 +123,21 @@ module Aptible
                 filename = "#{handle}.dump"
                 CLI.logger.info "Dumping to #{filename}"
                 `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
-            desc 'db:execute HANDLE SQL_FILE', 'Executes sql against a database'
+            desc 'db:execute HANDLE SQL_FILE [--on-error-stop]',
+                 'Executes sql against a database'
             option :environment
+            option :on_error_stop, type: :boolean
             define_method 'db:execute' do |handle, sql_path|
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 CLI.logger.info "Executing #{sql_path} against #{handle}"
-                `psql #{url} < #{sql_path}`
+                args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+                `psql #{args}#{url} < #{sql_path}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
