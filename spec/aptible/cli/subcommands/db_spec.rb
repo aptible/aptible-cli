@@ -450,23 +450,106 @@ describe Aptible::CLI::Agent do
     context 'valid database' do
       before do
         allow(Aptible::Api::Database).to receive(:all) { [database] }
-        allow(subject).to receive(:`).with(/pg_dump .*/)
       end
 
-      it 'prints a message indicating the dump is happening' do
+      it 'exits with the same code as pg_dump' do
+        exit_status = 123
         cred = Fabricate(:database_credential, default: true, type: 'foo',
                                                database: database)
+
+        allow(subject).to receive(:`).with(/pg_dump/) do
+          `exit #{exit_status}`
+        end
 
         expect(subject).to receive(:with_local_tunnel).with(cred)
           .and_yield(socat_helper)
 
-        subject.send('db:dump', handle)
-
-        expect(captured_logs)
-          .to match(/Dumping to foobar.dump/i)
+        expect do
+          subject.send('db:dump', handle)
+        end.to raise_error { |error|
+          expect(error).to be_a SystemExit
+          expect(error.status).to eq exit_status
+        }
       end
 
-      it 'invokes pg_dump with the tunnel url' do
+      context 'successful dump' do
+        before do
+          allow(subject).to receive(:`).with(/pg_dump .*/) do
+            `exit 0`
+          end
+        end
+
+        it 'prints a message indicating the dump is happening' do
+          cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                                 database: database)
+
+          expect(subject).to receive(:with_local_tunnel).with(cred)
+            .and_yield(socat_helper)
+
+          subject.send('db:dump', handle)
+
+          expect(captured_logs)
+            .to match(/Dumping to foobar.dump/i)
+        end
+
+        it 'invokes pg_dump with the tunnel url' do
+          cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                                 database: database)
+
+          expect(subject).to receive(:with_local_tunnel).with(cred)
+            .and_yield(socat_helper)
+
+          local_url = 'postgresql://aptible:password@localhost.aptible.in:4242'\
+            '/db'
+
+          expect(subject).to receive(:`)
+            .with(/pg_dump #{local_url}  > foobar.dump/)
+
+          subject.send('db:dump', handle)
+        end
+
+        it 'sends extra options if given' do
+          cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                                 database: database)
+
+          expect(subject).to receive(:with_local_tunnel).with(cred)
+            .and_yield(socat_helper)
+
+          pg_dump_options = '--exclude-table-data=events ' \
+                          '--exclude-table-data=versions'
+          allow(subject).to receive(:`).with(/pg_dump .* #{pg_dump_options} .*/)
+
+          subject.send('db:dump', handle,
+                       '--exclude-table-data=events',
+                       '--exclude-table-data=versions')
+        end
+
+        it 'fails when the database is not provisioned' do
+          allow(database).to receive(:status) { 'pending' }
+
+          expect { subject.send('db:dump', handle) }
+            .to raise_error(/foobar is not provisioned/im)
+        end
+      end
+    end
+  end
+
+  describe '#db:execute' do
+    sql_path = 'file.sql'
+    it 'should fail if database is non-existent' do
+      allow(Aptible::Api::Database).to receive(:all) { [] }
+      expect do
+        subject.send('db:execute', handle, sql_path)
+      end.to raise_error("Could not find database #{handle}")
+    end
+
+    context 'valid database' do
+      before do
+        allow(Aptible::Api::Database).to receive(:all) { [database] }
+        allow(subject).to receive(:`).with(/psql .*/) { `exit 0` }
+      end
+
+      it 'executes the file against the URL' do
         cred = Fabricate(:database_credential, default: true, type: 'foo',
                                                database: database)
 
@@ -475,33 +558,60 @@ describe Aptible::CLI::Agent do
 
         local_url = 'postgresql://aptible:password@localhost.aptible.in:4242/db'
 
-        expect(subject).to receive(:`)
-          .with(/pg_dump #{local_url}  > foobar.dump/)
+        expect(subject).to receive(:`).with(/psql #{local_url} < #{sql_path}/)
 
-        subject.send('db:dump', handle)
-      end
+        subject.send('db:execute', handle, sql_path)
 
-      it 'sends extra options if given' do
-        cred = Fabricate(:database_credential, default: true, type: 'foo',
-                                               database: database)
-
-        expect(subject).to receive(:with_local_tunnel).with(cred)
-          .and_yield(socat_helper)
-
-        pg_dump_options = '--exclude-table-data=events ' \
-                          '--exclude-table-data=versions'
-        allow(subject).to receive(:`).with(/pg_dump .* #{pg_dump_options} .*/)
-
-        subject.send('db:dump', handle,
-                     '--exclude-table-data=events',
-                     '--exclude-table-data=versions')
+        expect(captured_logs)
+          .to match(/Executing #{sql_path} against #{handle}/)
       end
 
       it 'fails when the database is not provisioned' do
         allow(database).to receive(:status) { 'pending' }
 
-        expect { subject.send('db:dump', handle) }
+        expect { subject.send('db:execute', handle, sql_path) }
           .to raise_error(/foobar is not provisioned/im)
+      end
+
+      context 'on error stop' do
+        before do
+          subject.options = { on_error_stop: true }
+        end
+
+        it 'adds the ON_ERROR_STOP argument' do
+          cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                                 database: database)
+
+          expect(subject).to receive(:with_local_tunnel).with(cred)
+            .and_yield(socat_helper)
+
+          local_url = 'postgresql://aptible:password@localhost.aptible.in:4242'\
+            '/db'
+
+          expect(subject).to receive(:`)
+            .with(/psql -v ON_ERROR_STOP=true #{local_url} < #{sql_path}/)
+
+          subject.send('db:execute', handle, sql_path)
+        end
+
+        it 'exits with the same code as psql' do
+          exit_status = 123
+          allow(subject).to receive(:`).with(/psql .*/) {
+            `exit #{exit_status}`
+          }
+          cred = Fabricate(:database_credential, default: true, type: 'foo',
+                                                 database: database)
+
+          expect(subject).to receive(:with_local_tunnel).with(cred)
+            .and_yield(socat_helper)
+
+          expect do
+            subject.send('db:execute', handle, sql_path)
+          end.to raise_error { |error|
+            expect(error).to be_a SystemExit
+            expect(error.status).to eq exit_status
+          }
+        end
       end
     end
   end
