@@ -6,7 +6,6 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(subject).to receive(:say) { |m| messages << m }
   end
 
   describe '#operation:cancel' do

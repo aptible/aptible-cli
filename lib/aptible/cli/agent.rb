@@ -69,7 +69,11 @@ module Aptible
 
       desc 'version', 'Print Aptible CLI version'
       def version
-        puts version_string
+        Formatter.render(Renderer.current) do |root|
+          root.keyed_object('version') do |node|
+            node.value('version', version_string)
+          end
+        end
       end
 
       desc 'login', 'Log in to Aptible'
@@ -138,19 +142,19 @@ module Aptible
         end
 
         save_token(token.access_token)
-        puts "Token written to #{token_file}"
+        CLI.logger.info "Token written to #{token_file}"
 
         lifetime_format = { units: 2, joiner: ', ' }
         token_lifetime = (token.expires_at - token.created_at).round
         expires_in = ChronicDuration.output(token_lifetime, lifetime_format)
-        puts "This token will expire after #{expires_in} " \
-             '(use --lifetime to customize)'
+        CLI.logger.info "This token will expire after #{expires_in} " \
+                        '(use --lifetime to customize)'
       end
 
       private
 
       def deprecated(msg)
-        $stderr.puts yellow([
+        CLI.logger.warn([
           "DEPRECATION NOTICE: #{msg}",
           'Please contact support@aptible.com with any questions.'
         ].join("\n"))
@@ -180,7 +184,7 @@ module Aptible
         now = Time.now.utc.to_i
 
         if last_nag < now - nag_frequency
-          $stderr.puts yellow([
+          CLI.logger.warn([
             'You have installed the Aptible CLI from source.',
             'This is not recommended: some functionality may not work!',
             'Review this support topic for more information:',

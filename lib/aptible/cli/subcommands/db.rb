@@ -1,5 +1,6 @@
 require 'term/ansicolor'
 require 'uri'
+require 'English'
 
 module Aptible
   module CLI
@@ -15,28 +16,73 @@ module Aptible
             desc 'db:list', 'List all databases'
             option :environment
             define_method 'db:list' do
-              scoped_environments(options).each do |env|
-                present_environment_databases(env)
+              Formatter.render(Renderer.current) do |root|
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
+                  scoped_environments(options).each do |account|
+                    account.each_database do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database(n, db, account)
+                      end
+                    end
+                  end
+                end
               end
             end
 
-            desc 'db:create HANDLE' \
-                 '[--type TYPE] [--container-size SIZE_MB] [--size SIZE_GB]',
+            desc 'db:versions', 'List available database versions'
+            define_method 'db:versions' do
+              Formatter.render(Renderer.current) do |root|
+                root.grouped_keyed_list('type', 'version') do |node|
+                  Aptible::Api::DatabaseImage.all(
+                    token: fetch_token
+                  ).each do |database_image|
+                    node.object do |n|
+                      n.value('type', database_image.type)
+                      n.value('version', database_image.version)
+                      n.value('default', database_image.default)
+                      n.value('description', database_image.description)
+                      n.value('docker_repo', database_image.docker_repo)
+                    end
+                  end
+                end
+              end
+            end
+
+            desc 'db:create HANDLE ' \
+                 '[--type TYPE] [--version VERSION] ' \
+                 '[--container-size SIZE_MB] [--size SIZE_GB]',
                  'Create a new database'
-            option :type, default: 'postgresql'
+            option :type, type: :string
+            option :version, type: :string
             option :container_size, type: :numeric
             option :size, default: 10, type: :numeric
             option :environment
             define_method 'db:create' do |handle|
-              environment = ensure_environment(options)
+              account = ensure_environment(options)
 
               db_opts = {
                 handle: handle,
-                type: options[:type],
                 initial_container_size: options[:container_size],
                 initial_disk_size: options[:size]
               }.delete_if { |_, v| v.nil? }
-              database = environment.create_database!(db_opts)
+
+              type = options[:type]
+              version = options[:version]
+
+              if version && type
+                image = find_database_image(type, version)
+                db_opts[:type] = image.type
+                db_opts[:database_image] = image
+              elsif version
+                raise Thor::Error, '--type is required when passing --version'
+              else
+                db_opts[:type] = type || 'postgresql'
+              end
+
+              database = account.create_database!(db_opts)
 
               op_opts = {
                 type: 'provision',
@@ -55,35 +101,43 @@ module Aptible
               end
 
               attach_to_operation_logs(op)
-              say database.reload.connection_url
+
+              render_database(database.reload, account)
             end
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
             option :environment
             define_method 'db:clone' do |source_handle, dest_handle|
+              # TODO: Deprecate + recommend backup
               source = ensure_database(options.merge(db: source_handle))
-              dest = clone_database(source, dest_handle)
-              say dest.connection_url
+              database = clone_database(source, dest_handle)
+              render_database(database, database.account)
             end
 
-            desc 'db:dump HANDLE', 'Dump a remote database to file'
+            desc 'db:dump HANDLE [pg_dump options]',
+                 'Dump a remote database to file'
             option :environment
-            define_method 'db:dump' do |handle|
+            define_method 'db:dump' do |handle, *dump_options|
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 filename = "#{handle}.dump"
-                say "Dumping to #{filename}"
-                `pg_dump #{url} > #{filename}`
+                CLI.logger.info "Dumping to #{filename}"
+                `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
-            desc 'db:execute HANDLE SQL_FILE', 'Executes sql against a database'
+            desc 'db:execute HANDLE SQL_FILE [--on-error-stop]',
+                 'Executes sql against a database'
             option :environment
+            option :on_error_stop, type: :boolean
             define_method 'db:execute' do |handle, sql_path|
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
-                say "Executing #{sql_path} against #{handle}"
-                `psql #{url} < #{sql_path}`
+                CLI.logger.info "Executing #{sql_path} against #{handle}"
+                args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+                `psql #{args}#{url} < #{sql_path}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
@@ -97,37 +151,37 @@ module Aptible
 
               credential = find_credential(database, options[:type])
 
-              say "Creating #{credential.type} tunnel to #{database.handle}...",
-                  :green
+              m = "Creating #{credential.type} tunnel to #{database.handle}..."
+              CLI.logger.info m
 
               if options[:type].nil?
                 types = database.database_credentials.map(&:type)
                 unless types.empty?
                   valid = types.join(', ')
-                  say 'Use --type TYPE to specify a tunnel type', :green
-                  say "Valid types for #{database.handle}: #{valid}", :green
+                  CLI.logger.info 'Use --type TYPE to specify a tunnel type'
+                  CLI.logger.info "Valid types for #{database.handle}: #{valid}"
                 end
               end
 
               with_local_tunnel(credential, desired_port) do |tunnel_helper|
                 port = tunnel_helper.port
-                say "Connect at #{local_url(credential, port)}", :green
+                CLI.logger.info "Connect at #{local_url(credential, port)}"
 
                 uri = URI(local_url(credential, port))
                 db = uri.path.gsub(%r{^/}, '')
-                say 'Or, use the following arguments:', :green
-                say("* Host: #{uri.host}", :green)
-                say("* Port: #{uri.port}", :green)
-                say("* Username: #{uri.user}", :green) unless uri.user.empty?
-                say("* Password: #{uri.password}", :green)
-                say("* Database: #{db}", :green) unless db.empty?
+                CLI.logger.info 'Or, use the following arguments:'
+                CLI.logger.info "* Host: #{uri.host}"
+                CLI.logger.info "* Port: #{uri.port}"
+                CLI.logger.info "* Username: #{uri.user}" unless uri.user.empty?
+                CLI.logger.info "* Password: #{uri.password}"
+                CLI.logger.info "* Database: #{db}" unless db.empty?
 
-                say 'Connected. Ctrl-C to close connection.'
+                CLI.logger.info 'Connected. Ctrl-C to close connection.'
 
                 begin
                   tunnel_helper.wait
                 rescue Interrupt
-                  say 'Closing tunnel'
+                  CLI.logger.warn 'Closing tunnel'
                 end
               end
             end
@@ -136,15 +190,23 @@ module Aptible
             option :environment
             define_method 'db:deprovision' do |handle|
               database = ensure_database(options.merge(db: handle))
-              say "Deprovisioning #{database.handle}..."
-              database.create_operation!(type: 'deprovision')
+              CLI.logger.info "Deprovisioning #{database.handle}..."
+              op = database.create_operation!(type: 'deprovision')
+              begin
+                attach_to_operation_logs(op)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status != 404
+              end
             end
 
             desc 'db:backup HANDLE', 'Backup a database'
             option :environment
             define_method 'db:backup' do |handle|
               database = ensure_database(options.merge(db: handle))
-              say "Backing up #{database.handle}..."
+              CLI.logger.info "Backing up #{database.handle}..."
               op = database.create_operation!(type: 'backup')
               attach_to_operation_logs(op)
             end
@@ -153,7 +215,7 @@ module Aptible
             option :environment
             define_method 'db:reload' do |handle|
               database = ensure_database(options.merge(db: handle))
-              say "Reloading #{database.handle}..."
+              CLI.logger.info "Reloading #{database.handle}..."
               op = database.create_operation!(type: 'reload')
               attach_to_operation_logs(op)
             end
@@ -173,7 +235,7 @@ module Aptible
                 disk_size: options[:size]
               }.delete_if { |_, v| v.nil? }
 
-              say "Restarting #{database.handle}..."
+              CLI.logger.info "Restarting #{database.handle}..."
               op = database.create_operation!(opts)
               attach_to_operation_logs(op)
             end
@@ -185,7 +247,11 @@ module Aptible
               database = ensure_database(options.merge(db: handle))
               credential = find_credential(database, options[:type])
 
-              say(credential.connection_url)
+              Formatter.render(Renderer.current) do |root|
+                root.keyed_object('connection_url') do |node|
+                  node.value('connection_url', credential.connection_url)
+                end
+              end
             end
           end
         end

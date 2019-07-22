@@ -152,6 +152,7 @@ module Aptible
         end
 
         def apps_from_handle(handle, environment)
+          # TODO: This should probably use each_app for more efficiency.
           if environment
             environment.apps
           else
@@ -163,6 +164,7 @@ module Aptible
           Hash[args.map do |arg|
             k, v = arg.split('=', 2)
             validate_env_key!(k)
+            validate_env_pair!(k, v)
             [k, v]
           end]
         end
@@ -172,6 +174,11 @@ module Aptible
           # May 2017 (> 3 years of Aptible!), there are only 2 such cases, both
           # of which are indeed mispelled options.
           raise Thor::Error, "Invalid argument: #{k}" if k.start_with?('-')
+        end
+
+        def validate_env_pair!(k, v)
+          # Nil values
+          raise Thor::Error, "Invalid argument: #{k}" if v.nil?
         end
 
         private

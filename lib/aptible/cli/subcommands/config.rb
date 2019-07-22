@@ -14,28 +14,42 @@ module Aptible
             def config
               app = ensure_app(options)
               config = app.current_configuration
-              env = config ? config.env : nil
-              puts formatted_config(env || {})
+              env = config ? config.env : {}
+
+              Formatter.render(Renderer.current) do |root|
+                root.keyed_list('shell_export') do |list|
+                  env.each_pair do |k, v|
+                    list.object do |node|
+                      node.value('key', k)
+                      node.value('value', v)
+                      node.value('shell_export', "#{k}=#{Shellwords.escape(v)}")
+                    end
+                  end
+                end
+              end
             end
 
-            desc 'config:add', 'Add an ENV variable to an app'
+            desc 'config:add [VAR1=VAL1] [VAR2=VAL2] [...]',
+                 'Add an ENV variable to an app'
             app_options
             define_method 'config:add' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
               env = extract_env(args)
               operation = app.create_operation!(type: 'configure', env: env)
-              puts 'Updating configuration and restarting app...'
+              CLI.logger.info 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:set', 'Alias for config:add'
+            desc 'config:set [VAR1=VAL1] [VAR2=VAL2] [...]',
+                 'Add an ENV variable to an app'
             app_options
             define_method 'config:set' do |*args|
               send('config:add', *args)
             end
 
-            desc 'config:rm', 'Remove an ENV variable from an app'
+            desc 'config:rm [VAR1] [VAR2] [...]',
+                 'Remove an ENV variable from an app'
             app_options
             define_method 'config:rm' do |*args|
               # FIXME: define_method - ?! Seriously, WTF Thor.
@@ -45,21 +59,15 @@ module Aptible
                 [arg, '']
               end]
               operation = app.create_operation!(type: 'configure', env: env)
-              puts 'Updating configuration and restarting app...'
+              CLI.logger.info 'Updating configuration and restarting app...'
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:unset', 'Alias for config:rm'
+            desc 'config:unset [VAR1] [VAR2] [...]',
+                 'Remove an ENV variable from an app'
             app_options
             define_method 'config:unset' do |*args|
               send('config:rm', *args)
-            end
-
-            private
-
-            def formatted_config(env)
-              env = Hash[env.sort]
-              env.map { |k, v| "#{k}=#{Shellwords.escape(v)}" }.join("\n")
             end
           end
         end

@@ -8,7 +8,11 @@ end
 Fabricator(:service, from: :stub_service) do
   transient :app, :database
 
+  id { Fabricate.sequence(:service_id) { |i| i } }
   process_type 'web'
+  command { nil }
+  container_count { 1 }
+  container_memory_limit_mb { 512 }
   vhosts { [] }
 
   after_create do |service, transients|

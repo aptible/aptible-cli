@@ -11,12 +11,19 @@ module Aptible
             desc 'apps', 'List all applications'
             option :environment
             def apps
-              scoped_environments(options).each do |env|
-                say "=== #{env.handle}"
-                env.apps.each do |app|
-                  say app.handle
+              Formatter.render(Renderer.current) do |root|
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
+                  scoped_environments(options).each do |account|
+                    account.each_app do |app|
+                      node.object do |n|
+                        ResourceFormatter.inject_app(n, app, account)
+                      end
+                    end
+                  end
                 end
-                say ''
               end
             end
 
@@ -29,8 +36,13 @@ module Aptible
               if app.errors.any?
                 raise Thor::Error, app.errors.full_messages.first
               else
-                say "App #{handle} created!"
-                say "Git remote: #{app.git_repo}"
+                CLI.logger.info "App #{handle} created!"
+
+                Formatter.render(Renderer.current) do |root|
+                  root.object do |o|
+                    o.value('git_remote', app.git_repo)
+                  end
+                end
               end
             end
 
@@ -56,9 +68,9 @@ module Aptible
                 # Noop
               when 1
                 if container_count.nil?
-                  m = yellow('Passing container count as a positional ' \
-                             'argument is deprecated, use --container-count')
-                  $stderr.puts m
+                  m = 'Passing container count as a positional ' \
+                      'argument is deprecated, use --container-count'
+                  CLI.logger.warn(m)
                   container_count = Integer(more.first)
                 else
                   raise Thor::Error, 'Container count was passed via both ' \
@@ -77,9 +89,9 @@ module Aptible
 
               if options[:size]
                 if container_size.nil?
-                  m = yellow('Passing container size via the --size keyword ' \
-                             'argument is deprecated, use --container-size')
-                  $stderr.puts m
+                  m = 'Passing container size via the --size keyword ' \
+                      'argument is deprecated, use --container-size'
+                  CLI.logger.warn(m)
                   container_size = options[:size]
                 else
                   raise Thor::Error, 'Container size was passed via both ' \
@@ -106,8 +118,16 @@ module Aptible
             app_options
             define_method 'apps:deprovision' do
               app = ensure_app(options)
-              say "Deprovisioning #{app.handle}..."
-              app.create_operation!(type: 'deprovision')
+              CLI.logger.info "Deprovisioning #{app.handle}..."
+              op = app.create_operation!(type: 'deprovision')
+              begin
+                attach_to_operation_logs(op)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status != 404
+              end
             end
           end
         end

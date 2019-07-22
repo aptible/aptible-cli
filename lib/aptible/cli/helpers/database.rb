@@ -40,12 +40,6 @@ module Aptible
           databases.select { |a| a.handle == handle }
         end
 
-        def present_environment_databases(environment)
-          say "=== #{environment.handle}"
-          environment.databases.each { |db| say db.handle }
-          say ''
-        end
-
         def clone_database(source, dest_handle)
           op = source.create_operation!(type: 'clone', handle: dest_handle)
           attach_to_operation_logs(op)
@@ -119,6 +113,28 @@ module Aptible
           err = 'No default credential for database'
           err = "No credential with type #{type} for database" if type
           raise Thor::Error, "#{err}, valid credential types: #{valid}"
+        end
+
+        def find_database_image(type, version)
+          available_versions = []
+
+          Aptible::Api::DatabaseImage.all(token: fetch_token).each do |i|
+            next unless i.type == type
+            return i if i.version == version
+            available_versions << i.version
+          end
+
+          err = "No Database Image of type #{type} with version #{version}"
+          err = "#{err}, valid versions: #{available_versions.join(' ')}"
+          raise Thor::Error, err
+        end
+
+        def render_database(database, account)
+          Formatter.render(Renderer.current) do |root|
+            root.keyed_object('connection_url') do |node|
+              ResourceFormatter.inject_database(node, database, account)
+            end
+          end
         end
       end
     end

@@ -36,7 +36,7 @@ module Aptible
               end
 
               operation = app.create_operation!(type: type)
-              puts 'Restarting app...'
+              CLI.logger.info 'Restarting app...'
               attach_to_operation_logs(operation)
             end
           end

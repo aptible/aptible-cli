@@ -7,21 +7,23 @@ describe Aptible::CLI::Agent do
   let(:database) { Fabricate(:database, account: account, handle: 'some-db') }
   let!(:backup) do
     # created_at: 2016-06-14 13:24:11 +0000
-    Fabricate(:backup, database: database, created_at: Time.at(1465910651))
+    Fabricate(
+      :backup,
+      database: database, created_at: Time.at(1465910651), account: account
+    )
   end
 
-  let(:messages) { [] }
+  let(:default_handle) { 'some-db-at-2016-06-14-13-24-11' }
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(subject).to receive(:say) { |m| messages << m }
     allow(Aptible::Api::Account).to receive(:all) { [account, alt_account] }
   end
 
   describe '#backup:restore' do
     it 'fails if the backup cannot be found' do
-      expect(Aptible::Api::Backup).to receive(:find).with(1, token: token)
-        .and_return(nil)
+      expect(Aptible::Api::Backup).to receive(:find)
+        .with(1, token: token).and_return(nil)
 
       expect { subject.send('backup:restore', 1) }
         .to raise_error('Backup #1 not found')
@@ -31,23 +33,26 @@ describe Aptible::CLI::Agent do
       let(:op) { Fabricate(:operation, resource: backup) }
 
       before do
-        expect(Aptible::Api::Backup).to receive(:find).with(1, token: token)
-          .and_return(backup)
-        expect(subject).to receive(:attach_to_operation_logs).with(op)
+        expect(Aptible::Api::Backup).to receive(:find)
+          .with(1, token: token).and_return(backup)
       end
 
       it 'provides a default handle and no disk size' do
-        h = 'some-db-at-2016-06-14-13-24-11'
-
         expect(backup).to receive(:create_operation!) do |options|
-          expect(options[:handle]).to eq(h)
+          expect(options[:handle]).to eq(default_handle)
           expect(options[:disk_size]).not_to be_present
           expect(options[:destination_account]).not_to be_present
           op
         end
 
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: account, handle: default_handle)
+        end
+
         subject.send('backup:restore', 1)
-        expect(messages).to eq(["Restoring backup into #{h}"])
+
+        expect(captured_logs)
+          .to match(/restoring backup into #{default_handle}/im)
       end
 
       it 'accepts a handle' do
@@ -61,9 +66,13 @@ describe Aptible::CLI::Agent do
           op
         end
 
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: account, handle: h)
+        end
+
         subject.options = { handle: h }
         subject.send('backup:restore', 1)
-        expect(messages).to eq(["Restoring backup into #{h}"])
+        expect(captured_logs).to match(/restoring backup into #{h}/im)
       end
 
       it 'accepts a container size' do
@@ -75,6 +84,10 @@ describe Aptible::CLI::Agent do
           expect(options[:disk_size]).to be_nil
           expect(options[:destination_account]).not_to be_present
           op
+        end
+
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: account, handle: default_handle)
         end
 
         subject.options = { container_size: s }
@@ -92,6 +105,10 @@ describe Aptible::CLI::Agent do
           op
         end
 
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: account, handle: default_handle)
+        end
+
         subject.options = { size: s }
         subject.send('backup:restore', 1)
       end
@@ -101,6 +118,10 @@ describe Aptible::CLI::Agent do
           expect(options[:handle]).to be_present
           expect(options[:destination_account]).to eq(alt_account)
           op
+        end
+
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: alt_account, handle: default_handle)
         end
 
         subject.options = { environment: 'alt' }
@@ -131,19 +152,19 @@ describe Aptible::CLI::Agent do
 
     it 'can show a subset of backups' do
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(5)
+      expect(captured_output_text.split("\n").size).to eq(5)
     end
 
     it 'allows scoping via environment' do
       subject.options = { max_age: '1w', environment: database.account.handle }
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(5)
+      expect(captured_output_text.split("\n").size).to eq(5)
     end
 
     it 'shows more backups if requested' do
       subject.options = { max_age: '2y' }
       subject.send('backup:list', database.handle)
-      expect(messages.size).to eq(9)
+      expect(captured_output_text.split("\n").size).to eq(9)
     end
 
     it 'errors out if max_age is invalid' do

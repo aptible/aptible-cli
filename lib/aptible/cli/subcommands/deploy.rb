@@ -19,7 +19,8 @@ module Aptible
             include Helpers::Operation
             include Helpers::App
 
-            desc 'deploy [OPTIONS] [VAR1=VAL1] [VAR=VAL2] ...', 'Deploy an app'
+            desc 'deploy [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]',
+                 'Deploy an app'
             option :git_commitish,
                    desc: 'Deploy a specific git commit or branch: the ' \
                          'commitish must have been pushed to Aptible beforehand'
@@ -78,7 +79,7 @@ module Aptible
 
               operation = app.create_operation!(opts)
 
-              puts 'Deploying app...'
+              CLI.logger.info 'Deploying app...'
               attach_to_operation_logs(operation)
             end
           end
