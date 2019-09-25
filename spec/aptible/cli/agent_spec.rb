@@ -178,7 +178,20 @@ describe Aptible::CLI::Agent do
             .and_return(email: email, password: password, security_key: true)
         end
 
+        it 'should warn the user and exit gracefully if U2F isn\'t supported' do
+          allow(subject).to receive(:which)
+            .and_return(nil)
+
+          expect(subject).to receive(:puts)
+            .once
+
+          subject.login
+        end
+
         it 'should call into U2F if enabled and supported by the server' do
+          allow(subject).to receive(:which)
+            .and_return('/usr/local/bin/u2f-host')
+
           e = make_oauth2_error(
             'otp_token_required',
             'u2f' => {
