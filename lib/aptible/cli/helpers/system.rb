@@ -14,6 +14,12 @@ module Aptible
 
           nil
         end
+
+        def ask_then_line(*args)
+          ret = ask(*args)
+          puts ''
+          ret
+        end
       end
     end
   end

@@ -175,22 +175,48 @@ describe Aptible::CLI::Agent do
       context 'with U2F' do
         before do
           allow(subject).to receive(:options)
-            .and_return(email: email, password: password, security_key: true)
+            .and_return(email: email, password: password)
         end
 
-        it 'should warn the user and exit gracefully if U2F isn\'t supported' do
+        it 'shouldn\'t use U2F if not supported' do
           allow(subject).to receive(:which)
             .and_return(nil)
 
-          expect(subject).to receive(:puts)
+          e = make_oauth2_error(
+            'otp_token_required',
+            'u2f' => {
+              'challenge' => 'some 123',
+              'devices' => [
+                { 'version' => 'U2F_V2', 'key_handle' => '123' },
+                { 'version' => 'U2F_V2', 'key_handle' => '456' }
+              ]
+            }
+          )
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, expires_in: 1.week.seconds)
             .once
+            .and_raise(e)
+
+          expect(Aptible::CLI::Helpers::SecurityKey).not_to \
+            receive(:authenticate)
+
+          expect(subject).to receive(:ask).with('2FA Token: ')
+            .once
+            .and_return(token)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, otp_token: token,
+                  expires_in: 12.hours.seconds)
+            .once
+            .and_return(token)
 
           subject.login
         end
 
-        it 'should call into U2F if enabled and supported by the server' do
-          allow(subject).to receive(:which)
-            .and_return('/usr/local/bin/u2f-host')
+        it 'should call into U2F if supported' do
+          allow(subject).to receive(:which).and_return('u2f-host')
+          allow(subject).to receive(:ask).with('2FA Token: ') { sleep }
 
           e = make_oauth2_error(
             'otp_token_required',
@@ -209,6 +235,8 @@ describe Aptible::CLI::Agent do
             .with(email: email, password: password, expires_in: 1.week.seconds)
             .once
             .and_raise(e)
+
+          expect(subject).to receive(:puts).with(/security key/i)
 
           expect(Aptible::CLI::Helpers::SecurityKey).to receive(:authenticate)
             .with(
