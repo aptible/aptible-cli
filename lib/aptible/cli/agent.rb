@@ -159,7 +159,9 @@ module Aptible
           # Block until one of the threads completes
           q.pop
 
-          mfa_threads.each(&:kill).each(&:join)
+          mfa_threads.each do |thr|
+            thr.kill if thr.status == 'sleep'
+          end.each(&:join)
 
           retry
         end
