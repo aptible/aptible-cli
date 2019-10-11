@@ -160,7 +160,8 @@ module Aptible
           q.pop
 
           mfa_threads.each do |thr|
-            thr.kill if thr.status == 'sleep'
+            sleep 0.5 until thr.status != 'run'
+            thr.kill
           end.each(&:join)
 
           retry
