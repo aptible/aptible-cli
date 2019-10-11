@@ -441,10 +441,11 @@ describe Aptible::CLI::Agent do
 
   describe '#db:replicate' do
     let(:master) { Fabricate(:database, handle: 'master') }
+    let(:influxdb) { Fabricate(:database, handle: 'inf', type: 'influxdb') }
     let(:replica) do
       Fabricate(:database, account: master.account, handle: 'replica')
     end
-    let(:databases) { [master] }
+    let(:databases) { [master, influxdb] }
 
     before { allow(Aptible::Api::Database).to receive(:all) { databases } }
 
@@ -475,6 +476,11 @@ describe Aptible::CLI::Agent do
     it 'fails if the DB is not found' do
       expect { subject.send('db:replicate', 'nope', 'replica') }
         .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+
+    it 'fails if the DB is not a supported type' do
+      expect { subject.send('db:replicate', 'influxdb', 'replica') }
+        .to raise_error(Thor::Error)
     end
   end
 
