@@ -439,6 +439,45 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#db:replicate' do
+    let(:master) { Fabricate(:database, handle: 'master') }
+    let(:replica) do
+      Fabricate(:database, account: master.account, handle: 'replica')
+    end
+    let(:databases) { [master] }
+
+    before { allow(Aptible::Api::Database).to receive(:all) { databases } }
+
+    let(:op) { Fabricate(:operation) }
+    let(:provision) { Fabricate(:operation) }
+
+    it 'allows replicating an existing database' do
+      expect(master).to receive(:create_operation!)
+        .with(type: 'replicate', handle: 'replica').and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op) do
+        databases << replica
+        replica
+      end
+
+      expect(replica).to receive_message_chain(:operations, :last)
+        .and_return(provision)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(provision)
+
+      expect(replica).to receive(:reload).and_return(replica)
+
+      subject.send('db:replicate', 'master', 'replica')
+
+      expect(captured_logs).to match(/replicating master/i)
+    end
+
+    it 'fails if the DB is not found' do
+      expect { subject.send('db:replicate', 'nope', 'replica') }
+        .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+  end
+
   describe '#db:dump' do
     it 'should fail if database is non-existent' do
       allow(Aptible::Api::Database).to receive(:all) { [] }

@@ -47,6 +47,15 @@ module Aptible
           databases_from_handle(dest_handle, source.account).first
         end
 
+        def replicate_database(source, dest_handle)
+          op = source.create_operation!(type: 'replicate', handle: dest_handle)
+          attach_to_operation_logs(op)
+
+          replica = databases_from_handle(dest_handle, source.account).first
+          attach_to_operation_logs(replica.operations.last)
+          replica
+        end
+
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(credential, port = 0)

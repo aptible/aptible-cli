@@ -114,6 +114,16 @@ module Aptible
               render_database(database, database.account)
             end
 
+            desc 'db:replicate SOURCE DEST',
+                 'Create a replica/follower of a database'
+            option :environment
+            define_method 'db:replicate' do |source_handle, dest_handle|
+              source = ensure_database(options.merge(db: source_handle))
+              CLI.logger.info "Replicating #{source_handle}..."
+              database = replicate_database(source, dest_handle)
+              render_database(database.reload, database.account)
+            end
+
             desc 'db:dump HANDLE [pg_dump options]',
                  'Dump a remote database to file'
             option :environment
