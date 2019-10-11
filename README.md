@@ -48,6 +48,7 @@ Commands:
   aptible db:execute HANDLE SQL_FILE [--on-error-stop]                                                                               # Executes sql against a database
   aptible db:list                                                                                                                    # List all databases
   aptible db:reload HANDLE                                                                                                           # Reload a database
+  aptible db:replicate SOURCE DEST                                                                                                   # Create a replica/follower of a database
   aptible db:restart HANDLE [--container-size SIZE_MB] [--size SIZE_GB]                                                              # Restart a database
   aptible db:tunnel HANDLE                                                                                                           # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                              # Display a database URL
