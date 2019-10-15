@@ -114,7 +114,7 @@ module Aptible
               render_database(database, database.account)
             end
 
-            desc 'db:replicate SOURCE DEST',
+            desc 'db:replicate HANDLE REPLICA_HANDLE',
                  'Create a replica/follower of a database'
             option :environment
             define_method 'db:replicate' do |source_handle, dest_handle|
