@@ -47,8 +47,14 @@ module Aptible
           databases_from_handle(dest_handle, source.account).first
         end
 
-        def replicate_database(source, dest_handle)
-          op = source.create_operation!(type: 'replicate', handle: dest_handle)
+        def replicate_database(source, dest_handle, options)
+          replication_params = {
+            type: 'replicate',
+            handle: dest_handle,
+            container_size: options[:container_size],
+            disk_size: options[:size]
+          }.reject { |_, v| v.nil? }
+          op = source.create_operation!(replication_params)
           attach_to_operation_logs(op)
 
           replica = databases_from_handle(dest_handle, source.account).first

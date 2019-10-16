@@ -440,26 +440,29 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#db:replicate' do
-    let(:master) { Fabricate(:database, handle: 'master') }
-    let(:influxdb) { Fabricate(:database, handle: 'inf', type: 'influxdb') }
-    let(:replica) do
-      Fabricate(:database, account: master.account, handle: 'replica')
-    end
-    let(:databases) { [master, influxdb] }
-
+    let(:databases) { [] }
     before { allow(Aptible::Api::Database).to receive(:all) { databases } }
 
-    let(:op) { Fabricate(:operation) }
-    let(:provision) { Fabricate(:operation) }
+    def expect_replicate_database(opts = {})
+      master = Fabricate(:database, handle: 'master')
+      databases << master
+      replica = Fabricate(:database,
+                          account: master.account,
+                          handle: 'replica')
 
-    it 'allows replicating an existing database' do
+      op = Fabricate(:operation)
+
+      params = { type: 'replicate', handle: 'replica' }.merge(opts)
+      params[:disk_size] = params.delete(:size) if params[:size]
       expect(master).to receive(:create_operation!)
-        .with(type: 'replicate', handle: 'replica').and_return(op)
+        .with(**params).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op) do
         databases << replica
         replica
       end
+
+      provision = Fabricate(:operation)
 
       expect(replica).to receive_message_chain(:operations, :last)
         .and_return(provision)
@@ -468,19 +471,27 @@ describe Aptible::CLI::Agent do
 
       expect(replica).to receive(:reload).and_return(replica)
 
+      subject.options = opts
       subject.send('db:replicate', 'master', 'replica')
 
       expect(captured_logs).to match(/replicating master/i)
     end
 
+    it 'allows replicating an existing database' do
+      expect_replicate_database
+    end
+
+    it 'allows replicating a database with a container size' do
+      expect_replicate_database(container_size: 40)
+    end
+
+    it 'allows replicating a database with a disk size' do
+      expect_replicate_database(size: 40)
+    end
+
     it 'fails if the DB is not found' do
       expect { subject.send('db:replicate', 'nope', 'replica') }
         .to raise_error(Thor::Error, 'Could not find database nope')
-    end
-
-    it 'fails if the DB is not a supported type' do
-      expect { subject.send('db:replicate', 'influxdb', 'replica') }
-        .to raise_error(Thor::Error)
     end
   end
 
