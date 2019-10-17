@@ -114,6 +114,19 @@ module Aptible
               render_database(database, database.account)
             end
 
+            desc 'db:replicate HANDLE REPLICA_HANDLE ' \
+                 '[--container-size SIZE_MB] [--size SIZE_GB]',
+                 'Create a replica/follower of a database'
+            option :environment
+            option :container_size, type: :numeric
+            option :size, type: :numeric
+            define_method 'db:replicate' do |source_handle, dest_handle|
+              source = ensure_database(options.merge(db: source_handle))
+              CLI.logger.info "Replicating #{source_handle}..."
+              database = replicate_database(source, dest_handle, options)
+              render_database(database.reload, database.account)
+            end
+
             desc 'db:dump HANDLE [pg_dump options]',
                  'Dump a remote database to file'
             option :environment
