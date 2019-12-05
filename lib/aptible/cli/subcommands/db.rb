@@ -53,12 +53,13 @@ module Aptible
 
             desc 'db:create HANDLE ' \
                  '[--type TYPE] [--version VERSION] ' \
-                 '[--container-size SIZE_MB] [--size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
                  'Create a new database'
             option :type, type: :string
             option :version, type: :string
             option :container_size, type: :numeric
-            option :size, default: 10, type: :numeric
+            option :size, type: :numeric
+            option :disk_size, default: 10, type: :numeric
             option :environment
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
@@ -66,7 +67,7 @@ module Aptible
               db_opts = {
                 handle: handle,
                 initial_container_size: options[:container_size],
-                initial_disk_size: options[:size]
+                initial_disk_size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
 
               type = options[:type]
@@ -87,7 +88,7 @@ module Aptible
               op_opts = {
                 type: 'provision',
                 container_size: options[:container_size],
-                disk_size: options[:size]
+                disk_size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
               op = database.create_operation(op_opts)
 
@@ -115,15 +116,23 @@ module Aptible
             end
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
-                 '[--container-size SIZE_MB] [--size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
                  'Create a replica/follower of a database'
             option :environment
             option :container_size, type: :numeric
             option :size, type: :numeric
+            option :disk_size, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
               CLI.logger.info "Replicating #{source_handle}..."
-              database = replicate_database(source, dest_handle, options)
+
+              opts = {
+                environment: options[:environment],
+                container_size: options[:container_size],
+                size: options[:disk_size] || options[:size]
+              }.delete_if { |_, v| v.nil? }
+
+              database = replicate_database(source, dest_handle, opts)
               render_database(database.reload, database.account)
             end
 
@@ -234,10 +243,11 @@ module Aptible
             end
 
             desc 'db:restart HANDLE ' \
-                 '[--container-size SIZE_MB] [--size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
+            option :disk_size, type: :numeric
             option :size, type: :numeric
             define_method 'db:restart' do |handle|
               database = ensure_database(options.merge(db: handle))
@@ -245,7 +255,7 @@ module Aptible
               opts = {
                 type: 'restart',
                 container_size: options[:container_size],
-                disk_size: options[:size]
+                disk_size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.info "Restarting #{database.handle}..."
