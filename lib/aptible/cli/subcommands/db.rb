@@ -70,6 +70,12 @@ module Aptible
                 initial_disk_size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
 
+              CLI.logger.warn([
+                'You have used the "--size" option to specify a disk size.',
+                'This option which be deprecated in a future version.',
+                'Please use the "--disk-size" option, instead.'
+              ].join("\n")) if options[:size]
+
               type = options[:type]
               version = options[:version]
 
@@ -131,6 +137,12 @@ module Aptible
                 container_size: options[:container_size],
                 size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
+
+              CLI.logger.warn([
+                'You have used the "--size" option to specify a disk size.',
+                'This option which be deprecated in a future version.',
+                'Please use the "--disk-size" option, instead.'
+              ].join("\n")) if options[:size]
 
               database = replicate_database(source, dest_handle, opts)
               render_database(database.reload, database.account)
@@ -257,6 +269,12 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size] || options[:size]
               }.delete_if { |_, v| v.nil? }
+
+              CLI.logger.warn([
+                'You have used the "--size" option to specify a disk size.',
+                'This option which be deprecated in a future version.',
+                'Please use the "--disk-size" option, instead.'
+              ].join("\n")) if options[:size]
 
               CLI.logger.info "Restarting #{database.handle}..."
               op = database.create_operation!(opts)

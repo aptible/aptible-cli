@@ -40,6 +40,12 @@ module Aptible
                 destination_account: destination_account
               }.delete_if { |_, v| v.nil? }
 
+              CLI.logger.warn([
+                'You have used the "--size" option to specify a disk size.',
+                'This option which be deprecated in a future version.',
+                'Please use the "--disk-size" option, instead.'
+              ].join("\n")) if options[:size]
+
               operation = backup.create_operation!(opts)
               CLI.logger.info "Restoring backup into #{handle}"
               attach_to_operation_logs(operation)
