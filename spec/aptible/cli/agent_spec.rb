@@ -258,6 +258,36 @@ describe Aptible::CLI::Agent do
           subject.login
         end
       end
+
+      context 'SSO logins' do
+        let(:token) { 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJpZCI6I' }
+
+        it 'accepts a token as an argument' do
+          options = { sso: token }
+          allow(subject).to receive(:options).and_return options
+
+          expect(subject).to receive(:save_token).with(token)
+
+          subject.login
+        end
+
+        it 'rejects clearly invalid tokens' do
+          options = { sso: 'blarg' }
+          allow(subject).to receive(:options).and_return options
+
+          expect { subject.login }.to raise_error Thor::Error
+        end
+
+        it 'prompts for a token if none provided' do
+          options = { sso: 'sso' }
+          allow(subject).to receive(:options).and_return options
+
+          expect(subject).to receive(:ask).once.and_return(token)
+          expect(subject).to receive(:save_token).with(token)
+
+          subject.login
+        end
+      end
     end
   end
 
