@@ -19,7 +19,7 @@ module Aptible
             raise "Invalid scheme: #{uri.scheme} (use https)"
           end
 
-          apis = [Aptible::Auth, Aptible::Api, Aptible::Billing]
+          apis = [Aptible::Auth, Aptible::Api]
 
           api = apis.find do |klass|
             uri.host == URI(klass.configuration.root_url).host
