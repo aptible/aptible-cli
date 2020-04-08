@@ -34,6 +34,7 @@ Commands:
   aptible apps:deprovision                                                                                                           # Deprovision an app
   aptible apps:scale SERVICE [--container-count COUNT] [--container-size SIZE_MB]                                                    # Scale a service
   aptible backup:list DB_HANDLE                                                                                                      # List backups for a database
+  aptible backup:purge BACKUP_ID                                                                                                     # Restore a backup
   aptible backup:restore BACKUP_ID [--environment ENVIRONMENT_HANDLE] [--handle HANDLE] [--container-size SIZE_MB] [--size SIZE_GB]  # Restore a backup
   aptible config                                                                                                                     # Print an app's current configuration
   aptible config:add [VAR1=VAL1] [VAR2=VAL2] [...]                                                                                   # Add an ENV variable to an app
