@@ -178,4 +178,34 @@ describe Aptible::CLI::Agent do
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
   end
+
+  describe '#backup:purge' do
+    it 'fails if the backup cannot be found' do
+      expect(Aptible::Api::Backup).to receive(:find)
+        .with(1, token: token).and_return(nil)
+
+      expect { subject.send('backup:purge', 1) }
+        .to raise_error('Backup #1 not found')
+    end
+
+    context 'successful purge' do
+      let(:op) { Fabricate(:operation, resource: backup) }
+
+      before do
+        expect(Aptible::Api::Backup).to receive(:find)
+          .with(1, token: token).and_return(backup)
+      end
+
+      it 'creates a purge operation on the backup' do
+        expect(backup).to receive(:create_operation!) do |options|
+          expect(options[:type]).to eq('purge')
+          op
+        end
+
+        expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+        subject.send('backup:purge', 1)
+      end
+    end
+  end
 end
