@@ -85,6 +85,16 @@ module Aptible
                 end
               end
             end
+
+            desc 'backup:purge BACKUP_ID', 'Restore a backup'
+            define_method 'backup:purge' do |backup_id|
+              backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
+              raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
+
+              operation = backup.create_operation!(type: 'purge')
+              CLI.logger.info "Purging backup #{backup_id}"
+              attach_to_operation_logs(operation)
+            end
           end
         end
       end
