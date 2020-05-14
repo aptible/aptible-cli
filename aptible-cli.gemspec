@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'aptible-resource', '~> 1.1'
   spec.add_dependency 'aptible-api', '~> 1.0'
-  spec.add_dependency 'aptible-auth', '~> 1.0'
+  spec.add_dependency 'aptible-auth', '~> 1.1.0'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'thor', '~> 0.20.0'
   spec.add_dependency 'git'
