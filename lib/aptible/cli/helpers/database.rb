@@ -55,10 +55,10 @@ module Aptible
           }.reject { |_, v| v.nil? }
 
           if options[:logical]
-            replication_params.merge(type: 'replicate-logical',
-                                     docker_ref: options[:database_image])
+            replication_params[:type] = 'replicate-logical'
+            replication_params[:docker_ref] = options[:database_image]
           else
-            replication_params.merge(type: 'replicate')
+            replication_params[:type] = 'replicate'
           end
 
           op = source.create_operation!(replication_params)
