@@ -138,12 +138,14 @@ module Aptible
                 raise Thor::Error, 'This command only works for PostgreSQL'
               end
 
-              if options[:logical] && options[:version].nil?
-                raise Thor::Error, '--version is required for logical ' \
-                                   'replication'
+              if options[:logical]
+                if options[:version]
+                  image = find_database_image(source.type, version)
+                else
+                  raise Thor::Error, '--version is required for logical ' \
+                                     'replication'
+                end
               end
-
-              image = find_database_image(source.type, version)
 
               CLI.logger.info "Replicating #{source_handle}..."
 
@@ -152,7 +154,7 @@ module Aptible
                 container_size: options[:container_size],
                 size: options[:disk_size] || options[:size],
                 logical: options[:logical],
-                database_image: image
+                database_image: image || nil
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
