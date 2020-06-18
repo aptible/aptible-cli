@@ -519,6 +519,31 @@ describe Aptible::CLI::Agent do
       expect { subject.send('db:replicate', 'nope', 'replica') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
+
+    it 'allows logical replication of a database with --version set' do
+      expect_replicate_database(logical: true, version: 10)
+    end
+
+    it 'fails if logical replication requested without --version' do
+      master = Fabricate(:database, handle: 'master', type: 'postgresql')
+      databases << master
+
+      params = { type: 'replicate', handle: 'replica', logical: true }
+      expect subject.send('db:replicate', 'master', 'replica').with(**params)
+        .to raise_error(Thor::Error, '--version is required for logical ' \
+                                     'replication')
+    end
+
+    it 'fails if logical replication requested for non-postgres db' do
+      master = Fabricate(:database, handle: 'master', type: 'mysql')
+      databases << master
+
+      params = { type: 'replicate', handle: 'replica',
+                 logical: true, version: 10 }
+      expect subject.send('db:replicate', 'master', 'replica').with(**params)
+        .to raise_error(Thor::Error, 'Logical replication only works for ' \
+                                     'PostgreSQL')
+    end
   end
 
   describe '#db:dump' do

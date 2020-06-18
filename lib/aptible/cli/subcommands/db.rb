@@ -134,11 +134,11 @@ module Aptible
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
 
-              if source.type != 'postgresql'
-                raise Thor::Error, 'This command only works for PostgreSQL'
-              end
-
               if options[:logical]
+                if source.type != 'postgresql'
+                  raise Thor::Error, 'Logical replication only works for ' \
+                                     'PostgreSQL'
+                end
                 if options[:version]
                   image = find_database_image(source.type, version)
                 else
