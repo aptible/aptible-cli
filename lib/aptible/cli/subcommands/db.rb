@@ -140,7 +140,7 @@ module Aptible
                                      'PostgreSQL'
                 end
                 if options[:version]
-                  image = find_database_image(source.type, version)
+                  image = find_database_image(source.type, options[:version])
                 else
                   raise Thor::Error, '--version is required for logical ' \
                                      'replication'
