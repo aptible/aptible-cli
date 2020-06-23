@@ -123,7 +123,7 @@ module Aptible
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--logical] [--version VERSION]',
+                 '[--logical --version VERSION]',
                  'Create a replica/follower of a database'
             option :environment
             option :container_size, type: :numeric
