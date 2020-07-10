@@ -4,6 +4,41 @@ module Aptible
       class << self
         NO_NESTING = Object.new.freeze
 
+        def inject_backup(node, backup, include_db: false)
+          description = "#{backup.id}: #{backup.created_at}, " \
+                        "#{backup.aws_region}"
+
+          if include_db
+            db = backup.database_with_deleted
+            node.keyed_object('database', 'id') do |n|
+              inject_deleted_database(n, db, backup.account)
+            end
+
+            description = "#{description}, " \
+                          "#{db.handle} deleted at #{db.deleted_at}"
+          end
+
+          node.value('id', backup.id)
+          node.value('description', description)
+          node.value('created_at', backup.created_at)
+          node.value('region', backup.aws_region)
+          node.value('size', backup.size)
+
+          if backup.copied_from
+            node.keyed_object('copied_from', 'description') do |n|
+              inject_backup(n, backup.copied_from)
+            end
+          end
+        end
+
+        def inject_deleted_database(node, database, account)
+          node.value('id', database.id)
+          node.value('handle', database.handle)
+          node.value('type', database.type)
+          node.value('deleted_at', database.deleted_at)
+          attach_account(node, account)
+        end
+
         def inject_account(node, account)
           node.value('id', account.id)
           node.value('handle', account.handle)
@@ -47,6 +82,7 @@ module Aptible
 
           node.value('type', database.type)
           node.value('status', database.status)
+
           node.value('connection_url', database.connection_url)
 
           node.list('credentials') do |creds_list|
@@ -54,7 +90,6 @@ module Aptible
               creds_list.object { |n| inject_credential(n, cred) }
             end
           end
-
           attach_account(node, account)
         end
 

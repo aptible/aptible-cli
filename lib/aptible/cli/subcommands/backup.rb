@@ -69,17 +69,42 @@ module Aptible
               database = ensure_database(options.merge(db: handle))
 
               Formatter.render(Renderer.current) do |root|
-                root.keyed_list('description') do |l|
+                root.keyed_list('description') do |node|
                   database.each_backup do |backup|
-                    break if backup.created_at < min_created_at
-                    description = "#{backup.id}: #{backup.created_at}, " \
-                      "#{backup.aws_region}"
+                    if backup.created_at < min_created_at && !backup.copied_from
+                      break
+                    end
+                    node.object do |n|
+                      ResourceFormatter.inject_backup(n, backup)
+                    end
+                  end
+                end
+              end
+            end
 
-                    l.object do |o|
-                      o.value('id', backup.id)
-                      o.value('description', description)
-                      o.value('created_at', backup.created_at)
-                      o.value('region', backup.aws_region)
+            desc 'backup:orphaned', 'List backups associated with ' \
+                                    'deprovisioned databases'
+            option :environment
+            option :max_age, default: '1y',
+                             desc: 'Limit backups returned '\
+                                   '(example usage: 1w, 1y, etc.)'
+            define_method 'backup:orphaned' do
+              age = ChronicDuration.parse(options[:max_age])
+              raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
+              min_created_at = Time.now - age
+
+              Formatter.render(Renderer.current) do |root|
+                root.keyed_list('description') do |node|
+                  scoped_environments(options).each do |account|
+                    account.each_orphaned_backup do |backup|
+                      created_at = backup.created_at
+                      copied_from = backup.copied_from
+                      break if created_at < min_created_at && !copied_from
+                      node.object do |n|
+                        ResourceFormatter.inject_backup(
+                          n, backup, include_db: true
+                        )
+                      end
                     end
                   end
                 end

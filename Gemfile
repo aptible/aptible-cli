@@ -6,7 +6,7 @@ gem 'rack', '~> 1.0'
 
 group :test do
   gem 'webmock'
-  gem 'codecov', require: false
+  gem 'codecov', '~> 0.1.0', require: false
 end
 
 # Specify your gem's dependencies in aptible-cli.gemspec

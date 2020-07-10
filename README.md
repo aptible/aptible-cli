@@ -34,6 +34,7 @@ Commands:
   aptible apps:deprovision                                                                                                                # Deprovision an app
   aptible apps:scale SERVICE [--container-count COUNT] [--container-size SIZE_MB]                                                         # Scale a service
   aptible backup:list DB_HANDLE                                                                                                           # List backups for a database
+  aptible backup:orphaned                                                                                                                 # List backups associated with deprovisioned databases
   aptible backup:purge BACKUP_ID                                                                                                          # Permanently delete a backup
   aptible backup:restore BACKUP_ID [--environment ENVIRONMENT_HANDLE] [--handle HANDLE] [--container-size SIZE_MB] [--disk-size SIZE_GB]  # Restore a backup
   aptible config                                                                                                                          # Print an app's current configuration
