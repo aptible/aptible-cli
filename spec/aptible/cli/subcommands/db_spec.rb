@@ -527,7 +527,9 @@ describe Aptible::CLI::Agent do
                           account: master.account,
                           handle: 'replica')
 
-      dbimg = Fabricate(:database_image, type: 'postgresql', version: 10,
+      dbimg = Fabricate(:database_image,
+                        type: 'postgresql',
+                        version: 10,
                         docker_ref: 'aptible/postgresql:10')
 
       expect(subject).to receive(:find_database_image).with('postgresql', 10)
