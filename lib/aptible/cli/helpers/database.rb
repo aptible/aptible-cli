@@ -56,7 +56,8 @@ module Aptible
 
           if options[:logical]
             replication_params[:type] = 'replicate_logical'
-            replication_params[:docker_ref] = options[:database_image].docker_repo
+            replication_params[:docker_ref] =
+              options[:database_image].docker_repo
           else
             replication_params[:type] = 'replicate'
           end
