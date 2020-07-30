@@ -530,7 +530,7 @@ describe Aptible::CLI::Agent do
       dbimg = Fabricate(:database_image,
                         type: 'postgresql',
                         version: 10,
-                        docker_ref: 'aptible/postgresql:10')
+                        docker_repo: 'aptible/postgresql:10')
 
       expect(subject).to receive(:find_database_image).with('postgresql', 10)
         .and_return(dbimg)
@@ -538,7 +538,7 @@ describe Aptible::CLI::Agent do
       op = Fabricate(:operation)
 
       params = { type: 'replicate_logical', handle: 'replica',
-                 docker_ref: dbimg.docker_ref }
+                 docker_ref: dbimg.docker_repo }
       expect(master).to receive(:create_operation!)
         .with(**params).and_return(op)
 
