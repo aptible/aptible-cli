@@ -23,7 +23,7 @@ module Aptible
               handle = options[:handle]
               unless handle
                 ts_suffix = backup.created_at.getgm.strftime '%Y-%m-%d-%H-%M-%S'
-                handle = "#{backup.database.handle}-at-#{ts_suffix}"
+                handle = "#{backup.database_with_deleted.handle}-at-#{ts_suffix}"
               end
 
               destination_account = if options[:environment]
