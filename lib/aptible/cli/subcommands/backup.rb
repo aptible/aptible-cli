@@ -111,7 +111,8 @@ module Aptible
               end
             end
 
-            desc 'backup:purge BACKUP_ID', 'Permanently delete a backup'
+            desc 'backup:purge BACKUP_ID',
+                 'Permanently delete a backup and any copies of it'
             define_method 'backup:purge' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
