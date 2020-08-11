@@ -2,14 +2,15 @@ require 'spec_helper'
 
 describe Aptible::CLI::Agent do
   let(:token) { 'some-token' }
-  let(:account) { Fabricate(:account, handle: 'test') }
+  let(:account) { Fabricate(:account, handle: 'test', id: 1) }
   let(:alt_account) { Fabricate(:account, handle: 'alt') }
   let(:database) { Fabricate(:database, account: account, handle: 'some-db') }
   let!(:backup) do
     # created_at: 2016-06-14 13:24:11 +0000
     Fabricate(
       :backup,
-      database: database, created_at: Time.at(1465910651), account: account
+      database: database, created_at: Time.at(1465910651), account: account,
+      id: 1
     )
   end
 
@@ -176,6 +177,50 @@ describe Aptible::CLI::Agent do
     it 'fails if the DB is not found' do
       expect { subject.send('backup:list', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+  end
+
+  describe '#backup:orphaned' do
+    before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
+    before do
+      m = allow(account).to receive(:each_orphaned_backup)
+      ages = [
+        1.day, 2.days, 3.days, 4.days,
+        5.days, 2.weeks, 3.weeks, 1.month,
+        1.year
+      ]
+      ages.each do |age|
+        b = Fabricate(:backup, database: database, created_at: age.ago,
+                               account: account)
+        allow(b).to receive(:database_with_deleted).and_return(database)
+        m.and_yield(b)
+        b
+      end
+    end
+    before { subject.options = { max_age: '1w' } }
+
+    it 'can show a subset of backups' do
+      subject.send('backup:orphaned')
+      puts captured_output_text
+      expect(captured_output_text.split("\n").size).to eq(5)
+    end
+
+    it 'allows scoping via environment' do
+      subject.options = { max_age: '1w', environment: database.account.handle }
+      subject.send('backup:orphaned')
+      expect(captured_output_text.split("\n").size).to eq(5)
+    end
+
+    it 'shows more backups if requested' do
+      subject.options = { max_age: '2y' }
+      subject.send('backup:orphaned')
+      expect(captured_output_text.split("\n").size).to eq(9)
+    end
+
+    it 'errors out if max_age is invalid' do
+      subject.options = { max_age: 'foobar' }
+      expect { subject.send('backup:orphaned') }
+        .to raise_error(Thor::Error, 'Invalid age: foobar')
     end
   end
 
