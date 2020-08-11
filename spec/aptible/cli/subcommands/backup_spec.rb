@@ -9,7 +9,9 @@ describe Aptible::CLI::Agent do
     # created_at: 2016-06-14 13:24:11 +0000
     Fabricate(
       :backup,
-      database: database, created_at: Time.at(1465910651), account: account,
+      database_with_deleted: database,
+      created_at: Time.at(1465910651),
+      account: account,
       id: 1
     )
   end
