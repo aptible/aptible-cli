@@ -49,11 +49,19 @@ module Aptible
 
         def replicate_database(source, dest_handle, options)
           replication_params = {
-            type: 'replicate',
             handle: dest_handle,
             container_size: options[:container_size],
             disk_size: options[:size]
           }.reject { |_, v| v.nil? }
+
+          if options[:logical]
+            replication_params[:type] = 'replicate_logical'
+            replication_params[:docker_ref] =
+              options[:database_image].docker_repo
+          else
+            replication_params[:type] = 'replicate'
+          end
+
           op = source.create_operation!(replication_params)
           attach_to_operation_logs(op)
 

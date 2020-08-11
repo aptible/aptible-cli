@@ -519,6 +519,69 @@ describe Aptible::CLI::Agent do
       expect { subject.send('db:replicate', 'nope', 'replica') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
+
+    it 'allows logical replication of a database with --version set' do
+      master = Fabricate(:database, handle: 'master')
+      databases << master
+      replica = Fabricate(:database,
+                          account: master.account,
+                          handle: 'replica')
+
+      dbimg = Fabricate(:database_image,
+                        type: 'postgresql',
+                        version: 10,
+                        docker_repo: 'aptible/postgresql:10')
+
+      expect(subject).to receive(:find_database_image).with('postgresql', 10)
+        .and_return(dbimg)
+
+      op = Fabricate(:operation)
+
+      params = { type: 'replicate_logical', handle: 'replica',
+                 docker_ref: dbimg.docker_repo }
+      expect(master).to receive(:create_operation!)
+        .with(**params).and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op) do
+        databases << replica
+        replica
+      end
+
+      provision = Fabricate(:operation)
+
+      expect(replica).to receive_message_chain(:operations, :last)
+        .and_return(provision)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(provision)
+
+      expect(replica).to receive(:reload).and_return(replica)
+
+      subject.options = { logical: true, version: 10 }
+      subject.send('db:replicate', 'master', 'replica')
+
+      expect(captured_logs).to match(/replicating master/i)
+    end
+
+    it 'fails if logical replication requested without --version' do
+      master = Fabricate(:database, handle: 'master', type: 'postgresql')
+      databases << master
+
+      subject.options = { type: 'replicate', handle: 'replica', logical: true }
+      expect { subject.send('db:replicate', 'master', 'replica') }
+        .to raise_error(Thor::Error, '--version is required for logical ' \
+                                     'replication')
+    end
+
+    it 'fails if logical replication requested for non-postgres db' do
+      master = Fabricate(:database, handle: 'master', type: 'mysql')
+      databases << master
+
+      subject.options = { type: 'replicate', handle: 'replica',
+                          logical: true, version: 10 }
+      expect { subject.send('db:replicate', 'master', 'replica') }
+        .to raise_error(Thor::Error, 'Logical replication only works for ' \
+                                     'PostgreSQL')
+    end
   end
 
   describe '#db:dump' do

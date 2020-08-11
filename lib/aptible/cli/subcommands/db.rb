@@ -122,20 +122,39 @@ module Aptible
             end
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--logical --version VERSION]',
                  'Create a replica/follower of a database'
             option :environment
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, type: :numeric
+            option :logical, type: :boolean
+            option :version, type: :string
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
+
+              if options[:logical]
+                if source.type != 'postgresql'
+                  raise Thor::Error, 'Logical replication only works for ' \
+                                     'PostgreSQL'
+                end
+                if options[:version]
+                  image = find_database_image(source.type, options[:version])
+                else
+                  raise Thor::Error, '--version is required for logical ' \
+                                     'replication'
+                end
+              end
+
               CLI.logger.info "Replicating #{source_handle}..."
 
               opts = {
                 environment: options[:environment],
                 container_size: options[:container_size],
-                size: options[:disk_size] || options[:size]
+                size: options[:disk_size] || options[:size],
+                logical: options[:logical],
+                database_image: image || nil
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
