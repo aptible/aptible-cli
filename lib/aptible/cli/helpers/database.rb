@@ -51,7 +51,8 @@ module Aptible
           replication_params = {
             handle: dest_handle,
             container_size: options[:container_size],
-            disk_size: options[:size]
+            disk_size: options[:size],
+            key_arn: options[:key_arn]
           }.reject { |_, v| v.nil? }
 
           if options[:logical]

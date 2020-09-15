@@ -133,6 +133,7 @@ module Aptible
             option :disk_size, type: :numeric
             option :logical, type: :boolean
             option :version, type: :string
+            option :key_arn, type: :string
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
 
@@ -156,7 +157,8 @@ module Aptible
                 container_size: options[:container_size],
                 size: options[:disk_size] || options[:size],
                 logical: options[:logical],
-                database_image: image || nil
+                database_image: image || nil,
+                key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
