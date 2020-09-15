@@ -53,7 +53,8 @@ module Aptible
 
             desc 'db:create HANDLE ' \
                  '[--type TYPE] [--version VERSION] ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--key-arn KEY_ARN]',
                  'Create a new database'
             option :type, type: :string
             option :version, type: :string
@@ -125,7 +126,7 @@ module Aptible
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--logical --version VERSION]',
+                 '[--logical --version VERSION] [--key-arn KEY_ARN]',
                  'Create a replica/follower of a database'
             option :environment
             option :container_size, type: :numeric
