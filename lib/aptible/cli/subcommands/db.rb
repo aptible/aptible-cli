@@ -60,6 +60,7 @@ module Aptible
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, default: 10, type: :numeric
+            option :key_arn, type: :string
             option :environment
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
@@ -67,7 +68,8 @@ module Aptible
               db_opts = {
                 handle: handle,
                 initial_container_size: options[:container_size],
-                initial_disk_size: options[:disk_size] || options[:size]
+                initial_disk_size: options[:disk_size] || options[:size],
+                current_kms_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
