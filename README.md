@@ -75,7 +75,7 @@ Commands:
   aptible restart                                                                                                                                # Restart all services associated with an app
   aptible services                                                                                                                               # List Services for an App
   aptible ssh [COMMAND]                                                                                                                          # Run a command against an app
-  aptible version                                                                                                                                # Print Aptible CLI version                                                                                                                       # Print Aptible CLI version
+  aptible version                                                                                                                                # Print Aptible CLI version
 ```
 <!-- END USAGE -->
 
