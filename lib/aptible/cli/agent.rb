@@ -67,6 +67,7 @@ module Aptible
       def initialize(*)
         nag_toolbelt unless toolbelt?
         Aptible::Resource.configure { |conf| conf.user_agent = version_string }
+        warn_sso_enforcement
         super
       end
 
@@ -230,6 +231,22 @@ module Aptible
           FileUtils.mkdir_p(File.dirname(nag_file))
           File.open(nag_file, 'w', 0o600) { |f| f.write(now.to_s) }
         end
+      end
+
+      def warn_sso_enforcement
+        # If the user is also a member of
+        begin
+          token = fetch_token
+        rescue StandardError
+          return
+        end
+        reauth = Aptible::Auth::ReauthenticateOrganization.all(token: token)
+        return if reauth.empty?
+
+        CLI.logger.warn(['WARNING: You will need to use the appropriate',
+                         'login method (SSO or Aptible credentials) to access',
+                         'these organizations:',
+                         reauth.map(&:name)].join(' '))
       end
 
       def version_string
