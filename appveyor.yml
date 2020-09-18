@@ -8,12 +8,6 @@ environment:
     - RUBY_VERSION: 23
 
 install:
-  # The SSL_CERT_* environment variables are here since otherwise calls to
-  # codecov.io wtill not work. These variables do have to be set in order for
-  # the gem to make calls to the Aptible API, since otherwise Ruby will fail
-  # with a certificate verification error.
-  - set SSL_CERT_DIR=%PROGRAMFILES%\Git\mingw64\ssl\certs
-  - set SSL_CERT_FILE=%PROGRAMFILES%\Git\mingw64\ssl\cert.pem
   # Override PATHEXT so our ssh bat file has a higher precedence.
   - set PATHEXT=.BAT;.COM;.EXE;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
   - set PATH=C:\Ruby%RUBY_VERSION%-x64\bin;%PATH%
