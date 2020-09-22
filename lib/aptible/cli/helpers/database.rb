@@ -105,10 +105,11 @@ module Aptible
 
         def local_url(credential, local_port)
           remote_url = credential.connection_url
-          uri = URI.parse(remote_url)
 
+          uri = URI.parse(remote_url)
+          domain = credential.database.account.stack.internal_domain
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
-          "localhost.aptible.in:#{local_port}#{uri.path}"
+          "localhost.#{domain}:#{local_port}#{uri.path}"
         end
 
         def find_credential(database, type = nil)

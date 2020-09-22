@@ -13,7 +13,9 @@ describe Aptible::CLI::Agent do
   end
 
   let(:handle) { 'foobar' }
-  let(:database) { Fabricate(:database, handle: handle) }
+  let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+  let(:account) { Fabricate(:account, stack: stack) }
+  let(:database) { Fabricate(:database, handle: handle, account: account) }
   let(:socat_helper) { SocatHelperMock.new(port: 4242) }
 
   describe '#db:create' do
