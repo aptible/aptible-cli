@@ -53,13 +53,15 @@ module Aptible
 
             desc 'db:create HANDLE ' \
                  '[--type TYPE] [--version VERSION] ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--key-arn KEY_ARN]',
                  'Create a new database'
             option :type, type: :string
             option :version, type: :string
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, default: 10, type: :numeric
+            option :key_arn, type: :string
             option :environment
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
@@ -67,7 +69,8 @@ module Aptible
               db_opts = {
                 handle: handle,
                 initial_container_size: options[:container_size],
-                initial_disk_size: options[:disk_size] || options[:size]
+                initial_disk_size: options[:disk_size] || options[:size],
+                current_kms_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
@@ -123,7 +126,7 @@ module Aptible
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--logical --version VERSION]',
+                 '[--logical --version VERSION] [--key-arn KEY_ARN]',
                  'Create a replica/follower of a database'
             option :environment
             option :container_size, type: :numeric
@@ -131,6 +134,7 @@ module Aptible
             option :disk_size, type: :numeric
             option :logical, type: :boolean
             option :version, type: :string
+            option :key_arn, type: :string
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
 
@@ -154,7 +158,8 @@ module Aptible
                 container_size: options[:container_size],
                 size: options[:disk_size] || options[:size],
                 logical: options[:logical],
-                database_image: image || nil
+                database_image: image || nil,
+                key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
