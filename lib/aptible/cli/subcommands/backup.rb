@@ -9,13 +9,15 @@ module Aptible
 
             desc 'backup:restore BACKUP_ID ' \
                  '[--environment ENVIRONMENT_HANDLE] [--handle HANDLE] ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--key-arn KEY_ARN]',
                  'Restore a backup'
             option :handle, desc: 'a name to use for the new database'
             option :environment, desc: 'a different environment to restore to'
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, type: :numeric
+            option :key_arn, type: :string
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
@@ -38,7 +40,8 @@ module Aptible
                 handle: handle,
                 container_size: options[:container_size],
                 disk_size: options[:disk_size] || options[:size],
-                destination_account: destination_account
+                destination_account: destination_account,
+                key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
