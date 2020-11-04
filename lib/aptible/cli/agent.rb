@@ -235,11 +235,7 @@ module Aptible
 
       def warn_sso_enforcement
         # If the user is also a member of
-        begin
-          token = fetch_token
-        rescue StandardError
-          return
-        end
+        token = fetch_token
         reauth = Aptible::Auth::ReauthenticateOrganization.all(token: token)
         return if reauth.empty?
 
@@ -247,6 +243,7 @@ module Aptible
                          'login method (SSO or Aptible credentials) to access',
                          'these organizations:',
                          reauth.map(&:name)].join(' '))
+      rescue StandardError
       end
 
       def version_string
