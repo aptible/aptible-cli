@@ -23,6 +23,7 @@ module Aptible
           node.value('created_at', backup.created_at)
           node.value('region', backup.aws_region)
           node.value('size', backup.size)
+          node.value('manual', backup.manual)
 
           if backup.copied_from
             node.keyed_object('copied_from', 'description') do |n|
