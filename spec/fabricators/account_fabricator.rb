@@ -20,6 +20,7 @@ Fabricator(:account, from: :stub_account) do
   bastion_host 'localhost'
   dumptruck_port 1234
   handle 'aptible'
+  ca_body '--BEGIN FAKE CERT-- test --END FAKE CERT--'
   stack
 
   apps { [] }
