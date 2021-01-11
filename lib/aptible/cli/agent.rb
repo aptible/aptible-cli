@@ -23,6 +23,7 @@ require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
 require_relative 'subcommands/db'
 require_relative 'subcommands/domains'
+require_relative 'subcommands/environment'
 require_relative 'subcommands/logs'
 require_relative 'subcommands/ps'
 require_relative 'subcommands/rebuild'
@@ -47,6 +48,7 @@ module Aptible
       include Subcommands::Config
       include Subcommands::DB
       include Subcommands::Domains
+      include Subcommands::Environment
       include Subcommands::Logs
       include Subcommands::Ps
       include Subcommands::Rebuild

@@ -66,6 +66,8 @@ Commands:
   aptible endpoints:tcp:modify [--app APP] ENDPOINT_HOSTNAME                                                                                                  # Modify an App TCP Endpoint
   aptible endpoints:tls:create [--app APP] SERVICE                                                                                                            # Create an App TLS Endpoint
   aptible endpoints:tls:modify [--app APP] ENDPOINT_HOSTNAME                                                                                                  # Modify an App TLS Endpoint
+  aptible environment:ca_cert                                                                                                                                 # Retrieve the CA certificate associated with the environment
+  aptible environment:list                                                                                                                                    # List all environments
   aptible help [COMMAND]                                                                                                                                      # Describe available commands or one specific command
   aptible login                                                                                                                                               # Log in to Aptible
   aptible logs [--app APP | --database DATABASE]                                                                                                              # Follows logs from a running app or database
