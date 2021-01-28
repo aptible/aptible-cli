@@ -25,7 +25,6 @@ require_relative 'subcommands/db'
 require_relative 'subcommands/domains'
 require_relative 'subcommands/environment'
 require_relative 'subcommands/logs'
-require_relative 'subcommands/ps'
 require_relative 'subcommands/rebuild'
 require_relative 'subcommands/deploy'
 require_relative 'subcommands/restart'
@@ -50,7 +49,6 @@ module Aptible
       include Subcommands::Domains
       include Subcommands::Environment
       include Subcommands::Logs
-      include Subcommands::Ps
       include Subcommands::Rebuild
       include Subcommands::Deploy
       include Subcommands::Restart
