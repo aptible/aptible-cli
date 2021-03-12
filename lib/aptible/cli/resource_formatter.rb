@@ -82,6 +82,7 @@ module Aptible
           node.value('handle', database.handle)
 
           node.value('type', database.type)
+          node.value('version', database.database_image.version)
           node.value('status', database.status)
 
           node.value('connection_url', database.connection_url)
@@ -92,6 +93,11 @@ module Aptible
             end
           end
           attach_account(node, account)
+
+          node.value('disk_type', database.disk.ebs_volume_type)
+          node.value('disk_size', database.disk.size)
+          node.value('container_size', \
+                     database.service.container_memory_limit_mb)
         end
 
         def inject_credential(node, credential)
