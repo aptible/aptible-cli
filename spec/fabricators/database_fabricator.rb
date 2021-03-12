@@ -16,6 +16,8 @@ Fabricator(:database, from: :stub_database) do
   status 'provisioned'
   connection_url 'postgresql://aptible:password@10.252.1.125:49158/db'
   account
+  database_image
+  disk { Fabricate(:database_disk) }
   service { nil }
 
   backups { [] }
