@@ -94,10 +94,15 @@ module Aptible
           end
           attach_account(node, account)
 
-          node.value('disk_type', database.disk.ebs_volume_type)
-          node.value('disk_size', database.disk.size)
-          node.value('container_size', \
-                     database.service.container_memory_limit_mb)
+          if database.disk
+            node.value('disk_type', database.disk.ebs_volume_type)
+            node.value('disk_size', database.disk.size)
+          end
+
+          if database.service
+            node.value('container_size', \
+                       database.service.container_memory_limit_mb)
+          end
         end
 
         def inject_credential(node, credential)
