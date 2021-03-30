@@ -72,6 +72,7 @@ Commands:
   aptible login                                                                                                                                               # Log in to Aptible
   aptible logs [--app APP | --database DATABASE]                                                                                                              # Follows logs from a running app or database
   aptible operation:cancel OPERATION_ID                                                                                                                       # Cancel a running operation
+  aptible operation:log OPERATION_ID                                                                                                                          # Follow log of a running operation
   aptible rebuild                                                                                                                                             # Rebuild an app, and restart its services
   aptible restart                                                                                                                                             # Restart all services associated with an app
   aptible services                                                                                                                                            # List Services for an App
