@@ -157,7 +157,7 @@ describe Aptible::CLI::Agent do
               'status' => op.status,
               'git_ref' => op.git_ref,
               'user_email' => op.user_email,
-              'created_at' => op.created_at
+              'created_at' => op.created_at.strftime('%Y-%m-%d %H:%M:%S %z')
             },
           'services' => []
         }
