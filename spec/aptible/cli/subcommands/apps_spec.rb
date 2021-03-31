@@ -136,10 +136,17 @@ describe Aptible::CLI::Agent do
 
     it 'includes the last deploy operation in JSON' do
       account = Fabricate(:account, handle: 'account')
-      op = Fabricate(:operation, type: 'deploy', status: 'succeeded')
+      op = Fabricate(:operation, type: 'deploy',
+                                 status: 'succeeded',
+                                 git_ref: SecureRandom.hex(20))
+
       app = Fabricate(:app, account: account, handle: 'app',
                             last_deploy_operation: op)
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
+
+      expected_description = "#{op.id}: #{op.created_at}, " \
+                             "deploy of git_ref: \"#{op.git_ref}\" " \
+                             "succeeded after 1:00, #{op.user_email}"
 
       expected_json = [
         {
@@ -157,7 +164,10 @@ describe Aptible::CLI::Agent do
               'status' => op.status,
               'git_ref' => op.git_ref,
               'user_email' => op.user_email,
-              'created_at' => op.created_at.strftime('%Y-%m-%d %H:%M:%S %z')
+              'created_at' => op.created_at.strftime('%Y-%m-%d %H:%M:%S %z'),
+              'operation' => op.type,
+              'duration' => '1:00',
+              'description' => expected_description
             },
           'services' => []
         }

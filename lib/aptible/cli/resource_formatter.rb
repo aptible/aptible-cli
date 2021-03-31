@@ -45,12 +45,71 @@ module Aptible
           node.value('handle', account.handle)
         end
 
-        def inject_operation(node, operation)
-          node.value('id', operation.id)
-          node.value('status', operation.status)
-          node.value('git_ref', operation.git_ref)
-          node.value('user_email', operation.user_email)
-          node.value('created_at', operation.created_at)
+        def inject_operation(node, op)
+          preposition = {
+            'running' => 'for',
+            'queued' => 'for',
+            'failed' => 'after',
+            'succeeded' => 'after'
+          }
+
+          finished = %w(failed succeeded).include?(op.status)
+          finished_at = finished ? op.updated_at : Time.now
+          duration = (finished_at - op.created_at).round
+          duration = "#{duration / 60}:#{(duration % 60).to_s.rjust(2, '0')}"
+          duration = "#{duration}+" unless finished
+
+          ram_size = op.container_size
+          disk_size = op.disk_size
+
+          if op.type == 'deploy'
+            if op.git_ref == '0000000000000000000000000000000000000000'
+              deployment_artifact = ' of docker_image: '\
+                                    "#{op.env['APTIBLE_DOCKER_IMAGE']}"
+              node_value('docker_image', op.env['APTIBLE_DOCKER_IMAGE'])
+            elsif op.git_ref
+              deployment_artifact = " of git_ref: \"#{op.git_ref}\""
+            elsif op.env
+              deployment_artifact = ' of docker_image: '\
+                                    "\"#{op.env['APTIBLE_DOCKER_IMAGE']}\""
+              # node_value('docker_image', op.env['APTIBLE_DOCKER_IMAGE'])
+            else
+              deployment_artifact = ' What was deployed?'
+            end
+          end
+
+          description = "#{op.id}: #{op.created_at}, " \
+                        "#{op.type}#{deployment_artifact} " \
+                        "#{op.status} #{preposition[op.status]} " \
+                        "#{duration}, " \
+                        "#{op.user_email}"
+
+          node.value('id', op.id)
+          node.value('status', op.status)
+          node.value('git_ref', op.git_ref)
+          node.value('user_email', op.user_email)
+          node.value('created_at', op.created_at)
+          node.value('operation', op.type)
+          node.value('duration', duration)
+
+          case op.type
+          when 'restart'
+            if ram_size
+              node.value('container_size', ram_size)
+              description += ", container size: #{ram_size}mb"
+            end
+            if disk_size > 0
+              node.value('disk_size', disk_size)
+              description += ", disk size: #{disk_size}gb"
+            end
+          when 'deploy'
+            true
+          when 'execute'
+            node.value('command', op.command)
+            description += ", command: \"#{op.command}\""
+          end
+
+          node.value('description', description)
         end
 
         def inject_app(node, app, account)
