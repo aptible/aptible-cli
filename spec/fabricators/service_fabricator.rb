@@ -14,6 +14,7 @@ Fabricator(:service, from: :stub_service) do
   container_count { 1 }
   container_memory_limit_mb { 512 }
   vhosts { [] }
+  operations { [] }
 
   after_create do |service, transients|
     if transients[:app]

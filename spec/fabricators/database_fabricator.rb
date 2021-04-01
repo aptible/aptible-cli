@@ -19,7 +19,7 @@ Fabricator(:database, from: :stub_database) do
   database_image
   disk { Fabricate(:database_disk) }
   service { nil }
-
+  operations { [] }
   backups { [] }
   database_credentials { [] }
 
