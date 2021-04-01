@@ -29,6 +29,7 @@ Fabricator(:app, from: :stub_app) do
   configurations { [] }
   current_configuration { nil }
   errors { Aptible::Resource::Errors.new }
+  operations { [] }
 
   after_create { |app| app.account.apps << app }
 end

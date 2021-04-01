@@ -32,15 +32,33 @@ module Aptible
 
               resource = ensure_app_or_database(options)
 
-              m = "Operations for #{resource.handle}: "\
-                  "#{resource.operations.count}"
-              CLI.logger.info m
-
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list('description') do |node|
                   all_operations = resource.operations
-                  # TODO: make aptible-api-ruby include
-                  # app service and vhost operations?
+
+                  if resource.is_a?(Aptible::Api::App)
+                    resource.services.each do |s|
+                      all_operations + s.operations
+                    end
+                    resource.vhosts.each do |v|
+                      all_operations + v.operations  
+                    end
+                    # Configurations?
+                    # Image scan?
+                  else
+                    # Backups?
+                    # DatabaseCredential
+                    resource.database_credentials.each do |c|
+                      all_operations + c.operations
+                    end
+                    resource.service.vhosts.each do |v|
+                      all_operations + v.operations  
+                    end
+                  end
+                  
+
+                  
+                  # all_operations.order(id: :desc)
                   all_operations.each do |op|
                     created_at = op.created_at
                     break if created_at < min_created_at

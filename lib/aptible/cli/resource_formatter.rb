@@ -98,7 +98,7 @@ module Aptible
               node.value('container_size', ram_size)
               description += ", container size: #{ram_size}mb"
             end
-            if disk_size > 0
+            if disk_size && disk_size > 0
               node.value('disk_size', disk_size)
               description += ", disk size: #{disk_size}gb"
             end
