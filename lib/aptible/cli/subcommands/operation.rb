@@ -32,10 +32,6 @@ module Aptible
 
               resource = ensure_app_or_database(options)
 
-              m = "Operations for #{resource.handle}: "\
-                  "#{resource.operations.count}"
-              CLI.logger.info m
-
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list('description') do |node|
                   all_operations = resource.operations

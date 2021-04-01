@@ -8,4 +8,12 @@ Fabricator(:operation, from: :stub_operation) do
   updated_at { Time.now }
   resource { Fabricate(:app) }
   errors { Aptible::Resource::Errors.new }
+
+  after_create do |op|
+    if op.app
+      op.app.operations << op
+    elsif op.database
+      op.database.operations << op
+    end
+  end
 end
