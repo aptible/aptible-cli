@@ -279,19 +279,24 @@ module Aptible
             end
 
             desc 'db:restart HANDLE ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]',
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]' \
+                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
             option :disk_size, type: :numeric
             option :size, type: :numeric
+            option :iops, type: :numeric
+            option :volume_type
             define_method 'db:restart' do |handle|
               database = ensure_database(options.merge(db: handle))
 
               opts = {
                 type: 'restart',
                 container_size: options[:container_size],
-                disk_size: options[:disk_size] || options[:size]
+                disk_size: options[:disk_size] || options[:size],
+                provisioned_iops: options[:iops],
+                ebs_volume_type: options[:volume_type]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.warn([
@@ -301,6 +306,26 @@ module Aptible
               ].join("\n")) if options[:size]
 
               CLI.logger.info "Restarting #{database.handle}..."
+              op = database.create_operation!(opts)
+              attach_to_operation_logs(op)
+            end
+
+            desc 'db:modify HANDLE ' \
+                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
+                 'Modify a database disk'
+            option :environment
+            option :iops, type: :numeric
+            option :volume_type
+            define_method 'db:modify' do |handle|
+              database = ensure_database(options.merge(db: handle))
+
+              opts = {
+                type: 'modify',
+                provisioned_iops: options[:iops],
+                ebs_volume_type: options[:volume_type]
+              }.delete_if { |_, v| v.nil? }
+
+              CLI.logger.info "Modifying #{database.handle}..."
               op = database.create_operation!(opts)
               attach_to_operation_logs(op)
             end

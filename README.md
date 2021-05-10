@@ -48,9 +48,10 @@ Commands:
   aptible db:dump HANDLE [pg_dump options]                                                                                                                    # Dump a remote database to file
   aptible db:execute HANDLE SQL_FILE [--on-error-stop]                                                                                                        # Executes sql against a database
   aptible db:list                                                                                                                                             # List all databases
+  aptible db:modify HANDLE [--iops IOPS] [--volume-type [gp2, gp3]]                                                                                           # Modify a database disk
   aptible db:reload HANDLE                                                                                                                                    # Reload a database
   aptible db:replicate HANDLE REPLICA_HANDLE [--container-size SIZE_MB] [--disk-size SIZE_GB] [--logical --version VERSION] [--key-arn KEY_ARN]               # Create a replica/follower of a database
-  aptible db:restart HANDLE [--container-size SIZE_MB] [--disk-size SIZE_GB]                                                                                  # Restart a database
+  aptible db:restart HANDLE [--container-size SIZE_MB] [--disk-size SIZE_GB][--iops IOPS] [--volume-type [gp2, gp3]]                                          # Restart a database
   aptible db:tunnel HANDLE                                                                                                                                    # Create a local tunnel to a database
   aptible db:url HANDLE                                                                                                                                       # Display a database URL
   aptible db:versions                                                                                                                                         # List available database versions
