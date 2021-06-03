@@ -92,7 +92,11 @@ module Aptible
         if options[:sso]
           begin
             token = options[:sso]
-            token = ask('Paste token copied from Dashboard:') if token == 'sso'
+            if token == 'sso'
+              browser_open_url('https://dashboard.aptible.com/settings/cli-sso-token')
+              sleep 0.5
+              token = ask('Paste token copied from Dashboard:')
+            end
             Base64.urlsafe_decode64(token.split('.').first)
             save_token(token)
             CLI.logger.info "Token written to #{token_file}"
@@ -257,6 +261,27 @@ module Aptible
 
       def toolbelt?
         ENV['APTIBLE_TOOLBELT']
+      end
+
+      # Open the specified URL in the default system web browser
+      def browser_open_url(url)
+        case RbConfig::CONFIG.fetch('host_os')
+        when /darwin/
+          cmd = 'open'
+        when /linux|bsd/
+          cmd = 'xdg-open'
+        when /mswin|mingw|cygwin/
+          cmd = 'start'
+        else
+          CLI.logger.warn("Unknown OS: #{RbConfig::CONFIG.fetch('host_os').inspect}")
+          cmd = 'open'
+        end
+
+        if system([cmd, cmd], url)
+          CLI.logger.info('Opening browser window...')
+        else
+          CLI.logger.warn("Failed to open in browser: #{url.inspect}")
+        end
       end
     end
   end
