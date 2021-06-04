@@ -11,6 +11,10 @@ end
 # Require library up front
 require 'aptible/cli'
 
+def fmt_time(time)
+  time.strftime('%Y-%m-%d %H:%M:%S %z')
+end
+
 class SpecRenderer < Aptible::CLI::Renderer::Base
   def initialize
     @nodes = []

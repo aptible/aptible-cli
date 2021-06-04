@@ -43,6 +43,7 @@ module Aptible
         def inject_account(node, account)
           node.value('id', account.id)
           node.value('handle', account.handle)
+          node.value('created_at', account.created_at)
         end
 
         def inject_operation(node, operation)
@@ -56,6 +57,7 @@ module Aptible
         def inject_app(node, app, account)
           node.value('id', app.id)
           node.value('handle', app.handle)
+          node.value('created_at', app.created_at)
 
           node.value('status', app.status)
           node.value('git_remote', app.git_repo)
@@ -80,6 +82,7 @@ module Aptible
         def inject_database(node, database, account)
           node.value('id', database.id)
           node.value('handle', database.handle)
+          node.value('created_at', database.created_at)
 
           node.value('type', database.type)
           node.value('version', database.database_image.version)
@@ -120,6 +123,7 @@ module Aptible
         def inject_service(node, service, app)
           node.value('id', service.id)
           node.value('service', service.process_type)
+          node.value('created_at', service.created_at)
 
           node.value('command', service.command || 'CMD')
           node.value('container_count', service.container_count)
@@ -132,6 +136,7 @@ module Aptible
           node.value('id', vhost.id)
           node.value('hostname', vhost.external_host)
           node.value('status', vhost.status)
+          node.value('created_at', vhost.created_at)
 
           case vhost.type
           when 'tcp', 'tls'

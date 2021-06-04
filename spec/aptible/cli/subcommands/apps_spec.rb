@@ -104,26 +104,30 @@ describe Aptible::CLI::Agent do
         {
           'environment' => {
             'id' => account.id,
-            'handle' => account.handle
+            'handle' => account.handle,
+            'created_at' => fmt_time(account.created_at)
           },
           'handle' => app.handle,
           'id' => app.id,
           'status' => app.status,
           'git_remote' => app.git_repo,
+          'created_at' => fmt_time(app.created_at),
           'services' => [
             {
               'service' => s1.process_type,
               'id' => s1.id,
               'command' => s1.command,
               'container_count' => s1.container_count,
-              'container_size' => s1.container_memory_limit_mb
+              'container_size' => s1.container_memory_limit_mb,
+              'created_at' => fmt_time(s1.created_at)
             },
             {
               'service' => s2.process_type,
               'id' => s2.id,
               'command' => 'CMD',
               'container_count' => s2.container_count,
-              'container_size' => s2.container_memory_limit_mb
+              'container_size' => s2.container_memory_limit_mb,
+              'created_at' => fmt_time(s2.created_at)
             }
           ]
         }
@@ -145,12 +149,14 @@ describe Aptible::CLI::Agent do
         {
           'environment' => {
             'id' => account.id,
-            'handle' => account.handle
+            'handle' => account.handle,
+            'created_at' => fmt_time(account.created_at)
           },
           'handle' => app.handle,
           'id' => app.id,
           'status' => app.status,
           'git_remote' => app.git_repo,
+          'created_at' => fmt_time(app.created_at),
           'last_deploy_operation' =>
             {
               'id' => op.id,

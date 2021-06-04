@@ -26,4 +26,5 @@ Fabricator(:account, from: :stub_account) do
   apps { [] }
   databases { [] }
   certificates { [] }
+  created_at { Time.now }
 end
