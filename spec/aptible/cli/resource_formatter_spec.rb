@@ -27,6 +27,7 @@ describe Aptible::CLI::ResourceFormatter do
         'Id: 12',
         'Hostname: foo.io',
         'Status: provisioned',
+        "Created At: #{fmt_time(service.created_at)}",
         'Type: https',
         'Port: default',
         'Internal: false',
