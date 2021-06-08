@@ -103,7 +103,7 @@ module Aptible
             node.value('disk_modification_progress',
                        database.disk.modification_progress)
             node.value('disk_modification_status', database.disk.status)
-            node.value('disk_provisioned_iops', database.disk.provisioned_iops)
+            node.value('disk_provisioned_iops', database.disk.baseline_iops)
           end
 
           if database.service
