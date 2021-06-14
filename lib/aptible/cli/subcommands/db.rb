@@ -279,7 +279,7 @@ module Aptible
             end
 
             desc 'db:restart HANDLE ' \
-                 '[--container-size SIZE_MB] [--disk-size SIZE_GB]' \
+                 '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
                  '[--iops IOPS] [--volume-type [gp2, gp3]]',
                  'Restart a database'
             option :environment
