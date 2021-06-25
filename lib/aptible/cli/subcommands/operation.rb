@@ -18,8 +18,10 @@ module Aptible
               o.update!(cancelled: true)
             end
 
-            desc 'operation:list [--app APP | --database DATABASE | --environment ENVIRONMENT ]',
-                 'List running or recent operations for an App, Database, or Environment'
+            desc 'operation:list [--app APP | --database DATABASE |' \
+                 ' --environment ENVIRONMENT ]',
+                 'List running or recent operations for an App, Database,' \
+                 ' or Environment'
             option :max_age,
                    default: '1w',
                    desc: 'Limit operations returned '\
@@ -41,7 +43,7 @@ module Aptible
                       all_operations + s.operations
                     end
                     resource.vhosts.each do |v|
-                      all_operations + v.operations  
+                      all_operations + v.operations
                     end
                     # Configurations?
                     # Image scan?
@@ -52,14 +54,12 @@ module Aptible
                       all_operations + c.operations
                     end
                     resource.service.vhosts.each do |v|
-                      all_operations + v.operations  
+                      all_operations + v.operations
                     end
                   elsif resource.is_a?(Aptible::Api::Account)
-                    puts "it is account #{resource.handle} #{resource.operations}"
+                    puts "This many ops: #{resource.operations.count}"
                   end
-                  
 
-                  
                   # all_operations.order(id: :desc)
                   all_operations.each do |op|
                     created_at = op.created_at

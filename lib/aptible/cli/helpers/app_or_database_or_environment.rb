@@ -15,7 +15,7 @@ module Aptible
 
         def ensure_app_or_database_or_environment(options = {})
           if options[:app] && options[:database]
-            m = 'You must specify only one of --app, --database, or --environment'
+            m = 'You must specify either --app, --database, or --environment'
             raise Thor::Error, m
           end
 
