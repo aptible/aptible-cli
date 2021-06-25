@@ -6,7 +6,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Token
             include Helpers::Operation
-            include Helpers::AppOrDatabase
+            include Helpers::AppOrDatabaseOrEnvironment
 
             desc 'operation:cancel OPERATION_ID', 'Cancel a running operation'
             define_method 'operation:cancel' do |operation_id|
@@ -18,8 +18,8 @@ module Aptible
               o.update!(cancelled: true)
             end
 
-            desc 'operation:list [--app APP | --database DATABASE]',
-                 'List running or recent operations for an App or Database'
+            desc 'operation:list [--app APP | --database DATABASE | --environment ENVIRONMENT ]',
+                 'List running or recent operations for an App, Database, or Environment'
             option :max_age,
                    default: '1w',
                    desc: 'Limit operations returned '\
@@ -30,7 +30,7 @@ module Aptible
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
 
-              resource = ensure_app_or_database(options)
+              resource = ensure_app_or_database_or_environment(options)
 
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list('description') do |node|
@@ -45,7 +45,7 @@ module Aptible
                     end
                     # Configurations?
                     # Image scan?
-                  else
+                  elsif resource.is_a?(Aptible::Api::Database)
                     # Backups?
                     # DatabaseCredential
                     resource.database_credentials.each do |c|
@@ -54,6 +54,8 @@ module Aptible
                     resource.service.vhosts.each do |v|
                       all_operations + v.operations  
                     end
+                  elsif resource.is_a?(Aptible::Api::Account)
+                    puts "it is account #{resource.handle} #{resource.operations}"
                   end
                   
 
