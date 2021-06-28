@@ -18,6 +18,7 @@ require_relative 'helpers/vhost/option_set_builder'
 require_relative 'helpers/tunnel'
 require_relative 'helpers/system'
 require_relative 'helpers/security_key'
+require_relative 'helpers/config_path'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
@@ -43,6 +44,7 @@ module Aptible
       include Helpers::Token
       include Helpers::Ssh
       include Helpers::System
+      include Helpers::ConfigPath
       include Subcommands::Apps
       include Subcommands::Config
       include Subcommands::DB
@@ -209,7 +211,7 @@ module Aptible
         # further: to do so, edit the file `.aptible/nag_toolbelt` and put a
         # timestamp far into the future. For example, writing 1577836800 will
         # disable the warning until 2020.
-        nag_file = File.join ENV['HOME'], '.aptible', 'nag_toolbelt'
+        nag_file = File.join aptible_config_path, 'nag_toolbelt'
         nag_frequency = 12.hours
 
         last_nag = begin
