@@ -65,8 +65,8 @@ module Aptible
         def inject_operation(node, operation)
           node.value('id', operation.id)
           node.value('status', operation.status)
-          if %w(deploy rebuild).include?(op.type)
-            node.value('git_ref', op.git_ref)
+          if %w(deploy rebuild).include?(operation.type)
+            node.value('git_ref', operation.git_ref)
           end
           node.value('user_email', operation.user_email)
           node.value('created_at', operation.created_at)
