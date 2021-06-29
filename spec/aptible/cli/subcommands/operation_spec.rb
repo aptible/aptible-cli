@@ -1,14 +1,7 @@
 require 'spec_helper'
 
-default_duration = '1:00'
-
 def fmt_time(time)
   time.strftime('%Y-%m-%d %H:%M:%S %z')
-end
-
-def queued_description(op)
-  "#{op.id}: #{op.created_at}, #{op.type} #{op.status} " \
-  "for 1:00+, #{op.user_email}"
 end
 
 describe Aptible::CLI::Agent do
@@ -25,10 +18,16 @@ describe Aptible::CLI::Agent do
                           app: a)
   end
   let!(:a_restart) { Fabricate(:operation, type: 'restart', app: a) }
-  let!(:a_configure) { Fabricate(:operation, type: 'configure', app: a) }
+  let!(:a_configure) do
+    Fabricate(:operation, type: 'configure', app: a,
+                          env: { 'FOO' => 'bar', 'BAZ' => 'bat' })
+  end
   let!(:a_rebuild) { Fabricate(:operation, type: 'rebuild', app: a) }
   let!(:a_restart) { Fabricate(:operation, type: 'restart', app: a) }
-  let!(:a_execute) { Fabricate(:operation, type: 'execute', app: a) }
+  let!(:a_execute) do
+    Fabricate(:operation, type: 'execute', app: a,
+                          command: '/bin/sh')
+  end
   let!(:a_logs) { Fabricate(:operation, type: 'logs', app: a) }
 
   let(:a_scale) do
@@ -74,71 +73,89 @@ describe Aptible::CLI::Agent do
 
       expected_json = [
         {
-          'created_at'  => a_deploy.created_at
-                                   .strftime('%Y-%m-%d %H:%M:%S %z'),
-          'description' => "#{a_deploy.id}: " \
-                           "#{fmt_time(a_deploy.created_at)}" \
-                           ", deploy of git_ref: \"#{a_deploy.git_ref}\"" \
-                           " #{a_deploy.status} after #{default_duration}, " \
-                           "#{a_deploy.user_email}",
-          'duration'    => default_duration,
-          'git_ref'     => a_deploy.git_ref,
-          'id'          => a_deploy.id,
-          'operation'   => a_deploy.type,
-          'status'      => a_deploy.status,
-          'user_email'  => a_deploy.user_email
+          'created_at'    => fmt_time(a_logs.created_at),
+          'description'   => "#{a_logs.id}: " \
+                             "#{fmt_time(a_logs.created_at)}, " \
+                             "StubApp #{a_logs.type} " \
+                             "#{a_logs.status}, " \
+                             "#{a_logs.user_email}",
+          'id'            => a_logs.id,
+          'operation'     => a_logs.type,
+          'status'        => a_logs.status,
+          'user_email'    => a_logs.user_email,
+          'resource_type' => 'StubApp'
         },
         {
-          'created_at'  => fmt_time(a_restart.created_at),
-          'description' => queued_description(a_restart),
-          'duration'    => "#{default_duration}+",
-          'git_ref'     => a_restart.git_ref,
-          'id'          => a_restart.id,
-          'operation'   => a_restart.type,
-          'status'      => a_restart.status,
-          'user_email'  => a_restart.user_email
+          'command'       => a_execute.command,
+          'created_at'    => fmt_time(a_execute.created_at),
+          'description'   => "#{a_execute.id}: " \
+                             "#{fmt_time(a_execute.created_at)}, " \
+                             "StubApp #{a_execute.type} " \
+                             "#{a_execute.status}, " \
+                             "#{a_execute.user_email}, " \
+                             "command: \"#{a_execute.command}\"",
+          'id'            => a_execute.id,
+          'operation'     => a_execute.type,
+          'status'        => a_execute.status,
+          'user_email'    => a_execute.user_email,
+          'resource_type' => 'StubApp'
         },
         {
-          'created_at'  => fmt_time(a_configure.created_at),
-          'description' => queued_description(a_configure),
-          'duration'    => "#{default_duration}+",
-          'git_ref'     => a_configure.git_ref,
-          'id'          => a_configure.id,
-          'operation'   => a_configure.type,
-          'status'      => a_configure.status,
-          'user_email'  => a_configure.user_email
+          'created_at'    => fmt_time(a_rebuild.created_at),
+          'description'   => "#{a_rebuild.id}: " \
+                             "#{fmt_time(a_rebuild.created_at)}, " \
+                             "StubApp #{a_rebuild.type} " \
+                             "#{a_rebuild.status}, " \
+                             "#{a_rebuild.user_email}",
+          'git_ref'       => a_rebuild.git_ref,
+          'id'            => a_rebuild.id,
+          'operation'     => a_rebuild.type,
+          'status'        => a_rebuild.status,
+          'user_email'    => a_rebuild.user_email,
+          'resource_type' => 'StubApp'
         },
         {
-          'created_at'  => fmt_time(a_rebuild.created_at),
-          'description' => queued_description(a_rebuild),
-          'duration'    => "#{default_duration}+",
-          'git_ref'     => a_rebuild.git_ref,
-          'id'          => a_rebuild.id,
-          'operation'   => a_rebuild.type,
-          'status'      => a_rebuild.status,
-          'user_email'  => a_rebuild.user_email
+          'created_at'    => fmt_time(a_configure.created_at),
+          'description'   => "#{a_configure.id}: " \
+                             "#{fmt_time(a_configure.created_at)}, " \
+                             "StubApp #{a_configure.type} " \
+                             "#{a_configure.status}, " \
+                             "#{a_configure.user_email}, " \
+                             'env: FOO BAZ',
+          'id'            => a_configure.id,
+          'operation'     => a_configure.type,
+          'status'        => a_configure.status,
+          'user_email'    => a_configure.user_email,
+          'env'           => { 'BAZ' => 'bat', 'FOO' => 'bar' },
+          'resource_type' => 'StubApp'
         },
         {
-          'command'     => a_execute.command,
-          'created_at'  => fmt_time(a_execute.created_at),
-          'description' => "#{queued_description(a_execute)}, " \
-                           "command: \"#{a_execute.command}\"",
-          'duration'    => "#{default_duration}+",
-          'git_ref'     => a_execute.git_ref,
-          'id'          => a_execute.id,
-          'operation'   => a_execute.type,
-          'status'      => a_execute.status,
-          'user_email'  => a_execute.user_email
+          'created_at'    => fmt_time(a_restart.created_at),
+          'description'   => "#{a_restart.id}: " \
+                             "#{fmt_time(a_restart.created_at)}, " \
+                             "StubApp #{a_restart.type} " \
+                             "#{a_restart.status}, " \
+                             "#{a_restart.user_email}",
+          'id'            => a_restart.id,
+          'operation'     => a_restart.type,
+          'status'        => a_restart.status,
+          'user_email'    => a_restart.user_email,
+          'resource_type' => 'StubApp'
         },
         {
-          'created_at'  => fmt_time(a_logs.created_at),
-          'description' => queued_description(a_logs),
-          'duration'    => "#{default_duration}+",
-          'git_ref'     => a_logs.git_ref,
-          'id'          => a_logs.id,
-          'operation'   => a_logs.type,
-          'status'      => a_logs.status,
-          'user_email'  => a_logs.user_email
+          'created_at'    => a_deploy.created_at
+                                     .strftime('%Y-%m-%d %H:%M:%S %z'),
+          'description'   => "#{a_deploy.id}: " \
+                             "#{fmt_time(a_deploy.created_at)}, " \
+                             "StubApp #{a_deploy.type} " \
+                             "#{a_deploy.status}, " \
+                             "#{a_deploy.user_email}",
+          'git_ref'       => a_deploy.git_ref,
+          'id'            => a_deploy.id,
+          'operation'     => a_deploy.type,
+          'status'        => a_deploy.status,
+          'user_email'    => a_deploy.user_email,
+          'resource_type' => 'StubApp'
         }
       ]
 

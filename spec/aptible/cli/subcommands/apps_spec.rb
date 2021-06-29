@@ -145,8 +145,7 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
 
       expected_description = "#{op.id}: #{op.created_at}, " \
-                             "deploy of git_ref: \"#{op.git_ref}\" " \
-                             "succeeded after 1:00, #{op.user_email}"
+                             "StubApp deploy succeeded, #{op.user_email}"
 
       expected_json = [
         {
@@ -166,8 +165,8 @@ describe Aptible::CLI::Agent do
               'user_email' => op.user_email,
               'created_at' => op.created_at.strftime('%Y-%m-%d %H:%M:%S %z'),
               'operation' => op.type,
-              'duration' => '1:00',
-              'description' => expected_description
+              'description' => expected_description,
+              'resource_type' => 'StubApp'
             },
           'services' => []
         }

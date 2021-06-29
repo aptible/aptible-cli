@@ -6,7 +6,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Token
             include Helpers::Operation
-            include Helpers::AppOrDatabaseOrEnvironment
+            include Helpers::AppOrDatabase
 
             desc 'operation:cancel OPERATION_ID', 'Cancel a running operation'
             define_method 'operation:cancel' do |operation_id|
@@ -18,10 +18,8 @@ module Aptible
               o.update!(cancelled: true)
             end
 
-            desc 'operation:list [--app APP | --database DATABASE |' \
-                 ' --environment ENVIRONMENT ]',
-                 'List running or recent operations for an App, Database,' \
-                 ' or Environment'
+            desc 'operation:list [--app APP | --database DATABASE ]',
+                 'List running or recent operations for an App or Database.'
             option :max_age,
                    default: '1w',
                    desc: 'Limit operations returned '\
@@ -32,7 +30,7 @@ module Aptible
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
 
-              resource = ensure_app_or_database_or_environment(options)
+              resource = ensure_app_or_database(options)
 
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list('description') do |node|
@@ -40,32 +38,27 @@ module Aptible
 
                   if resource.is_a?(Aptible::Api::App)
                     resource.services.each do |s|
-                      all_operations + s.operations
+                      all_operations += s.operations
                     end
                     resource.vhosts.each do |v|
-                      all_operations + v.operations
+                      all_operations += v.operations
                     end
-                    # Configurations?
-                    # Image scan?
                   elsif resource.is_a?(Aptible::Api::Database)
-                    # Backups?
-                    # DatabaseCredential
                     resource.database_credentials.each do |c|
-                      all_operations + c.operations
+                      all_operations += c.operations
                     end
                     resource.service.vhosts.each do |v|
-                      all_operations + v.operations
+                      all_operations += v.operations
                     end
-                  elsif resource.is_a?(Aptible::Api::Account)
-                    puts "This many ops: #{resource.operations.count}"
                   end
 
-                  # all_operations.order(id: :desc)
-                  all_operations.each do |op|
+                  all_operations.sort_by(&:id).reverse.each do |op|
                     created_at = op.created_at
                     break if created_at < min_created_at
                     node.object do |n|
-                      ResourceFormatter.inject_operation(n, op)
+                      unless op.type == 'poll'
+                        ResourceFormatter.inject_operation(n, op)
+                      end
                     end
                   end
                 end

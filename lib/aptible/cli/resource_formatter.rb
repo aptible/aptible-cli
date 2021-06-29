@@ -46,67 +46,59 @@ module Aptible
         end
 
         def inject_operation(node, op)
-          preposition = {
-            'running' => 'for',
-            'queued' => 'for',
-            'failed' => 'after',
-            'succeeded' => 'after'
-          }
+          resource_type = op.resource.class.name.demodulize
+          event = case resource_type
+                  when 'Service'
+                    "#{resource_type} \"#{op.resource.process_type}\""
+                  when 'Vhost'
+                    domain = op.resource.virtual_domain || \
+                             op.resource.external_host
+                    "#{resource_type} \"#{domain}\""
+                  when 'DatabaseCredential'
+                    'Database'
+                  else
+                    resource_type
+                  end
 
-          finished = %w(failed succeeded).include?(op.status)
-          finished_at = finished ? op.updated_at : Time.now
-          duration = (finished_at - op.created_at).round
-          duration = "#{duration / 60}:#{(duration % 60).to_s.rjust(2, '0')}"
-          duration = "#{duration}+" unless finished
-
-          ram_size = op.container_size
+          c_size = op.container_size
+          c_count = op.container_count
           disk_size = op.disk_size
 
-          if op.type == 'deploy'
-            if op.git_ref == '0000000000000000000000000000000000000000'
-              deployment_artifact = ' of docker_image: '\
-                                    "#{op.env['APTIBLE_DOCKER_IMAGE']}"
-              node_value('docker_image', op.env['APTIBLE_DOCKER_IMAGE'])
-            elsif op.git_ref
-              deployment_artifact = " of git_ref: \"#{op.git_ref}\""
-            elsif op.env
-              deployment_artifact = ' of docker_image: '\
-                                    "\"#{op.env['APTIBLE_DOCKER_IMAGE']}\""
-              # node_value('docker_image', op.env['APTIBLE_DOCKER_IMAGE'])
-            else
-              deployment_artifact = ' What was deployed?'
-            end
-          end
-
           description = "#{op.id}: #{op.created_at}, " \
-                        "#{op.type}#{deployment_artifact} " \
-                        "#{op.status} #{preposition[op.status]} " \
-                        "#{duration}, " \
+                        "#{event} #{op.type} " \
+                        "#{op.status}, " \
                         "#{op.user_email}"
 
           node.value('id', op.id)
           node.value('status', op.status)
-          node.value('git_ref', op.git_ref)
+          if %w(deploy rebuild).include?(op.type)
+            node.value('git_ref', op.git_ref)
+          end
           node.value('user_email', op.user_email)
           node.value('created_at', op.created_at)
           node.value('operation', op.type)
-          node.value('duration', duration)
+          node.value('resource_type', resource_type)
 
           case op.type
-          when 'restart'
-            if ram_size
-              node.value('container_size', ram_size)
-              description += ", container size: #{ram_size}mb"
+          when 'restart', 'scale'
+            if c_size
+              node.value('container_size', c_size)
+              description += ", container size: #{c_size}mb"
+            end
+            if c_count
+              node.value('containter_count', c_count)
+              description += ", container_count: #{c_count}"
             end
             if disk_size && disk_size > 0
               node.value('disk_size', disk_size)
               description += ", disk size: #{disk_size}gb"
             end
-          when 'deploy'
-            true
           when 'execute'
             node.value('command', op.command)
             description += ", command: \"#{op.command}\""
+          when 'configure'
+            node.value('env', op.env)
+            description += ", env: #{op.env.keys.join(' ')}"
           end
 
           node.value('description', description)
