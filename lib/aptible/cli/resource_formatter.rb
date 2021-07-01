@@ -5,8 +5,17 @@ module Aptible
         NO_NESTING = Object.new.freeze
 
         def inject_backup(node, backup, include_db: false)
+          origin = if backup.manual && !backup.copied_from
+                     "manual, #{backup.created_from_operation.user_email}"
+                   elsif backup.manual && backup.copied_from
+                     'manual, copy'
+                   elsif backup.copied_from
+                     'automatic, copy'
+                   else
+                     'automatic'
+                   end
           description = "#{backup.id}: #{backup.created_at}, " \
-                        "#{backup.aws_region}"
+                        "#{backup.aws_region}, #{origin}"
 
           if include_db
             db = backup.database_with_deleted
@@ -30,6 +39,13 @@ module Aptible
               inject_backup(n, backup.copied_from)
             end
           end
+
+          if backup.created_from_operation && \
+             backup.manual && !backup.copied_from
+            node.keyed_object('created_from_operation', 'id') do |n|
+              inject_operation(n, backup.created_from_operation)
+            end
+          end
         end
 
         def inject_deleted_database(node, database, account)
@@ -49,7 +65,9 @@ module Aptible
         def inject_operation(node, operation)
           node.value('id', operation.id)
           node.value('status', operation.status)
-          node.value('git_ref', operation.git_ref)
+          if %w(deploy rebuild).include?(operation.type)
+            node.value('git_ref', operation.git_ref)
+          end
           node.value('user_email', operation.user_email)
           node.value('created_at', operation.created_at)
         end
