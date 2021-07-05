@@ -196,6 +196,27 @@ module Aptible
           attach_service(node, service)
         end
 
+        def inject_log_drain(node, log_drain, account)
+          description = "#{log_drain.handle} in #{account.handle}"
+
+          node.value('id', log_drain.id)
+          node.value('description', description)
+          node.value('handle', log_drain.handle)
+          node.value('drain_apps', log_drain.drain_apps)
+          node.value('drain_databases', log_drain.drain_databases)
+          node.value('drain_ephemeral_sessions',
+                     log_drain.drain_ephemeral_sessions)
+          node.value('drain_proxies', log_drain.drain_proxies)
+
+          optional_attrs = %w(drain_username drain_host drain_port url)
+          optional_attrs.each do |attr|
+            value = log_drain.attributes[attr]
+            node.value(attr, value) unless value.nil?
+          end
+
+          attach_account(node, account)
+        end
+
         private
 
         def attach_account(node, account)

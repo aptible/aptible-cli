@@ -19,6 +19,7 @@ require_relative 'helpers/tunnel'
 require_relative 'helpers/system'
 require_relative 'helpers/security_key'
 require_relative 'helpers/config_path'
+require_relative 'helpers/log_drain'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
@@ -35,6 +36,7 @@ require_relative 'subcommands/backup'
 require_relative 'subcommands/operation'
 require_relative 'subcommands/inspect'
 require_relative 'subcommands/endpoints'
+require_relative 'subcommands/log_drain'
 
 module Aptible
   module CLI
@@ -60,6 +62,7 @@ module Aptible
       include Subcommands::Operation
       include Subcommands::Inspect
       include Subcommands::Endpoints
+      include Subcommands::LogDrain
 
       # Forward return codes on failures.
       def self.exit_on_failure?
