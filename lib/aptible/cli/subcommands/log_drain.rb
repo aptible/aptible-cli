@@ -53,8 +53,8 @@ module Aptible
             end
 
             desc 'log_drain:create:datadog HANDLE ' \
-                 '--url DATADOG_URL --environment ENVIRONMENT' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--url DATADOG_URL --environment ENVIRONMENT ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a Datadog Log Drain'
@@ -72,8 +72,8 @@ module Aptible
             end
 
             desc 'log_drain:create:https HANDLE ' \
-                 '--url URL --environment ENVIRONMENT' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--url URL --environment ENVIRONMENT ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a HTTPS Drain'
@@ -88,8 +88,8 @@ module Aptible
             end
 
             desc 'log_drain:create:sumologic HANDLE ' \
-                 '--url SUMOLOGIC --environment ENVIRONMENT' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--url SUMOLOGIC_URL --environment ENVIRONMENT ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a Sumologic Drain'
@@ -104,8 +104,8 @@ module Aptible
             end
 
             desc 'log_drain:create:logdna HANDLE ' \
-                 '--url LOGDNA_URL --environment ENVIRONMENT' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--url LOGDNA_URL --environment ENVIRONMENT ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a LogDNA Log Drain'
@@ -122,9 +122,9 @@ module Aptible
             end
 
             desc 'log_drain:create:papertrail HANDLE ' \
-                 '--environment ENVIRONMENT' \
-                 '--host PAPERTRAIL_HOST --port PAPERTRAIL_PORT' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--environment ENVIRONMENT ' \
+                 '--host PAPERTRAIL_HOST --port PAPERTRAIL_PORT ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a Papertrail Log Drain'
@@ -140,10 +140,10 @@ module Aptible
             end
 
             desc 'log_drain:create:syslog HANDLE ' \
-                 '--environment ENVIRONMENT' \
-                 '--host SYSLOG_HOST --port SYSLOG_PORT' \
-                 '[--token TOKEN]' \
-                 '[--drain-apps true/false] [--drain_databases true/false]' \
+                 '--environment ENVIRONMENT ' \
+                 '--host SYSLOG_HOST --port SYSLOG_PORT ' \
+                 '[--token TOKEN] ' \
+                 '[--drain-apps true/false] [--drain_databases true/false] ' \
                  '[--drain_ephemeral_sessions true/false] ' \
                  '[--drain_proxies true/false]',
                  'Create a Papertrail Log Drain'
