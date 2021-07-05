@@ -217,6 +217,18 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_metric_drain(node, metric_drain, account)
+          description = "#{metric_drain.handle} in #{account.handle}"
+
+          node.value('id', metric_drain.id)
+          node.value('description', description)
+          node.value('handle', metric_drain.handle)
+          node.value('drain_type', metric_drain.drain_type)
+          node.value('drain_configuration', metric_drain.drain_configuration)
+
+          attach_account(node, account)
+        end
+
         private
 
         def attach_account(node, account)
