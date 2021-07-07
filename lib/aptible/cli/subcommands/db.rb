@@ -59,8 +59,8 @@ module Aptible
             option :type, type: :string
             option :version, type: :string
             option :container_size, type: :numeric
-            option :size, type: :numeric
             option :disk_size, default: 10, type: :numeric
+            option :size, type: :numeric
             option :key_arn, type: :string
             option :environment
             define_method 'db:create' do |handle|
@@ -69,15 +69,16 @@ module Aptible
               db_opts = {
                 handle: handle,
                 initial_container_size: options[:container_size],
-                initial_disk_size: options[:disk_size] || options[:size],
+                initial_disk_size: options[:disk_size],
                 current_kms_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
-              CLI.logger.warn([
-                'You have used the "--size" option to specify a disk size.',
-                'This option which be deprecated in a future version.',
-                'Please use the "--disk-size" option, instead.'
-              ].join("\n")) if options[:size]
+              if options[:size]
+                m = 'You have used the "--size" option to specify a disk size.'\
+                    'This abiguous option has been removed.'\
+                    'Please use the "--disk-size" option, instead.'
+                raise Thor::Error, m
+              end
 
               type = options[:type]
               version = options[:version]
@@ -97,7 +98,7 @@ module Aptible
               op_opts = {
                 type: 'provision',
                 container_size: options[:container_size],
-                disk_size: options[:disk_size] || options[:size]
+                disk_size: options[:disk_size]
               }.delete_if { |_, v| v.nil? }
               op = database.create_operation(op_opts)
 
@@ -156,17 +157,18 @@ module Aptible
               opts = {
                 environment: options[:environment],
                 container_size: options[:container_size],
-                size: options[:disk_size] || options[:size],
+                size: options[:disk_size],
                 logical: options[:logical],
                 database_image: image || nil,
                 key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
-              CLI.logger.warn([
-                'You have used the "--size" option to specify a disk size.',
-                'This option which be deprecated in a future version.',
-                'Please use the "--disk-size" option, instead.'
-              ].join("\n")) if options[:size]
+              if options[:size]
+                m = 'You have used the "--size" option to specify a disk size.'\
+                    'This abiguous option has been removed.'\
+                    'Please use the "--disk-size" option, instead.'
+                raise Thor::Error, m
+              end
 
               database = replicate_database(source, dest_handle, opts)
               render_database(database.reload, database.account)
@@ -294,16 +296,17 @@ module Aptible
               opts = {
                 type: 'restart',
                 container_size: options[:container_size],
-                disk_size: options[:disk_size] || options[:size],
+                disk_size: options[:disk_size],
                 provisioned_iops: options[:iops],
                 ebs_volume_type: options[:volume_type]
               }.delete_if { |_, v| v.nil? }
 
-              CLI.logger.warn([
-                'You have used the "--size" option to specify a disk size.',
-                'This option which be deprecated in a future version.',
-                'Please use the "--disk-size" option, instead.'
-              ].join("\n")) if options[:size]
+              if options[:size]
+                m = 'You have used the "--size" option to specify a disk size.'\
+                    'This abiguous option has been removed.'\
+                    'Please use the "--disk-size" option, instead.'
+                raise Thor::Error, m
+              end
 
               CLI.logger.info "Restarting #{database.handle}..."
               op = database.create_operation!(opts)
