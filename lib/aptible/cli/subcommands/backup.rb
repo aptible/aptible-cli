@@ -45,9 +45,8 @@ module Aptible
               }.delete_if { |_, v| v.nil? }
 
               if options[:size]
-
-                m = 'You have used the "--size" option to specify a disk size.',
-                    'This abiguous option has been removed.',
+                m = 'You have used the "--size" option to specify a disk size.'\
+                    'This abiguous option has been removed.'\
                     'Please use the "--disk-size" option, instead.'
                 raise Thor::Error, m
               end
