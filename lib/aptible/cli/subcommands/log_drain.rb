@@ -8,8 +8,8 @@ module Aptible
             include Helpers::Database
             include Helpers::LogDrain
 
-            drain_flags = '--environment ENVIRONMENT' \
-                          '[--drain-apps true/false]' \
+            drain_flags = '--environment ENVIRONMENT ' \
+                          '[--drain-apps true/false] ' \
                           '[--drain_databases true/false] ' \
                           '[--drain_ephemeral_sessions true/false] ' \
                           '[--drain_proxies true/false]'
@@ -39,7 +39,7 @@ module Aptible
             end
 
             desc 'log_drain:create:elasticsearch HANDLE '\
-                 '--db DATABASE_HANDLE' \
+                 '--db DATABASE_HANDLE ' \
                  + drain_flags,
                  'Create an Elasticsearch Log Drain'
             drain_options
