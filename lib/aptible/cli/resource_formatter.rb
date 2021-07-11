@@ -197,10 +197,7 @@ module Aptible
         end
 
         def inject_log_drain(node, log_drain, account)
-          description = "#{log_drain.handle} in #{account.handle}"
-
           node.value('id', log_drain.id)
-          node.value('description', description)
           node.value('handle', log_drain.handle)
           node.value('drain_apps', log_drain.drain_apps)
           node.value('drain_databases', log_drain.drain_databases)
@@ -218,10 +215,7 @@ module Aptible
         end
 
         def inject_metric_drain(node, metric_drain, account)
-          description = "#{metric_drain.handle} in #{account.handle}"
-
           node.value('id', metric_drain.id)
-          node.value('description', description)
           node.value('handle', metric_drain.handle)
           node.value('drain_type', metric_drain.drain_type)
           node.value('drain_configuration', metric_drain.drain_configuration)

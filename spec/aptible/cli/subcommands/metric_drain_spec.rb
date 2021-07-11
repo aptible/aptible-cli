@@ -18,7 +18,8 @@ describe Aptible::CLI::Agent do
     it 'lists a metric drains for an account' do
       subject.send('metric_drain:list')
 
-      out = "#{metric_drain.handle} in #{account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n"
       expect(captured_output_text).to eq(out)
     end
 
@@ -31,8 +32,9 @@ describe Aptible::CLI::Agent do
 
       subject.send('metric_drain:list')
 
-      out = "#{metric_drain.handle} in #{account.handle}\n" \
-            "#{other_metric_drain.handle} in #{other_account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n" \
+            "test2\n"
       expect(captured_output_text).to eq(out)
     end
 
@@ -45,7 +47,8 @@ describe Aptible::CLI::Agent do
       subject.options = { environment: account.handle }
       subject.send('metric_drain:list')
 
-      out = "#{metric_drain.handle} in #{account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n"
       expect(captured_output_text).to eq(out)
     end
   end
@@ -127,13 +130,23 @@ describe Aptible::CLI::Agent do
         subject.send('metric_drain:create:datadog', 'test-datadog')
       end
 
+      it 'raises an error when the custom series url is invalid' do
+        subject.options = {
+          environment: account.handle,
+          api_key: 'foobar',
+          site: 'BAD'
+        }
+        expect { subject.send('metric_drain:create:datadog', 'test-datadog') }
+          .to raise_error(Thor::Error, /Invalid site/i)
+      end
+
       it 'creates a new Datadog metric drain with a custom series url' do
         opts = {
           handle: 'test-datadog',
           drain_type: :datadog,
           drain_configuration: {
             api_key: 'foobar',
-            series_url: 'foo.bar.com'
+            series_url: 'https://app.datadoghq.eu'
           }
         }
         expect_provision_metric_drain(opts)
@@ -141,7 +154,7 @@ describe Aptible::CLI::Agent do
         subject.options = {
           environment: account.handle,
           api_key: 'foobar',
-          custom_url: 'foo.bar.com'
+          site: 'EU1'
         }
         subject.send('metric_drain:create:datadog', 'test-datadog')
       end

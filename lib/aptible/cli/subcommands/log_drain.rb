@@ -26,7 +26,10 @@ module Aptible
             option :environment
             define_method 'log_drain:list' do
               Formatter.render(Renderer.current) do |root|
-                root.keyed_list('description') do |node|
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
                   scoped_environments(options).each do |account|
                     account.log_drains.each do |drain|
                       node.object do |n|

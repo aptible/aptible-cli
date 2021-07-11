@@ -2,6 +2,13 @@ module Aptible
   module CLI
     module Subcommands
       module MetricDrain
+        SITES = {
+          'US1' => 'https://app.datadoghq.com',
+          'US3' => 'https://us3.datadoghq.com',
+          'EU1' => 'https://app.datadoghq.eu',
+          'US1-FED' => 'https://app.ddog-gov.com'
+        }.freeze
+
         def self.included(thor)
           thor.class_eval do
             include Helpers::Token
@@ -12,7 +19,10 @@ module Aptible
             option :environment
             define_method 'metric_drain:list' do
               Formatter.render(Renderer.current) do |root|
-                root.keyed_list('description') do |node|
+                root.grouped_keyed_list(
+                  { 'environment' => 'handle' },
+                  'handle'
+                ) do |node|
                   scoped_environments(options).each do |account|
                     account.metric_drains.each do |drain|
                       node.object do |n|
@@ -75,7 +85,7 @@ module Aptible
                  '--api_key DATADOG_API_KEY --environment ENVIRONMENT',
                  'Create a Datadog Metric Drain'
             option :api_key, type: :string
-            option :custom_url, type: :string
+            option :site, type: :string
             option :environment
             define_method 'metric_drain:create:datadog' do |handle|
               account = ensure_environment(options)
@@ -83,8 +93,15 @@ module Aptible
               config = {
                 api_key: options[:api_key]
               }
-              unless options[:custom_url].nil?
-                config[:series_url] = options[:custom_url]
+              unless options[:site].nil?
+                site = SITES[options[:site]]
+
+                unless site
+                  sites = SITES.keys.join(', ')
+                  raise Thor::Error, "Invalid site. Valid options are #{sites}"
+                end
+
+                config[:series_url] = site
               end
               opts = {
                 handle: handle,

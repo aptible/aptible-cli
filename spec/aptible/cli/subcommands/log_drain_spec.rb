@@ -18,7 +18,8 @@ describe Aptible::CLI::Agent do
     it 'lists a log drains for an account' do
       subject.send('log_drain:list')
 
-      out = "#{log_drain.handle} in #{account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n"
       expect(captured_output_text).to eq(out)
     end
 
@@ -31,8 +32,9 @@ describe Aptible::CLI::Agent do
 
       subject.send('log_drain:list')
 
-      out = "#{log_drain.handle} in #{account.handle}\n" \
-            "#{other_log_drain.handle} in #{other_account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n" \
+            "test2\n"
       expect(captured_output_text).to eq(out)
     end
 
@@ -45,7 +47,8 @@ describe Aptible::CLI::Agent do
       subject.options = { environment: account.handle }
       subject.send('log_drain:list')
 
-      out = "#{log_drain.handle} in #{account.handle}\n"
+      out = "=== aptible\n" \
+            "test\n"
       expect(captured_output_text).to eq(out)
     end
   end
