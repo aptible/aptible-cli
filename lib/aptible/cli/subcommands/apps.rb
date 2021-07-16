@@ -52,52 +52,17 @@ module Aptible
             app_options
             option :container_count, type: :numeric
             option :container_size, type: :numeric
-            option :size, type: :numeric,
-                          desc: 'DEPRECATED, use --container-size'
-            define_method 'apps:scale' do |type, *more|
+            define_method 'apps:scale' do |type|
               service = ensure_service(options, type)
 
               container_count = options[:container_count]
               container_size = options[:container_size]
 
-              # There are two legacy options we have to process here:
-              # - We used to accept apps:scale SERVICE COUNT
-              # - We used to accept --size
-              case more.size
-              when 0
-                # Noop
-              when 1
-                if container_count.nil?
-                  m = 'Passing container count as a positional ' \
-                      'argument is deprecated, use --container-count'
-                  CLI.logger.warn(m)
-                  container_count = Integer(more.first)
-                else
-                  raise Thor::Error, 'Container count was passed via both ' \
-                                     'the --container-count keyword argument ' \
-                                     'and a positional argument. ' \
-                                     'Use only --container-count to proceed.'
-                end
-              else
-                # Unfortunately, Thor does not want to let us easily hook into
-                # its usage formatting, so we have to work around it here.
-                command = thor.commands.fetch('apps:scale')
-                error = ArgumentError.new
-                args = [type] + more
-                thor.handle_argument_error(command, error, args, 1)
-              end
-
               if options[:size]
-                if container_size.nil?
-                  m = 'Passing container size via the --size keyword ' \
-                      'argument is deprecated, use --container-size'
-                  CLI.logger.warn(m)
-                  container_size = options[:size]
-                else
-                  raise Thor::Error, 'Container size was passed via both ' \
-                                     '--container-size and --size. ' \
-                                     'Use only --container-size to proceed.'
-                end
+                m = 'You have used the "--size" option to specify a container '\
+                    'size. This abiguous option has been removed.'\
+                    'Please use the "--container-size" option, instead.'
+                raise Thor::Error, m
               end
 
               if container_count.nil? && container_size.nil?
