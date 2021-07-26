@@ -56,7 +56,6 @@ Commands:
   aptible db:url HANDLE                                                                                                                                       # Display a database URL
   aptible db:versions                                                                                                                                         # List available database versions
   aptible deploy [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]                                                                                                      # Deploy an app
-  aptible domains                                                                                                                                             # Print an app's current virtual domains - DEPRECATED
   aptible endpoints:database:create DATABASE                                                                                                                  # Create a Database Endpoint
   aptible endpoints:deprovision [--app APP | --database DATABASE] ENDPOINT_HOSTNAME                                                                           # Deprovision an App or Database Endpoint
   aptible endpoints:https:create [--app APP] SERVICE                                                                                                          # Create an App HTTPS Endpoint
