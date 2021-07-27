@@ -209,6 +209,8 @@ module Aptible
         def inject_log_drain(node, log_drain, account)
           node.value('id', log_drain.id)
           node.value('handle', log_drain.handle)
+          node.value('drain_type', log_drain.drain_type)
+          node.value('created_at', log_drain.created_at)
           node.value('drain_apps', log_drain.drain_apps)
           node.value('drain_databases', log_drain.drain_databases)
           node.value('drain_ephemeral_sessions',
@@ -228,6 +230,7 @@ module Aptible
           node.value('id', metric_drain.id)
           node.value('handle', metric_drain.handle)
           node.value('drain_type', metric_drain.drain_type)
+          node.value('created_at', metric_drain.created_at)
           node.value('drain_configuration', metric_drain.drain_configuration)
 
           attach_account(node, account)
