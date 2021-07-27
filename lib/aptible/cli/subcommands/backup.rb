@@ -124,7 +124,14 @@ module Aptible
 
               operation = backup.create_operation!(type: 'purge')
               CLI.logger.info "Purging backup #{backup_id}"
-              attach_to_operation_logs(operation)
+              begin
+                attach_to_operation_logs(operation)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status != 404
+              end
             end
           end
         end
