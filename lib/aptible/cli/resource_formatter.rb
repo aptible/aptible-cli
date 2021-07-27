@@ -5,8 +5,18 @@ module Aptible
         NO_NESTING = Object.new.freeze
 
         def inject_backup(node, backup, include_db: false)
+          bu_operation = begin
+                           backup.created_from_operation
+                         rescue HyperResource::ClientError
+                           nil
+                         end
+
           origin = if backup.manual && !backup.copied_from
-                     "manual, #{backup.created_from_operation.user_email}"
+                     if bu_operation
+                       "manual, #{bu_operation.user_email}"
+                     else
+                       'manual, unknown'
+                     end
                    elsif backup.manual && backup.copied_from
                      'manual, copy'
                    elsif backup.copied_from
@@ -40,10 +50,10 @@ module Aptible
             end
           end
 
-          if backup.created_from_operation && \
+          if bu_operation && \
              backup.manual && !backup.copied_from
             node.keyed_object('created_from_operation', 'id') do |n|
-              inject_operation(n, backup.created_from_operation)
+              inject_operation(n, bu_operation)
             end
           end
         end
