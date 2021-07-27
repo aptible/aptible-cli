@@ -25,8 +25,7 @@ describe Aptible::CLI::Agent do
 
     it 'lists metric drains across multiple accounts' do
       other_account = Fabricate(:account)
-      other_metric_drain = Fabricate(:metric_drain, handle: 'test2',
-                                                    account: other_account)
+      Fabricate(:metric_drain, handle: 'test2', account: other_account)
       accounts = [account, other_account]
       allow(Aptible::Api::Account).to receive(:all).and_return(accounts)
 
