@@ -98,7 +98,8 @@ module Aptible
 
                 unless site
                   sites = SITES.keys.join(', ')
-                  raise Thor::Error, "Invalid site. Valid options are #{sites}"
+                  raise Thor::Error, 'Invalid Datadog site. ' \
+                                     "Valid options are #{sites}"
                 end
 
                 config[:series_url] = site

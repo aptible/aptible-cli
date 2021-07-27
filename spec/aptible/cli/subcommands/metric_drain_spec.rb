@@ -129,17 +129,17 @@ describe Aptible::CLI::Agent do
         subject.send('metric_drain:create:datadog', 'test-datadog')
       end
 
-      it 'raises an error when the custom series url is invalid' do
+      it 'raises an error when the Datadog site is invalid' do
         subject.options = {
           environment: account.handle,
           api_key: 'foobar',
           site: 'BAD'
         }
         expect { subject.send('metric_drain:create:datadog', 'test-datadog') }
-          .to raise_error(Thor::Error, /Invalid site/i)
+          .to raise_error(Thor::Error, /Invalid Datadog site/i)
       end
 
-      it 'creates a new Datadog metric drain with a custom series url' do
+      it 'creates a new Datadog metric drain with a Datadog site defined' do
         opts = {
           handle: 'test-datadog',
           drain_type: :datadog,
