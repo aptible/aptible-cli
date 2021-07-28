@@ -53,11 +53,13 @@ module Aptible
                 end
               end
 
-              option(
-                :internal,
-                type: :boolean,
-                desc: 'Restrict this Endpoint to internal traffic'
-              )
+              if builder.create?
+                option(
+                  :internal,
+                  type: :boolean,
+                  desc: 'Restrict this Endpoint to internal traffic'
+                )
+              end
 
               option(
                 :ip_whitelist,
