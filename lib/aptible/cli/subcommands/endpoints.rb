@@ -33,6 +33,22 @@ module Aptible
               provision_vhost_and_explain(service, vhost)
             end
 
+            database_modify_flags = Helpers::Vhost::OptionSetBuilder.new do
+              database!
+            end
+
+            desc 'endpoints:database:modify --database DATABASE ' \
+                 'ENDPOINT_HOSTNAME',
+                 'Modify a Database Endpoint'
+            database_modify_flags.declare_options(self)
+            define_method 'endpoints:database:modify' do |hostname|
+              database = ensure_database(options.merge(db: options[:database]))
+              vhost = find_vhost(each_service(database), hostname)
+              vhost.update!(**database_modify_flags.prepare(database.account,
+                                                            options))
+              provision_vhost_and_explain(vhost.service, vhost)
+            end
+
             tcp_create_flags = Helpers::Vhost::OptionSetBuilder.new do
               app!
               create!

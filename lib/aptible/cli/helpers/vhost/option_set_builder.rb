@@ -22,7 +22,9 @@ module Aptible
             thor.instance_exec(self) do |builder|
               option :environment
 
-              if builder.app?
+              if builder.database?
+                option :database
+              elsif builder.app?
                 app_options
 
                 if builder.create?
@@ -156,6 +158,8 @@ module Aptible
               params[:internal] = options.delete(:internal) do
                 create? ? false : nil
               end
+
+              options.delete(:database)
             else
               params[:internal] = false
             end
