@@ -94,6 +94,12 @@ describe Aptible::CLI::Agent do
         stub_options(ip_whitelist: %w(1.1.1.1))
         subject.send('endpoints:database:create', 'mydb')
       end
+
+      it 'creates an internal Database Endpoint' do
+        expect_create_vhost(db.service, internal: true)
+        stub_options(internal: true)
+        subject.send('endpoints:database:create', 'mydb')
+      end
     end
 
     describe 'endpoints:list' do

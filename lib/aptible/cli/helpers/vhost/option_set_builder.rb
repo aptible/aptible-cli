@@ -32,11 +32,6 @@ module Aptible
                     desc: 'Enable Default Domain on this Endpoint'
                   )
 
-                  option(
-                    :internal,
-                    type: :boolean,
-                    desc: 'Restrict this Endpoint to internal traffic'
-                  )
                 end
 
                 if builder.ports?
@@ -55,6 +50,12 @@ module Aptible
                   )
                 end
               end
+
+              option(
+                :internal,
+                type: :boolean,
+                desc: 'Restrict this Endpoint to internal traffic'
+              )
 
               option(
                 :ip_whitelist,
@@ -151,6 +152,10 @@ module Aptible
               end
 
               options.delete(:app)
+            elsif database?
+              params[:internal] = options.delete(:internal) do
+                create? ? false : nil
+              end
             else
               params[:internal] = false
             end
