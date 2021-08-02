@@ -22,7 +22,9 @@ module Aptible
             thor.instance_exec(self) do |builder|
               option :environment
 
-              if builder.app?
+              if builder.database?
+                option :database
+              elsif builder.app?
                 app_options
 
                 if builder.create?
@@ -32,11 +34,6 @@ module Aptible
                     desc: 'Enable Default Domain on this Endpoint'
                   )
 
-                  option(
-                    :internal,
-                    type: :boolean,
-                    desc: 'Restrict this Endpoint to internal traffic'
-                  )
                 end
 
                 if builder.ports?
@@ -54,6 +51,14 @@ module Aptible
                     desc: 'A port to expose on this Endpoint'
                   )
                 end
+              end
+
+              if builder.create?
+                option(
+                  :internal,
+                  type: :boolean,
+                  desc: 'Restrict this Endpoint to internal traffic'
+                )
               end
 
               option(
@@ -151,6 +156,12 @@ module Aptible
               end
 
               options.delete(:app)
+            elsif database?
+              params[:internal] = options.delete(:internal) do
+                create? ? false : nil
+              end
+
+              options.delete(:database)
             else
               params[:internal] = false
             end

@@ -94,6 +94,45 @@ describe Aptible::CLI::Agent do
         stub_options(ip_whitelist: %w(1.1.1.1))
         subject.send('endpoints:database:create', 'mydb')
       end
+
+      it 'creates an internal Database Endpoint' do
+        expect_create_vhost(db.service, internal: true)
+        stub_options(internal: true)
+        subject.send('endpoints:database:create', 'mydb')
+      end
+    end
+
+    describe 'endpoints:database:modify' do
+      it 'does not change anything if no options are passed' do
+        v = Fabricate(:vhost, service: db.service)
+        expect_modify_vhost(v, {})
+        stub_options(database: 'mydb')
+        subject.send('endpoints:database:modify', v.external_host)
+      end
+
+      it 'adds an IP whitelist' do
+        v = Fabricate(:vhost, service: db.service)
+        expect_modify_vhost(v, ip_whitelist: %w(1.1.1.1))
+
+        stub_options(database: 'mydb', ip_whitelist: %w(1.1.1.1))
+        subject.send('endpoints:database:modify', v.external_host)
+      end
+
+      it 'removes an IP whitelist' do
+        v = Fabricate(:vhost, service: db.service)
+        expect_modify_vhost(v, ip_whitelist: [])
+
+        stub_options(database: 'mydb', :'no-ip_whitelist' => true)
+        subject.send('endpoints:database:modify', v.external_host)
+      end
+
+      it 'does not allow disabling and adding an IP whitelist' do
+        v = Fabricate(:vhost, service: db.service)
+        stub_options(database: 'mydb', ip_whitelist: %w(1.1.1.1),
+                     :'no-ip_whitelist' => true)
+        expect { subject.send('endpoints:database:modify', v.external_host) }
+          .to raise_error(/conflicting.*no-ip-whitelist.*ip-whitelist/im)
+      end
     end
 
     describe 'endpoints:list' do
