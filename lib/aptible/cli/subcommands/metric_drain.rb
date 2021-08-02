@@ -86,7 +86,7 @@ module Aptible
             desc 'metric_drain:create:datadog HANDLE '\
                  '--api_key DATADOG_API_KEY '\
                  '--site DATADOG_SITE ' \
-                 ' --environment ENVIRONMENT',
+                 '--environment ENVIRONMENT',
                  'Create a Datadog Metric Drain'
             option :api_key, type: :string
             option :site, type: :string
