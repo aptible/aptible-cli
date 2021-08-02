@@ -55,7 +55,9 @@ module Aptible
 
             desc 'metric_drain:create:influxdb:custom HANDLE '\
                  '--username USERNAME --password PASSWORD ' \
-                 '--url URL_INCLUDING_PORT',
+                 '--url URL_INCLUDING_PORT ' \
+                 '--db INFLUX_DATABASE_NAME ' \
+                 '--environment ENVIRONMENT',
                  'Create an InfluxDB Metric Drain'
             option :db, type: :string
             option :username, type: :string
@@ -82,7 +84,9 @@ module Aptible
             end
 
             desc 'metric_drain:create:datadog HANDLE '\
-                 '--api_key DATADOG_API_KEY --environment ENVIRONMENT',
+                 '--api_key DATADOG_API_KEY '\
+                 '--site DATADOG_SITE ' \
+                 ' --environment ENVIRONMENT',
                  'Create a Datadog Metric Drain'
             option :api_key, type: :string
             option :site, type: :string
