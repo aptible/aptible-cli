@@ -25,9 +25,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'aptible-auth', '~> 1.2.3'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'thor', '~> 0.20.0'
-  spec.add_dependency 'git'
+  spec.add_dependency 'git', '< 1.10'
   spec.add_dependency 'term-ansicolor'
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
+  spec.add_dependency 'cbor'
 
   # Temporarily pin ffi until https://github.com/ffi/ffi/issues/868 is fixed
   spec.add_dependency 'ffi', '<= 1.14.1' if Gem.win_platform?
