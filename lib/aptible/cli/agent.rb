@@ -145,29 +145,32 @@ module Aptible
 
           # If the user has added a security key and their computer supports it,
           # allow them to use it
-          if u2f && !which('u2f-host').nil?
+          # https://developers.yubico.com/libfido2/Manuals
+          # installation: https://github.com/Yubico/libfido2#installation
+          if u2f && !which('fido2-assert').nil? && !which('fido2-token').nil?
             origin = Aptible::Auth::Resource.new.get.href
             app_id = Aptible::Auth::Resource.new.utf_trusted_facets.href
-
             challenge = u2f.fetch('challenge')
 
-            devices = u2f.fetch('devices').map do |dev|
-              Helpers::SecurityKey::Device.new(
-                dev.fetch('version'), dev.fetch('key_handle')
-              )
-            end
+            device_info = security_key_device(u2f, app_id)
 
-            puts 'Enter your 2FA token or touch your Security Key once it ' \
-                 'starts blinking.'
+            if device_info[:locations].count > 0 && device_info[:device]
+              puts "\nEnter your 2FA token or touch your Security Key " \
+                 'once it starts blinking.'
 
-            mfa_threads << Thread.new do
-              token_options[:u2f] = Helpers::SecurityKey.authenticate(
-                origin, app_id, challenge, devices
-              )
+              mfa_threads << Thread.new do
+                token_options[:u2f] = Helpers::SecurityKey.authenticate(
+                  origin,
+                  app_id,
+                  challenge,
+                  device_info[:device],
+                  device_info[:locations]
+                )
 
-              puts ''
+                puts ''
 
-              q.push(nil)
+                q.push(nil)
+              end
             end
           end
 
@@ -201,6 +204,78 @@ module Aptible
       end
 
       private
+
+      def security_key_device(u2f, app_id)
+        devices = u2f.fetch('devices').map do |dev|
+          version = dev.fetch('version')
+          rp_id =
+            if version == 'U2F_V2'
+              app_id
+            else
+              u2f['payload']['rpId']
+            end
+
+          Helpers::SecurityKey::Device.new(
+            dev.fetch('version'),
+            dev.fetch('key_handle'),
+            dev.fetch('name'),
+            rp_id
+          )
+        end
+
+        result = {
+          locations: [],
+          device: nil
+        }
+
+        device_locations = Helpers::SecurityKey.device_locations
+
+        if device_locations.count.zero?
+          no_keys = 'WARNING: no security keys detected on machine'
+          CLI.logger.warn(no_keys) if device_locations.count.zero?
+        else
+          result[:locations] = device_locations
+          no_creds = 'No credentials associated with user'
+          raise Error, no_creds if devices.count.zero?
+
+          result[:device] = devices[0]
+          if devices.count > 1
+            credential = security_credential(devices)
+            result[:device] = credential
+          end
+        end
+
+        result
+      end
+
+      # The name for our backend model is U2FDevice.
+      # However, really what we are storing is a security credential.
+      # Here we figure out which security credential to pass to fido2-assert.
+      def security_credential(devices)
+        puts 'There are multiple credentials associated ' \
+             'with this user.  Please select the ' \
+             "credential you want to use for authentication:\n"
+
+        device = nil
+        while device.nil?
+          devices.each_with_index do |dev, index|
+            puts "#{index}: #{dev.name}"
+          end
+
+          puts ''
+
+          device_index = ask(
+            'Enter the credential number you want to use: '
+          )
+
+          # https://stackoverflow.com/a/1235990
+          next unless /\A\d+\z/ =~ device_index
+
+          device = devices[device_index.to_i]
+        end
+
+        device
+      end
 
       def deprecated(msg)
         CLI.logger.warn([
