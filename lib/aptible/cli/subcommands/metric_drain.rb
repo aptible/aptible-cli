@@ -8,7 +8,7 @@ module Aptible
           'EU1' => 'https://app.datadoghq.eu',
           'US1-FED' => 'https://app.ddog-gov.com'
         }.freeze
-        PATH = '/api/v1/series'
+        PATH = '/api/v1/series'.freeze
 
         def self.included(thor)
           thor.class_eval do
