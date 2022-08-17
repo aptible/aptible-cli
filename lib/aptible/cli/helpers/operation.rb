@@ -48,6 +48,39 @@ module Aptible
           operation.update!(cancelled: true)
         end
 
+        def operation_logs(operation)
+          # if operation is not complete, send back a simple message saying its not ready yet
+          # TODO - check status enums
+          unless %w(succeeded failed finished).include? operation.status
+            # TODO - maybe we should include a copy-pasteable alternate command to view it while it's in-progress?
+            e = 'Unable to retrieve operation logs. You can view these logs when the operation is complete.'
+            raise Thor::Error, e
+          end
+
+          # go to s3 operation logs endpoint
+          # how to get to the new link? just use a http client and add a helper that just downloads from s3 with redirect
+          # TODO - move to helper, and move non-helper things into parent caller (?)
+          CLI.logger.info "Requesting results of operation logs"
+          uri = URI("#{Aptible::Auth.configuration.root_url}/operations/#{operation.id}/logs")
+          headers = { :Authorization => "bearer #{fetch_token}" }
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+          res = http.get(uri.path, headers)
+          # TODO - rescue from http call above?
+
+          if res.code != 301 or !res.header?('location')
+            e = 'Unable to retrieve operation logs. Redirect to destination not found.'
+            raise Thor::Error, e
+          end
+
+          # follow the link with redirect
+          s3_file = Net::HTTP.get_response(URI.parse(res.header['location']))
+
+          # download/spit out logs from s3
+          CLI.logger.info "Printing out results of operation logs"
+          puts s3_file.body
+        end
+
         def prettify_operation(o)
           bits = [o.status, o.type, "##{o.id}"]
           if o.resource.respond_to?(:handle)

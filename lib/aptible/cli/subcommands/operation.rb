@@ -16,6 +16,16 @@ module Aptible
               CLI.logger.info m
               o.update!(cancelled: true)
             end
+
+            desc 'operation:logs OPERATION_ID', 'View logs for a given operation'
+            define_method 'operation:logs' do |operation_id|
+              o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
+              raise "Operation ##{operation_id} not found" if o.nil?
+
+              m = "Requesting operation logs for #{prettify_operation(o)}..."
+              CLI.logger.info m
+              operation_logs(o)
+            end
           end
         end
       end
