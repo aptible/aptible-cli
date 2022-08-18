@@ -49,14 +49,6 @@ module Aptible
         end
 
         def operation_logs(operation)
-          # if operation is not complete, send back a simple message saying its not ready yet
-          # TODO - check status enums
-          unless %w(succeeded failed finished).include? operation.status
-            # TODO - maybe we should include a copy-pasteable alternate command to view it while it's in-progress?
-            e = 'Unable to retrieve operation logs. You can view these logs when the operation is complete.'
-            raise Thor::Error, e
-          end
-
           # go to s3 operation logs endpoint
           # how to get to the new link? just use a http client and add a helper that just downloads from s3 with redirect
           # TODO - move to helper, and move non-helper things into parent caller (?)
