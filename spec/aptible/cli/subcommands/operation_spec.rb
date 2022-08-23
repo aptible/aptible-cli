@@ -68,8 +68,8 @@ describe Aptible::CLI::Agent do
         .and_return(Fabricate(:operation, status: 'queued', id: operation_id))
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs. You can view '\
-                        'these logs when the operation is complete.')
+        .to raise_error('Error - You can view the logs when operation'\
+                        'is complete.')
     end
     it 'errors when operation not found and errored on deploy API' do
       operation_id = SecureRandom.uuid
@@ -86,8 +86,7 @@ describe Aptible::CLI::Agent do
         .and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs. Redirect to '\
-                        'destination not found.')
+        .to raise_error('Unable to retrieve operation logs with 301.')
     end
   end
 end
