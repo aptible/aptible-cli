@@ -3,7 +3,9 @@ require 'spec_helper'
 describe Aptible::CLI::Agent do
   let(:token) { 'some-token' }
   let(:operation) { Fabricate(:operation) }
-  let(:mock_s3_response) { instance_double(Net::HTTPResponse, body: 'Mock logs') }
+  let(:mock_s3_response) do
+    instance_double(Net::HTTPResponse, body: 'Mock logs')
+  end
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
@@ -66,7 +68,8 @@ describe Aptible::CLI::Agent do
         .and_return(Fabricate(:operation, status: 'queued', id: operation_id))
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs. You can view these logs when the operation is complete.')
+        .to raise_error('Unable to retrieve operation logs. You can view '\
+                        'these logs when the operation is complete.')
     end
     it 'errors when operation not found and errored on deploy API' do
       operation_id = SecureRandom.uuid
@@ -83,7 +86,8 @@ describe Aptible::CLI::Agent do
         .and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs. Redirect to destination not found.')
+        .to raise_error('Unable to retrieve operation logs. Redirect to '\
+                        'destination not found.')
     end
   end
 end
