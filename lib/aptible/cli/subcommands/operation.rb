@@ -17,13 +17,13 @@ module Aptible
               o.update!(cancelled: true)
             end
 
-            desc 'operation:logs OPERATION_ID', 'View logs for a given operation'
+            desc 'operation:logs OPERATION_ID', 'View logs for given operation'
             define_method 'operation:logs' do |operation_id|
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
 
               unless %w(succeeded failed).include? o.status
-                e = 'Unable to retrieve operation logs. You can view these logs when the operation is complete.'
+                e = 'Error - You can view the logs when operation is complete.'
                 raise Thor::Error, e
               end
 

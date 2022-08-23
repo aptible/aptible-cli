@@ -31,7 +31,9 @@ describe Aptible::CLI::Agent do
     it 'sends operation logs request when subcommand sent successfully' do
       operation_id = SecureRandom.uuid
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
-        .and_return(Fabricate(:operation, status: 'succeeded', id: operation_id))
+        .and_return(Fabricate(
+                      :operation, status: 'succeeded', id: operation_id
+        ))
 
       # stub out operations call
       response = Net::HTTPSuccess.new(1.0, '301', 'OK')
@@ -69,7 +71,9 @@ describe Aptible::CLI::Agent do
     it 'errors when operation not found and errored on deploy API' do
       operation_id = SecureRandom.uuid
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
-        .and_return(Fabricate(:operation, status: 'succeeded', id: operation_id))
+        .and_return(
+          Fabricate(:operation, status: 'succeeded', id: operation_id)
+        )
 
       # stub out operations call
       response = Net::HTTPSuccess.new(1.0, '404', 'Not Found')

@@ -50,10 +50,6 @@ module Aptible
 
         def operation_logs(operation)
           res = get_operation_logs_redirect(operation)
-          if !res || (res.code != '301' || !res.header.fetch(:location))
-            e = 'Unable to retrieve operation logs. Redirect not found.'
-            raise Thor::Error, e
-          end
 
           # follow the link with redirect
           s3_uri = URI(res.header.fetch(:location))
@@ -84,7 +80,10 @@ module Aptible
 
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
-          http.request(request)
+          res = http.request(request)
+          if !res || res.code != '301' || !res.header[:location]
+            raise Thor::Error, 'Unable to retrieve operation logs with 301.'
+          end
         end
       end
     end
