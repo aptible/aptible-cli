@@ -50,15 +50,13 @@ module Aptible
 
         def operation_logs(operation)
           res = get_operation_logs_redirect(operation)
+          location = res.header.fetch('location')
 
-          # follow the link with redirect
-          s3_uri = URI(res.header.fetch(:location))
-          s3_file = http.request(Net::HTTP::Get.new(s3_uri.request_uri))
-
+          s3_file_request = get_operation_logs_s3_file(location)
           # download/spit out logs from s3
           m = "Printing out results of operation logs for #{operation.id}"
           CLI.logger.info m
-          puts s3_file.body
+          puts s3_file_request.body
         end
 
         def prettify_operation(o)
@@ -72,18 +70,26 @@ module Aptible
         private
 
         def get_operation_logs_redirect(operation)
-          # go to s3 operation logs endpoint
           uri = URI(Aptible::Api.configuration.root_url.to_s +
                       "/operations/#{operation.id}/logs")
           headers = { 'Authorization' => "bearer #{fetch_token}" }
-          request = Net::HTTP::Get.new(uri.request_uri, headers)
-
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
-          res = http.request(request)
+          res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           if !res || res.code != '301' || !res.header[:location]
             raise Thor::Error, 'Unable to retrieve operation logs with 301.'
           end
+          res
+        end
+
+        def get_operation_logs_s3_file(location)
+          s3_uri = URI(location)
+          http = Net::HTTP.new(s3_uri.host, s3_uri.port)
+          http.use_ssl = true
+
+          # follow the link with redirect
+          request = Net::HTTP::Get.new(s3_uri.request_uri)
+          http.request(request)
         end
       end
     end

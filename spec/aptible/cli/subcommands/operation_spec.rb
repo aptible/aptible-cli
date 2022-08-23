@@ -3,9 +3,8 @@ require 'spec_helper'
 describe Aptible::CLI::Agent do
   let(:token) { 'some-token' }
   let(:operation) { Fabricate(:operation) }
-  let(:mock_s3_response) do
-    instance_double(Net::HTTPResponse, body: 'Mock logs')
-  end
+  let(:net_http_double) { instance_double(Net::HTTP) }
+  let(:net_http_get_double) { class_double(Net::HTTP::Get) }
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
@@ -39,19 +38,22 @@ describe Aptible::CLI::Agent do
 
       # stub out operations call
       response = Net::HTTPSuccess.new(1.0, '301', 'OK')
-      response.add_field('location', 'https://aptible.com/not-real')
-      expect_any_instance_of(Net::HTTP)
-        .to receive(:request)
-        .with(an_instance_of(Net::HTTP::Get))
-        .and_return(response)
+      response.add_field('location', 'https://s3.aptible.com/not-real/s3')
 
       # stub out s3 call
-      s3_response = Net::HTTPSuccess.new(1.0, '200', 'OK')
-      s3_response.body = response
-      expect_any_instance_of(Net::HTTP)
-        .to receive(:request)
-        .with(an_instance_of(Net::HTTP::Get))
-        .and_return(mock_s3_response)
+      s3_response = instance_double(Net::HTTPResponse, body: 'Mock logs')
+
+      allow(Net::HTTP).to receive(:new).twice do |_, _, _|
+        net_http_double
+      end
+      expect(net_http_double).to receive(:use_ssl=).twice
+      expect(net_http_double).to receive(:request).twice do |request|
+        if request.path == "/operations/#{operation_id}/logs"
+          response
+        elsif request.path == '/not-real/s3'
+          s3_response
+        end
+      end
 
       subject.send('operation:logs', 1)
     end
@@ -68,7 +70,7 @@ describe Aptible::CLI::Agent do
         .and_return(Fabricate(:operation, status: 'queued', id: operation_id))
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Error - You can view the logs when operation'\
+        .to raise_error('Error - You can view the logs when operation '\
                         'is complete.')
     end
     it 'errors when operation not found and errored on deploy API' do
