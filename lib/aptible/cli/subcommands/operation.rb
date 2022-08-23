@@ -22,10 +22,7 @@ module Aptible
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
 
-              # if operation is not complete, send back a simple message saying its not ready yet
-              # TODO - check status enums
-              unless %w(succeeded failed finished).include? o.status
-                # TODO - maybe we should include a copy-pasteable alternate command to view it while it's in-progress?
+              unless %w(succeeded failed).include? o.status
                 e = "Unable to retrieve operation logs. You can view these logs when the operation is complete."
                 raise Thor::Error, e
               end
