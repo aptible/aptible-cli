@@ -23,7 +23,7 @@ module Aptible
               raise "Operation ##{operation_id} not found" if o.nil?
 
               unless %w(succeeded failed).include? o.status
-                e = "Unable to retrieve operation logs. You can view these logs when the operation is complete."
+                e = 'Unable to retrieve operation logs. You can view these logs when the operation is complete.'
                 raise Thor::Error, e
               end
 
