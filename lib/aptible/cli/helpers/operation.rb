@@ -49,24 +49,15 @@ module Aptible
         end
 
         def operation_logs(operation)
-          # go to s3 operation logs endpoint
-          uri = URI("#{Aptible::Api.configuration.root_url}/operations/#{operation.id}/logs")
-          headers = { 'Authorization' => "bearer #{fetch_token}" }
-          request = Net::HTTP::Get.new(uri.request_uri, headers)
-
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = true
-          res = http.request(request)
-
+          res = get_operation_logs_redirect(operation)
           if !res || (res.code != '301' || !res.header.fetch(:location))
-            e = 'Unable to retrieve operation logs. Redirect to destination not found.'
+            e = 'Unable to retrieve operation logs. Redirect not found.'
             raise Thor::Error, e
           end
 
           # follow the link with redirect
           s3_uri = URI(res.header.fetch(:location))
-          s3_request = Net::HTTP::Get.new(s3_uri.request_uri)
-          s3_file = http.request(s3_request)
+          s3_file = http.request(Net::HTTP::Get.new(s3_uri.request_uri))
 
           # download/spit out logs from s3
           m = "Printing out results of operation logs for #{operation.id}"
@@ -80,6 +71,20 @@ module Aptible
             bits.concat ['on', o.resource.handle]
           end
           bits.join ' '
+        end
+
+        private
+
+        def get_operation_logs_redirect(operation)
+          # go to s3 operation logs endpoint
+          uri = URI(Aptible::Api.configuration.root_url.to_s +
+                      "/operations/#{operation.id}/logs")
+          headers = { 'Authorization' => "bearer #{fetch_token}" }
+          request = Net::HTTP::Get.new(uri.request_uri, headers)
+
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+          http.request(request)
         end
       end
     end
