@@ -50,9 +50,7 @@ module Aptible
 
         def operation_logs(operation)
           res = get_operation_logs_redirect(operation)
-          location = res.header.fetch('location')
-
-          s3_file_request = get_operation_logs_s3_file(location)
+          s3_file_request = get_operation_logs_s3_file(res[:location])
           # download/spit out logs from s3
           m = "Printing out results of operation logs for #{operation.id}"
           CLI.logger.info m
