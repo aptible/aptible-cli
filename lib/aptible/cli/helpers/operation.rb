@@ -76,9 +76,9 @@ module Aptible
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
-          if !res || res.code != '301' || !res.header[:location]
+          if !res || res.code != '301' || !res['location']
             # TODO: REMOVE BELOW LINE
-            puts res, res.code, res.header[:location]
+            puts res, res.code, res['location']
             raise Thor::Error, 'Unable to retrieve operation logs with 301.'
           end
           res
