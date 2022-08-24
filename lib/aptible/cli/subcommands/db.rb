@@ -346,6 +346,17 @@ module Aptible
                 end
               end
             end
+
+            desc 'db:rename OLD_HANDLE NEW_HANDLE', 'Rename a database handle'
+            option :environment
+            define_method 'db:rename' do |old_handle, new_handle|
+              db = ensure_database(options.merge(db: old_handle))
+              db.update(handle: new_handle)
+              m = "In order for the new database name (#{new_handle}) to"\
+                   ' appear in log drain and metric drain destinations,'\
+                   ' you must restart the database.'
+              CLI.logger.warn m
+            end
           end
         end
       end

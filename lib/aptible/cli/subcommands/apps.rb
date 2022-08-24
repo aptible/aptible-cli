@@ -94,6 +94,20 @@ module Aptible
                 raise if e.response.status != 404
               end
             end
+
+            desc 'apps:rename OLD_HANDLE NEW_HANDLE', 'Rename an app handle'
+            option :environment
+            define_method 'apps:rename' do |old_handle, new_handle|
+              app = ensure_app(options.merge(app: old_handle))
+              app.update(handle: new_handle)
+              m1 = "In order for the new app name (#{new_handle}) to appear"\
+                   ' in log drain and metric drain destinations, you must'\
+                   ' restart the app.'
+              m2 = 'Warning - Git remote addresses must be updated to match'\
+                   ' the new handle, if using Dockerfile deploy.'
+              CLI.logger.warn m1
+              CLI.logger.warn m2
+            end
           end
         end
       end
