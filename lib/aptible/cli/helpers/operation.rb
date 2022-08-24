@@ -72,7 +72,7 @@ module Aptible
         def get_operation_logs_redirect(operation)
           uri = URI(Aptible::Api.configuration.root_url.to_s +
                       "/operations/#{operation.id}/logs")
-          headers = { 'Authorization' => "bearer #{fetch_token}" }
+          headers = { 'Authorization' => "Bearer #{fetch_token}" }
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
