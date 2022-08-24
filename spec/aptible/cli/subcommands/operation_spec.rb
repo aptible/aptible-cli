@@ -3,8 +3,8 @@ require 'spec_helper'
 describe Aptible::CLI::Agent do
   let(:token) { 'some-token' }
   let(:operation) { Fabricate(:operation) }
-  let(:net_http_double) { instance_double(Net::HTTP) }
-  let(:net_http_get_double) { class_double(Net::HTTP::Get) }
+  let(:net_http_double) { double('Net::HTTP') }
+  let(:net_http_get_double) { double('Net::HTTP::Get') }
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
