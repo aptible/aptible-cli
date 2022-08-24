@@ -38,7 +38,7 @@ describe Aptible::CLI::Agent do
 
       # stub out operations call
       response = Net::HTTPSuccess.new(1.0, '301', 'OK')
-      response.add_field('location', 'https://s3.aptible.com/not-real/s3')
+      response.add_field(:location, 'https://s3.aptible.com/not-real/s3')
 
       # stub out s3 call
       s3_response = instance_double(Net::HTTPResponse, body: 'Mock logs')
