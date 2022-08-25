@@ -27,7 +27,7 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  describe '#operation:log' do
+  describe '#operation:connect' do
     it 'fails if the operation cannot be found' do
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(nil)
