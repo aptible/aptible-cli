@@ -73,7 +73,7 @@ describe Aptible::CLI::Agent do
         .to raise_error('Error - You can view the logs when operation '\
                         'is complete.')
     end
-    it 'errors when operation not found and errored on deploy API' do
+    it 'errors when operation logs are not found' do
       operation_id = SecureRandom.uuid
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(
