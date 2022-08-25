@@ -18,14 +18,14 @@ module Aptible
             end
 
             desc 'operation:connect OPERATION_ID',
-                 'Follow log of a running operation'
+                 'Follow logs of a running operation'
             define_method 'operation:connect' do |operation_id|
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
 
               if %w(failed succeeded).include? o.status
                 raise Thor::Error, "This operation has already #{o.status}. " \
-                                  'Only currently running operations are '\
+                                  'Only currently running operations are ' \
                                   'supported by this command at this time.'
               end
 
