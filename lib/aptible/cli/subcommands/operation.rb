@@ -17,9 +17,9 @@ module Aptible
               o.update!(cancelled: true)
             end
 
-            desc 'operation:log OPERATION_ID',
+            desc 'operation:connect OPERATION_ID',
                  'Follow log of a running operation'
-            define_method 'operation:log' do |operation_id|
+            define_method 'operation:connect' do |operation_id|
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
 

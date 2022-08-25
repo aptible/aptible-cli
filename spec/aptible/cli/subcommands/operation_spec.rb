@@ -32,7 +32,7 @@ describe Aptible::CLI::Agent do
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(nil)
 
-      expect { subject.send('operation:log', 1) }
+      expect { subject.send('operation:connect', 1) }
         .to raise_error('Operation #1 not found')
     end
 
@@ -42,7 +42,7 @@ describe Aptible::CLI::Agent do
         .with(op.id.to_s, token: token).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op)
-      subject.send('operation:log', op.id.to_s)
+      subject.send('operation:connect', op.id.to_s)
     end
 
     it 'connects to a queued operation' do
@@ -51,7 +51,7 @@ describe Aptible::CLI::Agent do
         .with(op.id.to_s, token: token).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op)
-      subject.send('operation:log', op.id.to_s)
+      subject.send('operation:connect', op.id.to_s)
     end
 
     it 'does not connect to a failed operation' do
@@ -59,7 +59,7 @@ describe Aptible::CLI::Agent do
       expect(Aptible::Api::Operation).to receive(:find)
         .with(op.id.to_s, token: token).and_return(op)
 
-      expect { subject.send('operation:log', op.id.to_s) }
+      expect { subject.send('operation:connect', op.id.to_s) }
         .to raise_error(Thor::Error, /Only currently running operations/)
     end
 
@@ -68,7 +68,7 @@ describe Aptible::CLI::Agent do
       expect(Aptible::Api::Operation).to receive(:find)
         .with(op.id.to_s, token: token).and_return(op)
 
-      expect { subject.send('operation:log', op.id.to_s) }
+      expect { subject.send('operation:connect', op.id.to_s) }
         .to raise_error(Thor::Error, /Only currently running operations/)
     end
   end
