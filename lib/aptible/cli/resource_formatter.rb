@@ -5,8 +5,27 @@ module Aptible
         NO_NESTING = Object.new.freeze
 
         def inject_backup(node, backup, include_db: false)
+          bu_operation = begin
+                           backup.created_from_operation
+                         rescue HyperResource::ClientError
+                           nil
+                         end
+
+          origin = if backup.manual && !backup.copied_from
+                     if bu_operation
+                       "manual, #{bu_operation.user_email}"
+                     else
+                       'manual, unknown'
+                     end
+                   elsif backup.manual && backup.copied_from
+                     'manual, copy'
+                   elsif backup.copied_from
+                     'automatic, copy'
+                   else
+                     'automatic'
+                   end
           description = "#{backup.id}: #{backup.created_at}, " \
-                        "#{backup.aws_region}"
+                        "#{backup.aws_region}, #{origin}"
 
           if include_db
             db = backup.database_with_deleted
@@ -30,6 +49,13 @@ module Aptible
               inject_backup(n, backup.copied_from)
             end
           end
+
+          if bu_operation && \
+             backup.manual && !backup.copied_from
+            node.keyed_object('created_from_operation', 'id') do |n|
+              inject_operation(n, bu_operation)
+            end
+          end
         end
 
         def inject_deleted_database(node, database, account)
@@ -43,12 +69,15 @@ module Aptible
         def inject_account(node, account)
           node.value('id', account.id)
           node.value('handle', account.handle)
+          node.value('created_at', account.created_at)
         end
 
         def inject_operation(node, operation)
           node.value('id', operation.id)
           node.value('status', operation.status)
-          node.value('git_ref', operation.git_ref)
+          if %w(deploy rebuild).include?(operation.type)
+            node.value('git_ref', operation.git_ref)
+          end
           node.value('user_email', operation.user_email)
           node.value('created_at', operation.created_at)
         end
@@ -56,6 +85,7 @@ module Aptible
         def inject_app(node, app, account)
           node.value('id', app.id)
           node.value('handle', app.handle)
+          node.value('created_at', app.created_at)
 
           node.value('status', app.status)
           node.value('git_remote', app.git_repo)
@@ -80,6 +110,7 @@ module Aptible
         def inject_database(node, database, account)
           node.value('id', database.id)
           node.value('handle', database.handle)
+          node.value('created_at', database.created_at)
 
           node.value('type', database.type)
           node.value('version', database.database_image.version)
@@ -97,6 +128,10 @@ module Aptible
           if database.disk
             node.value('disk_type', database.disk.ebs_volume_type)
             node.value('disk_size', database.disk.size)
+            node.value('disk_modification_progress',
+                       database.disk.modification_progress)
+            node.value('disk_modification_status', database.disk.status)
+            node.value('disk_provisioned_iops', database.disk.baseline_iops)
           end
 
           if database.service
@@ -116,6 +151,7 @@ module Aptible
         def inject_service(node, service, app)
           node.value('id', service.id)
           node.value('service', service.process_type)
+          node.value('created_at', service.created_at)
 
           node.value('command', service.command || 'CMD')
           node.value('container_count', service.container_count)
@@ -128,6 +164,7 @@ module Aptible
           node.value('id', vhost.id)
           node.value('hostname', vhost.external_host)
           node.value('status', vhost.status)
+          node.value('created_at', vhost.created_at)
 
           case vhost.type
           when 'tcp', 'tls'
@@ -167,6 +204,36 @@ module Aptible
           end
 
           attach_service(node, service)
+        end
+
+        def inject_log_drain(node, log_drain, account)
+          node.value('id', log_drain.id)
+          node.value('handle', log_drain.handle)
+          node.value('drain_type', log_drain.drain_type)
+          node.value('created_at', log_drain.created_at)
+          node.value('drain_apps', log_drain.drain_apps)
+          node.value('drain_databases', log_drain.drain_databases)
+          node.value('drain_ephemeral_sessions',
+                     log_drain.drain_ephemeral_sessions)
+          node.value('drain_proxies', log_drain.drain_proxies)
+
+          optional_attrs = %w(drain_username drain_host drain_port url)
+          optional_attrs.each do |attr|
+            value = log_drain.attributes[attr]
+            node.value(attr, value) unless value.nil?
+          end
+
+          attach_account(node, account)
+        end
+
+        def inject_metric_drain(node, metric_drain, account)
+          node.value('id', metric_drain.id)
+          node.value('handle', metric_drain.handle)
+          node.value('drain_type', metric_drain.drain_type)
+          node.value('created_at', metric_drain.created_at)
+          node.value('drain_configuration', metric_drain.drain_configuration)
+
+          attach_account(node, account)
         end
 
         private

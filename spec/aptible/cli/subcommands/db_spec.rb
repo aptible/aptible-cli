@@ -57,16 +57,6 @@ describe Aptible::CLI::Agent do
       subject.send('db:create', 'foo')
     end
 
-    it 'creates a new DB with a (implicitly) disk size' do
-      expect_provision_database(
-        { handle: 'foo', type: 'postgresql', initial_disk_size: 200 },
-        { disk_size: 200 }
-      )
-
-      subject.options = { type: 'postgresql', size: 200 }
-      subject.send('db:create', 'foo')
-    end
-
     it 'creates a new DB with a disk-size' do
       expect_provision_database(
         { handle: 'foo', type: 'postgresql', initial_disk_size: 200 },
@@ -389,13 +379,26 @@ describe Aptible::CLI::Agent do
       expect(captured_logs).to match(/restarting foobar/i)
     end
 
-    it 'allows restarting a database with (implicitly disk) size' do
+    it 'allows restarting a database with provisioned iops' do
       expect(database).to receive(:create_operation!)
-        .with(type: 'restart', disk_size: 40).and_return(op)
+        .with(type: 'restart', provisioned_iops: 3001)
+        .and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op)
 
-      subject.options = { size: 40 }
+      subject.options = { iops: 3001 }
+      subject.send('db:restart', handle)
+
+      expect(captured_logs).to match(/restarting foobar/i)
+    end
+
+    it 'allows restarting a database with ebs volume type' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'restart', ebs_volume_type: 'gp2').and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.options = { volume_type: 'gp2' }
       subject.send('db:restart', handle)
 
       expect(captured_logs).to match(/restarting foobar/i)
@@ -415,6 +418,53 @@ describe Aptible::CLI::Agent do
 
     it 'fails if the DB is not found' do
       expect { subject.send('db:restart', 'nope') }
+        .to raise_error(Thor::Error, 'Could not find database nope')
+    end
+  end
+
+  describe '#db:modify' do
+    before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
+    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
+
+    let(:op) { Fabricate(:operation) }
+
+    it 'allows modifying a database' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'modify').and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.send('db:modify', handle)
+
+      expect(captured_logs).to match(/modifying foobar/i)
+    end
+
+    it 'allows modifying a database with provisioned iops' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'modify', provisioned_iops: 3001).and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.options = { iops: 3001 }
+      subject.send('db:modify', handle)
+
+      expect(captured_logs).to match(/modifying foobar/i)
+    end
+
+    it 'allows modifying a database with ebs volume type' do
+      expect(database).to receive(:create_operation!)
+        .with(type: 'modify', ebs_volume_type: 'gp2').and_return(op)
+
+      expect(subject).to receive(:attach_to_operation_logs).with(op)
+
+      subject.options = { volume_type: 'gp2' }
+      subject.send('db:modify', handle)
+
+      expect(captured_logs).to match(/modifying foobar/i)
+    end
+
+    it 'fails if the DB is not found' do
+      expect { subject.send('db:modify', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
   end
@@ -507,10 +557,6 @@ describe Aptible::CLI::Agent do
 
     it 'allows replicating a database with a container size' do
       expect_replicate_database(container_size: 40)
-    end
-
-    it 'allows replicating a database with an (implicitly) disk size option' do
-      expect_replicate_database(size: 40)
     end
 
     it 'allows replicating a database with a disk-size option' do

@@ -1,6 +1,9 @@
 source 'https://rubygems.org'
 
-gem 'pry', github: 'fancyremarker/pry', branch: 'aptible'
+gem 'pry',
+    git: 'https://github.com/fancyremarker/pry.git',
+    branch: 'aptible'
+
 gem 'activesupport', '~> 4.0'
 gem 'rack', '~> 1.0'
 

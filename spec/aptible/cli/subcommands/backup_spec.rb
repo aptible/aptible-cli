@@ -112,7 +112,7 @@ describe Aptible::CLI::Agent do
           Fabricate(:database, account: account, handle: default_handle)
         end
 
-        subject.options = { size: s }
+        subject.options = { disk_size: s }
         subject.send('backup:restore', 1)
       end
 

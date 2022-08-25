@@ -7,6 +7,7 @@ Fabricator(:vhost, from: :stub_vhost) do
   virtual_domain { Fabricate.sequence(:virtual_domain) { |i| "domain#{i}" } }
   ip_whitelist { [] }
   container_ports { [] }
+  created_at { Time.now }
 
   after_create { |vhost| vhost.service.vhosts << vhost }
 end

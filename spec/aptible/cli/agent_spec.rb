@@ -187,8 +187,16 @@ describe Aptible::CLI::Agent do
             'u2f' => {
               'challenge' => 'some 123',
               'devices' => [
-                { 'version' => 'U2F_V2', 'key_handle' => '123' },
-                { 'version' => 'U2F_V2', 'key_handle' => '456' }
+                {
+                  'version' => 'U2F_V2',
+                  'key_handle' => '123',
+                  'name' => 'primary'
+                },
+                {
+                  'version' => 'U2F_V2',
+                  'key_handle' => '456',
+                  'name' => 'secondary'
+                }
               ]
             }
           )
@@ -215,16 +223,28 @@ describe Aptible::CLI::Agent do
         end
 
         it 'should call into U2F if supported' do
-          allow(subject).to receive(:which).and_return('u2f-host')
+          allow(subject).to receive(:which).and_return('fido2-token')
+          allow(subject).to receive(:which).and_return('fido2-assert')
           allow(subject).to receive(:ask).with('2FA Token: ') { sleep }
+          allow(subject).to receive(:ask).with(
+            'Enter the credential number you want to use: '
+          ) { '0' }
 
           e = make_oauth2_error(
             'otp_token_required',
             'u2f' => {
               'challenge' => 'some 123',
               'devices' => [
-                { 'version' => 'U2F_V2', 'key_handle' => '123' },
-                { 'version' => 'U2F_V2', 'key_handle' => '456' }
+                {
+                  'version' => 'U2F_V2',
+                  'key_handle' => '123',
+                  'name' => 'primary'
+                },
+                {
+                  'version' => 'U2F_V2',
+                  'key_handle' => '456',
+                  'name' => 'secondary'
+                }
               ]
             }
           )
@@ -238,15 +258,17 @@ describe Aptible::CLI::Agent do
 
           expect(subject).to receive(:puts).with(/security key/i)
 
+          expect(Aptible::CLI::Helpers::SecurityKey)
+            .to receive(:device_locations)
+            .and_return(['ioreg://4295020796'])
+
           expect(Aptible::CLI::Helpers::SecurityKey).to receive(:authenticate)
             .with(
               'https://auth.aptible.com/',
               'https://auth.aptible.com/u2f/trusted_facets',
               'some 123',
-              array_including(
-                instance_of(Aptible::CLI::Helpers::SecurityKey::Device),
-                instance_of(Aptible::CLI::Helpers::SecurityKey::Device)
-              )
+              instance_of(Aptible::CLI::Helpers::SecurityKey::Device),
+              ['ioreg://4295020796']
             ).and_return(u2f)
 
           expect(Aptible::Auth::Token).to receive(:create)

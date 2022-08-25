@@ -1,9 +1,13 @@
 require 'aptible/auth'
 
+require_relative 'config_path'
+
 module Aptible
   module CLI
     module Helpers
       module Token
+        include Helpers::ConfigPath
+
         TOKEN_ENV_VAR = 'APTIBLE_ACCESS_TOKEN'.freeze
 
         def fetch_token
@@ -40,7 +44,7 @@ module Aptible
         end
 
         def token_file
-          File.join ENV['HOME'], '.aptible', 'tokens.json'
+          File.join(aptible_config_path, 'tokens.json').freeze
         end
       end
     end

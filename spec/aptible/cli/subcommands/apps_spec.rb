@@ -104,26 +104,30 @@ describe Aptible::CLI::Agent do
         {
           'environment' => {
             'id' => account.id,
-            'handle' => account.handle
+            'handle' => account.handle,
+            'created_at' => fmt_time(account.created_at)
           },
           'handle' => app.handle,
           'id' => app.id,
           'status' => app.status,
           'git_remote' => app.git_repo,
+          'created_at' => fmt_time(app.created_at),
           'services' => [
             {
               'service' => s1.process_type,
               'id' => s1.id,
               'command' => s1.command,
               'container_count' => s1.container_count,
-              'container_size' => s1.container_memory_limit_mb
+              'container_size' => s1.container_memory_limit_mb,
+              'created_at' => fmt_time(s1.created_at)
             },
             {
               'service' => s2.process_type,
               'id' => s2.id,
               'command' => 'CMD',
               'container_count' => s2.container_count,
-              'container_size' => s2.container_memory_limit_mb
+              'container_size' => s2.container_memory_limit_mb,
+              'created_at' => fmt_time(s2.created_at)
             }
           ]
         }
@@ -145,12 +149,14 @@ describe Aptible::CLI::Agent do
         {
           'environment' => {
             'id' => account.id,
-            'handle' => account.handle
+            'handle' => account.handle,
+            'created_at' => fmt_time(account.created_at)
           },
           'handle' => app.handle,
           'id' => app.id,
           'status' => app.status,
           'git_remote' => app.git_repo,
+          'created_at' => fmt_time(app.created_at),
           'last_deploy_operation' =>
             {
               'id' => op.id,
@@ -247,42 +253,6 @@ describe Aptible::CLI::Agent do
           .to raise_error(/provide at least/im)
       end
 
-      it 'should scale container count (legacy)' do
-        stub_options
-        expect(service).to receive(:create_operation!)
-          .with(type: 'scale', container_count: 3)
-          .and_return(op)
-        subject.send('apps:scale', 'web', '3')
-        expect(captured_logs).to match(/deprecated/i)
-      end
-
-      it 'should scale container size (legacy)' do
-        stub_options(size: 90210)
-        expect(service).to receive(:create_operation!)
-          .with(type: 'scale', container_size: 90210)
-          .and_return(op)
-        subject.send('apps:scale', 'web')
-        expect(captured_logs).to match(/deprecated/i)
-      end
-
-      it 'should fail when using both current and legacy count' do
-        stub_options(container_count: 2)
-        expect { subject.send('apps:scale', 'web', '3') }
-          .to raise_error(/count was passed via both/im)
-      end
-
-      it 'should fail when using both current and legacy size' do
-        stub_options(container_size: 1024, size: 512)
-        expect { subject.send('apps:scale', 'web') }
-          .to raise_error(/size was passed via both/im)
-      end
-
-      it 'should fail when using too many arguments' do
-        stub_options
-        expect { subject.send('apps:scale', 'web', '3', '4') }
-          .to raise_error(/usage:.*apps:scale/im)
-      end
-
       it 'should fail if the service does not exist' do
         stub_options(container_count: 2)
 
@@ -316,17 +286,6 @@ describe Aptible::CLI::Agent do
       expect do
         subject.send('apps:scale', 'web')
       end.to raise_error(Thor::Error)
-    end
-
-    it 'should fail if number is not a valid number (legacy)' do
-      allow(subject).to receive(:options) { { app: 'hello' } }
-      allow(service).to receive(:create_operation) { op }
-
-      expect do
-        subject.send('apps:scale', 'web', 'potato')
-      end.to raise_error(ArgumentError)
-
-      expect(captured_logs).to match(/deprecated/i)
     end
   end
 

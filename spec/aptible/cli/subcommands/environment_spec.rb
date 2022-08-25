@@ -32,11 +32,13 @@ describe Aptible::CLI::Agent do
     expected_accounts = [
       {
         'handle' => 'foo',
-        'ca_body' => 'account 1 cert'
+        'ca_body' => 'account 1 cert',
+        'created_at' => fmt_time(a1.created_at)
       },
       {
         'handle' => 'bar',
-        'ca_body' => '--account 2 cert--'
+        'ca_body' => '--account 2 cert--',
+        'created_at' => fmt_time(a2.created_at)
       }
     ]
     expect(captured_output_json.map! { |account| account.except('id') })

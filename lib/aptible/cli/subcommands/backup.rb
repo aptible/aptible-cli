@@ -39,16 +39,17 @@ module Aptible
                 type: 'restore',
                 handle: handle,
                 container_size: options[:container_size],
-                disk_size: options[:disk_size] || options[:size],
+                disk_size: options[:disk_size],
                 destination_account: destination_account,
                 key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
 
-              CLI.logger.warn([
-                'You have used the "--size" option to specify a disk size.',
-                'This option which be deprecated in a future version.',
-                'Please use the "--disk-size" option, instead.'
-              ].join("\n")) if options[:size]
+              if options[:size]
+                m = 'You have used the "--size" option to specify a disk size.'\
+                    'This abiguous option has been removed.'\
+                    'Please use the "--disk-size" option, instead.'
+                raise Thor::Error, m
+              end
 
               operation = backup.create_operation!(opts)
               CLI.logger.info "Restoring backup into #{handle}"
@@ -123,7 +124,14 @@ module Aptible
 
               operation = backup.create_operation!(type: 'purge')
               CLI.logger.info "Purging backup #{backup_id}"
-              attach_to_operation_logs(operation)
+              begin
+                attach_to_operation_logs(operation)
+              rescue HyperResource::ClientError => e
+                # A 404 here means that the operation completed successfully,
+                # and was removed faster than attach_to_operation_logs
+                # could attach to the logs.
+                raise if e.response.status != 404
+              end
             end
           end
         end

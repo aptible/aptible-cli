@@ -1,7 +1,11 @@
+require_relative 'config_path'
+
 module Aptible
   module CLI
     module Helpers
       module Ssh
+        include Helpers::ConfigPath
+
         def connect_to_ssh_portal(operation, *extra_ssh_args)
           # NOTE: This is a little tricky to get rigt, so before you make any
           # changes, read this.
@@ -126,7 +130,7 @@ module Aptible
         end
 
         def ssh_dir
-          File.join ENV['HOME'], '.aptible', 'ssh'
+          File.join aptible_config_path, 'ssh'
         end
 
         def ssh_config_file

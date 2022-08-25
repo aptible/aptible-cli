@@ -22,6 +22,7 @@ Fabricator(:database, from: :stub_database) do
 
   backups { [] }
   database_credentials { [] }
+  created_at { Time.now }
 
   after_create do |database, transients|
     database.account.databases << database
