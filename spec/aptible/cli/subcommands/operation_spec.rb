@@ -27,12 +27,12 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  describe '#operation:connect' do
+  describe '#operation:follow' do
     it 'fails if the operation cannot be found' do
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(nil)
 
-      expect { subject.send('operation:connect', 1) }
+      expect { subject.send('operation:follow', 1) }
         .to raise_error('Operation #1 not found')
     end
 
@@ -42,7 +42,7 @@ describe Aptible::CLI::Agent do
         .with(op.id.to_s, token: token).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op)
-      subject.send('operation:connect', op.id.to_s)
+      subject.send('operation:follow', op.id.to_s)
     end
 
     it 'connects to a queued operation' do
@@ -51,25 +51,29 @@ describe Aptible::CLI::Agent do
         .with(op.id.to_s, token: token).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op)
-      subject.send('operation:connect', op.id.to_s)
+      subject.send('operation:follow', op.id.to_s)
     end
 
     it 'does not connect to a failed operation' do
-      op = Fabricate(:operation, status: 'failed')
+      id = 34
+      status = 'failed'
+      op = Fabricate(:operation, id: id, status: status)
       expect(Aptible::Api::Operation).to receive(:find)
         .with(op.id.to_s, token: token).and_return(op)
 
-      expect { subject.send('operation:connect', op.id.to_s) }
-        .to raise_error(Thor::Error, /Only currently running operations/)
+      expect { subject.send('operation:follow', op.id.to_s) }
+        .to raise_error(Thor::Error, /aptible operation:logs #{id}/)
     end
 
     it 'does not connect to a succeeded operation' do
-      op = Fabricate(:operation, status: 'succeeded')
+      id = 43
+      status = 'succeeded'
+      op = Fabricate(:operation, id: id, status: status)
       expect(Aptible::Api::Operation).to receive(:find)
         .with(op.id.to_s, token: token).and_return(op)
 
-      expect { subject.send('operation:connect', op.id.to_s) }
-        .to raise_error(Thor::Error, /Only currently running operations/)
+      expect { subject.send('operation:follow', op.id.to_s) }
+        .to raise_error(Thor::Error, /aptible operation:logs #{id}/)
     end
   end
 end
