@@ -879,31 +879,30 @@ describe Aptible::CLI::Agent do
 
   describe '#db:rename' do
     before do
-      database[:handle] = 'db'
-      account.databases = [database]
-      expect(Aptible::Api::Database).to receive(:all) { [database] }
+      allow(subject).to receive(:options)
+        .and_return(environment: account.handle)
       allow(Aptible::Api::Account).to receive(:all) { [account] }
     end
     context 'with environment and db' do
       it 'should rename properly' do
         expect(database).to receive(:update)
-          .with(handle: 'db2').and_return(database)
-        subject.send('db:rename', 'db', 'db2')
+          .with(handle: 'foo2').and_return(database)
+        subject.send('db:rename', database.handle, 'foo2')
         expect(captured_logs).to include(
-          'In order for the new database name (db2) to appear in log drain '\
+          'In order for the new database name (foo2) to appear in log drain '\
           'and metric drain destinations, you must reload the database.'
         )
       end
       it 'should fail if db does not exist' do
-        expect { subject.send('db:rename', 'db2', 'db3') }
-          .to raise_error(/Could not find database db2/)
+        expect { subject.send('db:rename', 'foo2', 'foo3') }
+          .to raise_error(/Could not find database foo2/)
       end
       it 'should raise error if update fails' do
         response = Faraday::Response.new(status: 500)
         error = HyperResource::ClientError.new('Mock Error', response: response)
         expect(database).to receive(:update)
-          .with(handle: 'db2').and_raise(error)
-        expect { subject.send('db:rename', 'db', 'db2') }
+          .with(handle: 'foo2').and_raise(error)
+        expect { subject.send('db:rename', database.handle, 'foo2') }
           .to raise_error(/Mock Error/)
       end
     end
