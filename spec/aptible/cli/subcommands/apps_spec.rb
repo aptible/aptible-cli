@@ -197,6 +197,40 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#apps:rename' do
+    before do
+      allow(Aptible::Api::App).to receive(:all) { [app] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+    end
+    context 'with environment and app' do
+      it 'should rename properly' do
+        strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+        allow(subject).to receive(:handle_strategies) { strategies }
+        expect(app).to receive(:update)
+          .with(handle: 'web2').and_return(app)
+        subject.send('apps:rename', 'web', 'web2')
+        expect(captured_logs).to include(
+          'In order for the new app name (web2) to appear in log drain and '\
+          'metric drain destinations, you must restart the app.'
+        )
+      end
+      it 'should fail if app does not exist' do
+        expect { subject.send('apps:rename', 'web2', 'web3') }
+          .to raise_error(/Could not find app web/)
+      end
+      it 'should raise error if update fails' do
+        strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+        allow(subject).to receive(:handle_strategies) { strategies }
+        response = Faraday::Response.new(status: 500)
+        error = HyperResource::ClientError.new('Mock Error', response: response)
+        expect(app).to receive(:update)
+          .with(handle: 'web2').and_raise(error)
+        expect { subject.send('apps:rename', 'web', 'web2') }
+          .to raise_error(/Mock Error/)
+      end
+    end
+  end
+
   describe '#apps:scale' do
     before do
       allow(Aptible::Api::App).to receive(:all) { [app] }
