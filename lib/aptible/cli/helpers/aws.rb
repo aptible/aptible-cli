@@ -37,7 +37,7 @@ module Aptible
             properties[:uploaded_at] = split_by_dot.last
           when 'v3'
             case properties[:type]
-            when 'app'
+            when 'apps'
               properties[:service_id] = file.split('/')[5].split('-').last.to_i
               file_name = file.split('/')[6]
             else
@@ -45,8 +45,8 @@ module Aptible
             end
             split_by_dot = file_name.split('.') - %w(log bck gz)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            # properties[:start_time]
-            # properties[:end_time]
+            properties[:start_time] = split_by_dot[1]
+            properties[:end_time] = split_by_dot[2]
           else
             m = "Cannot determine aptible log naming schema from #{file}"
             raise Thor::Error, m
@@ -74,6 +74,7 @@ module Aptible
         end
 
         def find_s3_files_by_string_match(region, bucket, stack, strings)
+          # This function just regex matches a provided string anywhwere in the s3 path
           begin
             stack_logs = s3_client(region).bucket(bucket).objects(prefix: stack).map(&:key)
           rescue => error
@@ -85,8 +86,40 @@ module Aptible
           stack_logs
         end
 
-        def find_s3_files_by_type_id
-          false
+        def find_s3_files_by_attrs(region, bucket, stack, attrs, time_range = nil)
+          # This function uses the known path schema to return files matching the
+          # provided criterea. EG:
+          # * attrs: { :type => 'app', :id => 123 }
+
+          begin
+            stack_logs = s3_client(region).bucket(bucket).objects(prefix: stack).map(&:key)
+          rescue => error
+            raise Thor::Error, error.message
+          end
+          attrs.each do |k, v|
+            stack_logs = stack_logs.select do |f|
+              info_from_path(f)[k] == v
+            end
+          end
+
+          if time_range
+            # select only logs within the time range
+            # TODO handle 'unknown' time ranges
+            stack_logs = stack_logs.select do |f|
+              info = info_from_path(f)
+              start_time = info[:start_time]
+              end_time = info[:end_time]
+              if start_time.nil? || end_time.nil?
+                m = "Cannot determine precise timestamps: #{f}"
+                CLI.logger.warn m
+                false
+              else
+                ( time_range.first < end_time ) & ( time_range.last > start_time )
+              end
+            end
+          end
+
+          stack_logs
         end
 
         def encryption_key(filesum, possible_keys)

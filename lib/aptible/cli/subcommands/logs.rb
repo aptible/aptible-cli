@@ -55,13 +55,13 @@ module Aptible
                    type: :array
             option :app_id,
                    desc: 'The Application ID you wish to downloads logs for.',
-                   type: :string
+                   type: :numeric
             option :database_id,
                    desc: 'The Database ID you wish to downloads logs for.',
-                   type: :string
+                   type: :numeric
             option :proxy_id,
                    desc: 'The Endpoint ID you wish to downloads logs for.',
-                   type: :string
+                   type: :numeric
             option :start_date,
                    desc: 'Get logs after starting from this date (M-D-YYYY)',
                    type: :string
@@ -101,24 +101,31 @@ module Aptible
                   options[:string_matches]
                 )
               elsif by_id
+                time_range = nil
                 if options[:start_date] || options[:end_date]
                   unless options[:start_date] && options[:end_date]
                     m = 'You must pass both --start-date and --end-date'
                     raise Thor::Error, m
                   end
-                  start_date = Time.strptime(options[:start_date], '%m/%d/%Y')
-                  end_date = Time.strptime(options[:start_date], '%m/%d/%Y')
+                  start_date = Time.strptime(options[:start_date], '%Y-%m-%d')
+                  end_date = Time.strptime(options[:end_date], '%Y-%m-%d')
+                  time_range = [start_date, end_date]
                   CLI.logger.info "Searching from #{start_date} to #{end_date}"
                 end
 
-                raise Thor::Error, 'Only --string-matches is implemented now.'
                 # TODO
                 # Make sure only one is passed
-                # files = find_s3_files_by_type_id(
-                #           region, bucket, stack,
-                #           type,id,
-                #           start_date, end_date
-                #          )
+                r_type = 'apps' if options[:app_id]
+                r_type = 'databases' if options[:database_id]
+                r_type = 'proxy' if options[:proxy_id]
+
+                files = find_s3_files_by_attrs(
+                  options[:region],
+                  options[:bucket],
+                  options[:stack],
+                  { :type => r_type, :id => by_id },
+                  time_range
+                )
               else
                 m = 'You must specify one of --string-matches, ' \
                     '--app-id, --database-id, or --proxy-id'
