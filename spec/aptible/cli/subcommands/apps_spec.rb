@@ -217,6 +217,9 @@ describe Aptible::CLI::Agent do
           'In order for the new app name (hello2) to appear in log drain and '\
           'metric drain destinations, you must restart the app.'
         )
+        expect(captured_logs).to include(
+          "(git@beta.aptible.com:#{account.handle}/hello2.git)"
+        )
       end
       it 'should fail if app does not exist' do
         expect { subject.send('apps:rename', 'hello2', 'hello3') }

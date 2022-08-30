@@ -111,7 +111,8 @@ module Aptible
                    " restart --app #{new_handle} --environment #{env.handle}\""
               m3 = 'Warning - Git remote addresses must be updated to match'\
                    ' the new handle, if using Dockerfile deploy. '\
-                   "(git@beta.aptible.com:madhu-sandbox/#{new_handle}.git)"
+                   "(git@beta.aptible.com:#{app.account.handle}"\
+                   "/#{new_handle}.git)"
               CLI.logger.warn m1
               CLI.logger.info m2
               CLI.logger.warn m3
