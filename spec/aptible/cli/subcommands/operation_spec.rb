@@ -90,5 +90,36 @@ describe Aptible::CLI::Agent do
       expect { subject.send('operation:logs', 1) }
         .to raise_error('Unable to retrieve operation logs with 301.')
     end
+    it 'errors when s3 itself returns an error code' do
+      operation_id = SecureRandom.uuid
+      expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
+        .and_return(Fabricate(
+                      :operation, status: 'succeeded', id: operation_id
+        ))
+
+      # stub out operations call
+      response = Net::HTTPSuccess.new(1.0, '301', 'OK')
+      response.add_field(:location, 'https://s3.aptible.com/not-real/s3')
+
+      # stub out s3 call (to fail)
+      s3_response = instance_double(Net::HTTPResponse,
+                                    code: 404, body: 'Mock logs')
+
+      allow(Net::HTTP).to receive(:new).twice do |_, _, _|
+        net_http_double
+      end
+      expect(net_http_double).to receive(:use_ssl=).twice
+      expect(net_http_double).to receive(:request).twice do |request|
+        if request.path == "/operations/#{operation_id}/logs"
+          response
+        elsif request.path == '/not-real/s3'
+          s3_response
+        end
+      end
+
+      expect { subject.send('operation:logs', 1) }
+        .to raise_error('Unable to retrieve operation logs, '\
+                        'S3 returned response code 404')
+    end
   end
 end
