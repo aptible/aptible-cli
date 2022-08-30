@@ -355,7 +355,7 @@ module Aptible
             define_method 'db:rename' do |old_handle, new_handle|
               env = ensure_environment(options)
               db = ensure_database(options.merge(db: old_handle))
-              db.update(handle: new_handle)
+              db.update!(handle: new_handle)
               m1 = "In order for the new database name (#{new_handle}) to"\
                    ' appear in log drain and metric drain destinations,'\
                    ' you must reload the database.'

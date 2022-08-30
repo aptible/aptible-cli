@@ -885,7 +885,7 @@ describe Aptible::CLI::Agent do
     end
     context 'with environment and db' do
       it 'should rename properly' do
-        expect(database).to receive(:update)
+        expect(database).to receive(:update!)
           .with(handle: 'foo2').and_return(database)
         subject.send('db:rename', database.handle, 'foo2')
         expect(captured_logs).to include(
@@ -899,11 +899,15 @@ describe Aptible::CLI::Agent do
       end
       it 'should raise error if update fails' do
         response = Faraday::Response.new(status: 500)
-        error = HyperResource::ClientError.new('Mock Error', response: response)
-        expect(database).to receive(:update)
+        error = HyperResource::ClientError.new(
+          'An error occurred: Validation failed: Handle has '\
+          'already been taken, Handle has already been taken',
+          response: response
+        )
+        expect(database).to receive(:update!)
           .with(handle: 'foo2').and_raise(error)
         expect { subject.send('db:rename', database.handle, 'foo2') }
-          .to raise_error(/Mock Error/)
+          .to raise_error(HyperResource::ClientError)
       end
     end
   end
