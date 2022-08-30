@@ -8,6 +8,7 @@ module Aptible
           'EU1' => 'https://app.datadoghq.eu',
           'US1-FED' => 'https://app.ddog-gov.com'
         }.freeze
+        PATH = '/api/v1/series'.freeze
 
         def self.included(thor)
           thor.class_eval do
@@ -106,7 +107,7 @@ module Aptible
                                      "Valid options are #{sites}"
                 end
 
-                config[:series_url] = site
+                config[:series_url] = site + PATH
               end
               opts = {
                 handle: handle,
