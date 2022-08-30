@@ -87,8 +87,7 @@ module Aptible
           http.use_ssl = true
 
           # follow the link with redirect and retrieve it from s3 directly
-          request = Net::HTTP::Get.new(s3_uri.request_uri)
-          res = http.request(request)
+          res = http.request(Net::HTTP::Get.new(s3_uri.request_uri))
           if !res || res.code != '200'
             raise Thor::Error, 'Unable to retrieve operation logs, '\
               "S3 returned response code #{res.code}"

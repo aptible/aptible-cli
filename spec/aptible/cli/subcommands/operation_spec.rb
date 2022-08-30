@@ -46,6 +46,7 @@ describe Aptible::CLI::Agent do
       allow(Net::HTTP).to receive(:new).twice do |_, _, _|
         net_http_double
       end
+      expect(s3_response).to receive(:code).and_return('200')
       expect(net_http_double).to receive(:use_ssl=).twice
       expect(net_http_double).to receive(:request).twice do |request|
         if request.path == "/operations/#{operation_id}/logs"
@@ -102,8 +103,7 @@ describe Aptible::CLI::Agent do
       response.add_field(:location, 'https://s3.aptible.com/not-real/s3')
 
       # stub out s3 call (to fail)
-      s3_response = instance_double(Net::HTTPResponse,
-                                    code: 404, body: 'Mock logs')
+      s3_response = Net::HTTPSuccess.new(1.0, '404', 'Not Found')
 
       allow(Net::HTTP).to receive(:new).twice do |_, _, _|
         net_http_double
