@@ -103,12 +103,12 @@ module Aptible
             define_method 'apps:rename' do |old_handle, new_handle|
               env = ensure_environment(options)
               app = ensure_app(options.merge(app: old_handle))
-              app.update(handle: new_handle)
+              app.update!(handle: new_handle)
               m1 = "In order for the new app name (#{new_handle}) to appear"\
                    ' in log drain and metric drain destinations, you must'\
                    ' restart the app.'
-              m2 = 'You can restart your app with this command: "aptible'\
-                   " restart --app #{new_handle} --environment #{env.handle}\""
+              m2 = 'You can restart your app with this command: "aptible '\
+                   "restart --app #{new_handle} --environment #{env.handle}\""
               m3 = 'Warning - Git remote addresses must be updated to match'\
                    ' the new handle, if using Dockerfile deploy. '\
                    "(git@beta.aptible.com:#{app.account.handle}"\

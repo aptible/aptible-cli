@@ -210,7 +210,7 @@ describe Aptible::CLI::Agent do
 
     context 'with environment and app' do
       it 'should rename properly' do
-        expect(app).to receive(:update)
+        expect(app).to receive(:update!)
           .with(handle: 'hello2').and_return(app)
         subject.send('apps:rename', 'hello', 'hello2')
         expect(captured_logs).to include(
@@ -226,12 +226,14 @@ describe Aptible::CLI::Agent do
           .to raise_error(/Could not find app hello/)
       end
       it 'should raise error if update fails' do
-        response = Faraday::Response.new(status: 500)
-        error = HyperResource::ClientError.new('Mock Error', response: response)
-        expect(app).to receive(:update)
+        response = Faraday::Response.new(status: 422)
+        error = HyperResource::ClientError.new('ActiveRecord::RecordInvalid:'\
+        ' Validation failed: Handle has already been taken, Handle has already'\
+        ' been taken', response: response)
+        expect(app).to receive(:update!)
           .with(handle: 'hello2').and_raise(error)
         expect { subject.send('apps:rename', 'hello', 'hello2') }
-          .to raise_error(/Mock Error/)
+          .to raise_error(HyperResource::ClientError)
       end
     end
   end
