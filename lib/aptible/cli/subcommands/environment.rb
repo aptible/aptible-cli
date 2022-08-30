@@ -41,6 +41,26 @@ module Aptible
                 end
               end
             end
+
+            desc 'environment:rename OLD_HANDLE NEW_HANDLE',
+                 'Rename an environment handle. In order for the new'\
+                 ' environment handle to appear in log drain/metric'\
+                 ' destinations, you must restart the apps/databases in'\
+                 ' this environment.'
+            define_method 'environment:rename' do |old_handle, new_handle|
+              env = ensure_environment(options.merge(environment: old_handle))
+              env.update!(handle: new_handle)
+              m1 = "In order for the new environment handle (#{new_handle})"\
+                   ' to appear in log drain and metric drain destinations,'\
+                   ' you must restart you must restart the apps/databases'\
+                   ' in this environment.'
+              m2 = 'Warning - Git remote addresses must be updated to match'\
+                   ' the new handle, if using Dockerfile deploy. '\
+                   "(ex: git@beta.aptible.com:#{new_handle}"\
+                   '/APP_HANDLE.git)'
+              CLI.logger.warn m1
+              CLI.logger.info m2
+            end
           end
         end
       end
