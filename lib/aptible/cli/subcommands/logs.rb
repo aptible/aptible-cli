@@ -63,10 +63,10 @@ module Aptible
                    desc: 'The Endpoint ID you wish to downloads logs for.',
                    type: :numeric
             option :start_date,
-                   desc: 'Get logs after starting from this date (M-D-YYYY)',
+                   desc: 'Get logs starting from this date (YYYY-MM-DD)',
                    type: :string
             option :end_date,
-                   desc: 'Get logs after starting from this date (M-D-YYYY)',
+                   desc: 'Get logs before this date (YYYY-MM-DD)',
                    type: :string
 
             # We don't download by default
