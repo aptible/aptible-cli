@@ -21,7 +21,7 @@ require_relative 'helpers/security_key'
 require_relative 'helpers/config_path'
 require_relative 'helpers/log_drain'
 require_relative 'helpers/metric_drain'
-require_relative 'helpers/aws'
+require_relative 'helpers/s3_log_helpers'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'

@@ -10,7 +10,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::AppOrDatabase
-            include Helpers::AwsHelpers
+            include Helpers::S3LogHelpers
 
             desc 'logs [--app APP | --database DATABASE]',
                  'Follows logs from a running app or database'
@@ -77,59 +77,55 @@ module Aptible
                    type: :string
 
             def logs_from_archive
+              t_fmt = '%Y-%m-%d %Z'
+
               ensure_aws_creds
+              validate_log_search_options(options)
 
-              by_id = options[:app_id] ||
-                      options[:database_id] ||
-                      options[:proxy_id]
+              id_options = [
+                options[:app_id],
+                options[:database_id],
+                options[:proxy_id]
+              ]
 
+              date_options = [options[:start_date], options[:end_date]]
+
+              r_type = 'apps' if options[:app_id]
+              r_type = 'databases' if options[:database_id]
+              r_type = 'proxy' if options[:proxy_id]
+
+              if date_options.any?
+                begin
+                  start_d = Time.strptime("#{options[:start_date]} UTC", t_fmt)
+                  end_d = Time.strptime("#{options[:end_date]} UTC", t_fmt)
+                rescue ArgumentError
+                  raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
+                end
+                time_range = [start_date, end_date]
+                CLI.logger.info "Searching from #{start_d} to #{end_d}"
+              else
+                time_range = nil
+              end
+
+              # --string-matches is useful for matching by partial container id,
+              # or for more flexibility than the currently suppored id_options
+              # may allow for. We should update id_options with new use cases,
+              # but leave string_matches as a way to download any named file
               if options[:string_matches]
-                if by_id
-                  m = 'You cannot pass --app-id, --database-id, or ' \
-                      '--proxy-id when using --string-matches.'
-                  raise Thor::Error, m
-                end
-                if options[:start_date] || options[:end_date]
-                  m = 'The options --start-date/--end-date cannot be used when ' \
-                      'searching by string'
-                      raise Thor::Error, m
-                end
                 files = find_s3_files_by_string_match(
                   options[:region],
                   options[:bucket],
                   options[:stack],
                   options[:string_matches]
                 )
-              elsif by_id
-                time_range = nil
-                if options[:start_date] || options[:end_date]
-                  unless options[:start_date] && options[:end_date]
-                    m = 'You must pass both --start-date and --end-date'
-                    raise Thor::Error, m
-                  end
-                  start_date = Time.strptime(options[:start_date], '%Y-%m-%d')
-                  end_date = Time.strptime(options[:end_date], '%Y-%m-%d')
-                  time_range = [start_date, end_date]
-                  CLI.logger.info "Searching from #{start_date} to #{end_date}"
-                end
-
-                # TODO
-                # Make sure only one is passed
-                r_type = 'apps' if options[:app_id]
-                r_type = 'databases' if options[:database_id]
-                r_type = 'proxy' if options[:proxy_id]
-
+              elsif id_options.any?
                 files = find_s3_files_by_attrs(
                   options[:region],
                   options[:bucket],
                   options[:stack],
-                  { :type => r_type, :id => by_id },
+                  { type: r_type, id: id_options.compact.first },
                   time_range
                 )
-              else
-                m = 'You must specify one of --string-matches, ' \
-                    '--app-id, --database-id, or --proxy-id'
-                raise Thor::Error, m
               end
 
               unless files.any?
@@ -139,6 +135,8 @@ module Aptible
               CLI.logger.info "Found #{files.count} matching files..."
 
               if options[:download_location]
+                # Since these files likely contain PHI, we will only download
+                # them if the user is explicit about where to save them.
                 files.each do |file|
                   shasum = info_from_path(file)[:shasum]
                   CLI.logger.info file
@@ -152,14 +150,12 @@ module Aptible
                   CLI.logger.info 'Done!'
                 end
               else
-                # Since these files likely contain PHI, we will show what was
-                # found, but we won't download them.
                 files.each do |file|
                   CLI.logger.info file
                 end
                 m = 'No files were downloaded. Please provide a location ' \
                     'with --download-location to download the files.'
-                CLI.logger.warn m
+                raise Thor::Error, m
               end
             end
           end

@@ -61,43 +61,31 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  describe 'logs_from_archive' do
-    around do |example| 
-      ClimateControl.modify(AWS_ACCESS_KEY_ID: 'foo', AWS_SECRET_ACCESS_KEY: 'bar') do
-         example.run
+  describe '#logs_from_archive' do
+    it 'should valide you have provided AWS credentials' do
+      skip 'TODO'
+    end
+    it 'should validate your input options' do
+      skip 'TODO'
+    end
+    it 'should return an error if it found no files' do
+      skip 'TODO'
+    end
+    context 'you do not provide a download location' do
+      it 'raises an error' do
+        skip 'TODO'
+      end
+      it 'prints the log file names that match' do
+        skip 'TODO'
       end
     end
-
-    context '--string-matches searches' do     
-      it 'do not also allow searching by type' do
-        subject.options = { app_id: '123', string_matches: ['foo'] }
-  
-        m = 'cannot pass --app-id, --database-id, or --proxy-id when using --string-matches'
-        expect{ subject.send(:logs_from_archive) }.to raise_error(/#{m}/)
+    context 'you provide a download location' do
+      it 'downloads each file' do
+        skip 'TODO'
       end
-
-      it 'ignores --start-date and --end-date options' do
-        subject.options = { start_date: '11/22/63', string_matches: ['foo'] }
-        m = '--start-date/--end-date cannot be used'
-        expect{ subject.send(:logs_from_archive) }.to raise_error(/#{m}/)
+      it 'prints the log file names that match' do
+        skip 'TODO'
       end
-
-      it 'uses find_s3_files_by_string_match' do
-         skip
-      end
-    end
-
-    context '--TYPE-ID searches' do 
-      it 'You must path both --start-date and --end-date' do
-        subject.options = { app_id: '123', start_date: '11/22/63' }
-  
-        m = 'You must pass both --start-date and --end-date'
-        expect{ subject.send(:logs_from_archive) }.to raise_error(/#{m}/)
-      end
-
-      it 'uses find_s3_files_by_type_id' do
-        skip
-     end
     end
   end
 end

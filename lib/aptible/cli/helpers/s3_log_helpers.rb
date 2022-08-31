@@ -4,16 +4,46 @@ require 'pathname'
 module Aptible
   module CLI
     module Helpers
-      module AwsHelpers
+      module S3LogHelpers
         def ensure_aws_creds
           cred_errors = []
           unless ENV['AWS_ACCESS_KEY_ID']
-            cred_errors << 'Missing environment variable: AWS_ACCESS_KEY_ID.'
+            cred_errors << 'Missing environment variable: AWS_ACCESS_KEY_ID'
           end
           unless ENV['AWS_SECRET_ACCESS_KEY']
-            cred_errors << 'Missing environment variable: AWS_SECRET_ACCESS_KEY.'
+            cred_errors << 'Missing environment variable: AWS_SECRET_ACCESS_KEY'
           end
           raise Thor::Error, cred_errors.join(' ') if cred_errors.any?
+        end
+
+        def validate_log_search_options(options = {})
+          id_options = [
+            options[:app_id],
+            options[:database_id],
+            options[:proxy_id]
+          ]
+          date_options = [options[:start_date], options[:end_date]]
+          unless options[:string_matches] || id_options.any?
+            m = 'You must specify an option to identify the logs to download,' \
+                ' either: --string-matches, --app-id, --database-id,' \
+                ' or --proxy-id'
+            raise Thor::Error, m
+          end
+
+          m = 'You cannot pass --app-id, --database-id, or ' \
+              '--proxy-id when using --string-matches.'
+          raise Thor::Error, m if options[:string_matches] && id_options.any?
+
+          m = 'You must specify only one of ' \
+              '--app-id, --database-id, or --proxy-id'
+          raise Thor::Error, m if id_options.any? && !id_options.one?
+
+          m = 'The options --start-date/--end-date cannot be used when ' \
+              'searching by string'
+          raise Thor::Error, m if options[:string_matches] && date_options.any?
+
+          m = 'You must pass both --start-date and --end-date'
+          raise Thor::Error, m if date_options.any? && !date_options.all?
         end
 
         def info_from_path(file)
@@ -43,10 +73,18 @@ module Aptible
             else
               file_name = file.split('/')[5]
             end
-            split_by_dot = file_name.split('.') - %w(log bck gz)
+            # The file name may have differing number of elements due to
+            # docker file log rotation. So we eliminate some useless items
+            # and then work from the beginning or end of the remaining to find
+            # known elements, ignoring any .1 .2 (or none at all) extension
+            # found in the middle of the file name. EG:
+            # ['contaienr_id', 'start_time', 'end_time']
+            # or
+            # ['container_id', '.1', 'start_time', 'end_time']]
+            split_by_dot = file_name.split('.') - %w(log gz archived)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            properties[:start_time] = split_by_dot[1]
-            properties[:end_time] = split_by_dot[2]
+            properties[:start_time] = split_by_dot[-2]
+            properties[:end_time] = split_by_dot[-1]
           else
             m = "Cannot determine aptible log naming schema from #{file}"
             raise Thor::Error, m
@@ -69,14 +107,18 @@ module Aptible
           location = File.join(path + file)
           FileUtils.mkdir_p(File.dirname(location))
           File.open(location, 'wb') do |f|
-            reap = s3.get_object(bucket: bucket, key: file, response_target: f)
+            # Is this memory efficient?
+            s3.get_object(bucket: bucket, key: file, response_target: f)
           end
         end
 
         def find_s3_files_by_string_match(region, bucket, stack, strings)
-          # This function just regex matches a provided string anywhwere in the s3 path
+          # This function just regex matches a provided string anywhwere
+          # in the s3 path
           begin
-            stack_logs = s3_client(region).bucket(bucket).objects(prefix: stack).map(&:key)
+            stack_logs = s3_client(region).bucket(bucket)
+                                          .objects(prefix: stack)
+                                          .map(&:key)
           rescue => error
             raise Thor::Error, error.message
           end
@@ -86,13 +128,17 @@ module Aptible
           stack_logs
         end
 
-        def find_s3_files_by_attrs(region, bucket, stack, attrs, time_range = nil)
-          # This function uses the known path schema to return files matching the
-          # provided criterea. EG:
+        def find_s3_files_by_attrs(region, bucket, stack,
+                                   attrs, time_range = nil)
+          # This function uses the known path schema to return files matching
+          # any provided criterea. EG:
           # * attrs: { :type => 'app', :id => 123 }
+          # * attrs: { :container_id => 'deadbeef' }
 
           begin
-            stack_logs = s3_client(region).bucket(bucket).objects(prefix: stack).map(&:key)
+            stack_logs = s3_client(region).bucket(bucket)
+                                          .objects(prefix: stack)
+                                          .map(&:key)
           rescue => error
             raise Thor::Error, error.message
           end
@@ -114,7 +160,7 @@ module Aptible
                 CLI.logger.warn m
                 false
               else
-                ( time_range.first < end_time ) & ( time_range.last > start_time )
+                (time_range.first < end_time) & (time_range.last > start_time)
               end
             end
           end
