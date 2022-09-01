@@ -49,7 +49,7 @@ module Aptible
                    desc: 'The name of the Stack to download logs from',
                    type: :string, required: true
             option :decryption_keys,
-                   desc: 'The Aptible-provided keys for decription. ' \
+                   desc: 'The Aptible-provided keys for decryption. ' \
                          '(Comma separated if multiple)',
                    type: :array, required: true
 
@@ -117,7 +117,7 @@ module Aptible
               end
 
               # --string-matches is useful for matching by partial container id,
-              # or for more flexibility than the currently suppored id_options
+              # or for more flexibility than the currently supported id_options
               # may allow for. We should update id_options with new use cases,
               # but leave string_matches as a way to download any named file
               if options[:string_matches]
@@ -143,7 +143,7 @@ module Aptible
               end
 
               unless files.any?
-                raise Thor::Error, 'No files found that matched all criterea'
+                raise Thor::Error, 'No files found that matched all criteria'
               end
 
               CLI.logger.info "Found #{files.count} matching files..."

@@ -132,7 +132,7 @@ module Aptible
         def find_s3_files_by_attrs(region, bucket, stack,
                                    attrs, time_range = nil)
           # This function uses the known path schema to return files matching
-          # any provided criterea. EG:
+          # any provided criteria. EG:
           # * attrs: { :type => 'app', :id => 123 }
           # * attrs: { :container_id => 'deadbeef' }
 
