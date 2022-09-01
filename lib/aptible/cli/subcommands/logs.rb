@@ -30,9 +30,13 @@ module Aptible
             end
 
             desc 'logs_from_archive --bucket NAME | --aws-region REGION | ' \
-                 '--stack NAAME --decryption-keys ONE [TWO] [THREE] | ' \
-                 '--download-location | --string-matches ONE [TWO] [THREE]',
-                 'Retrieves logs from your S3 archive.'
+                 '--stack NAAME --decryption-keys ONE [OR MORE] | ' \
+                 '--download-location | --string-matches ONE [OR MORE] |' \
+                 '--start-date YYYY-MM-DD | --end-date YYYY-MM-DD',
+                 'Retrieves container logs from an S3 archive in your own ' \
+                 'AWS account. You must provide your AWS credentials via ' \
+                 'the environment variables AWS_ACCESS_KEY_ID and ' \
+                 'AWS_SECRET_ACCESS_KEY'
 
             # Required to retrieve files
             option :region,
@@ -42,7 +46,7 @@ module Aptible
                    desc: 'The name of your S3 bucket',
                    type: :string, required: true
             option :stack,
-                   desc: 'The name of the Stack you wish to download logs from',
+                   desc: 'The name of the Stack to download logs from',
                    type: :string, required: true
             option :decryption_keys,
                    desc: 'The Aptible-provided keys for decription. ' \
@@ -51,22 +55,25 @@ module Aptible
 
             # For identifying files to download
             option :string_matches,
-                   desc: 'The strings you wish to match in log file names.',
+                   desc: 'The strings to match in log file names.',
                    type: :array
             option :app_id,
-                   desc: 'The Application ID you wish to downloads logs for.',
+                   desc: 'The Application ID to downloads logs for.',
                    type: :numeric
             option :database_id,
-                   desc: 'The Database ID you wish to downloads logs for.',
+                   desc: 'The Database ID to downloads logs for.',
                    type: :numeric
             option :proxy_id,
-                   desc: 'The Endpoint ID you wish to downloads logs for.',
+                   desc: 'The Endpoint ID to downloads logs for.',
                    type: :numeric
+            option :container_id,
+                   desc: 'The full (64 char) container ID to download logs for'
             option :start_date,
-                   desc: 'Get logs starting from this date (YYYY-MM-DD)',
+                   desc: 'Get logs starting from this (GMT) date ' \
+                         '(format: YYYY-MM-DD)',
                    type: :string
             option :end_date,
-                   desc: 'Get logs before this date (YYYY-MM-DD)',
+                   desc: 'Get logs before this (GMT) date (format: YYYY-MM-DD)',
                    type: :string
 
             # We don't download by default
@@ -77,15 +84,14 @@ module Aptible
                    type: :string
 
             def logs_from_archive
-              t_fmt = '%Y-%m-%d %Z'
-
               ensure_aws_creds
               validate_log_search_options(options)
 
               id_options = [
                 options[:app_id],
                 options[:database_id],
-                options[:proxy_id]
+                options[:proxy_id],
+                options[:container_id]
               ]
 
               date_options = [options[:start_date], options[:end_date]]
@@ -96,13 +102,16 @@ module Aptible
 
               if date_options.any?
                 begin
-                  start_d = Time.strptime("#{options[:start_date]} UTC", t_fmt)
-                  end_d = Time.strptime("#{options[:end_date]} UTC", t_fmt)
+                  start_date = gmt_date(options[:start_date])
+                  end_date = gmt_date(options[:end_date])
                 rescue ArgumentError
                   raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
                 end
+                if end_date < start_date
+                  raise Thor::Error, 'End date must be after start date.'
+                end
                 time_range = [start_date, end_date]
-                CLI.logger.info "Searching from #{start_d} to #{end_d}"
+                CLI.logger.info "Searching from #{start_date} to #{end_date}"
               else
                 time_range = nil
               end
@@ -119,11 +128,16 @@ module Aptible
                   options[:string_matches]
                 )
               elsif id_options.any?
+                if options[:container_id]
+                  search_attrs = { container_id: options[:container_id] }
+                else
+                  search_attrs = { type: r_type, id: id_options.compact.first }
+                end
                 files = find_s3_files_by_attrs(
                   options[:region],
                   options[:bucket],
                   options[:stack],
-                  { type: r_type, id: id_options.compact.first },
+                  search_attrs,
                   time_range
                 )
               end
@@ -139,7 +153,7 @@ module Aptible
                 # them if the user is explicit about where to save them.
                 files.each do |file|
                   shasum = info_from_path(file)[:shasum]
-                  CLI.logger.info file
+                  CLI.logger.info file.split('/').drop(4).join('/')
                   decrypt_and_translate_s3_file(
                     file,
                     encryption_key(shasum, options[:decryption_keys]),
@@ -147,15 +161,14 @@ module Aptible
                     options[:bucket],
                     options[:download_location]
                   )
-                  CLI.logger.info 'Done!'
                 end
               else
                 files.each do |file|
-                  CLI.logger.info file
+                  CLI.logger.info file.split('/').drop(4).join('/')
                 end
                 m = 'No files were downloaded. Please provide a location ' \
                     'with --download-location to download the files.'
-                raise Thor::Error, m
+                CLI.logger.warn m
               end
             end
           end

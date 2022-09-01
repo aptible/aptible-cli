@@ -20,22 +20,23 @@ module Aptible
           id_options = [
             options[:app_id],
             options[:database_id],
-            options[:proxy_id]
+            options[:proxy_id],
+            options[:container_id]
           ]
           date_options = [options[:start_date], options[:end_date]]
           unless options[:string_matches] || id_options.any?
             m = 'You must specify an option to identify the logs to download,' \
                 ' either: --string-matches, --app-id, --database-id,' \
-                ' or --proxy-id'
+                ' --proxy-id, or --container-id'
             raise Thor::Error, m
           end
 
-          m = 'You cannot pass --app-id, --database-id, or ' \
-              '--proxy-id when using --string-matches.'
+          m = 'You cannot pass --app-id, --database-id, --proxy-id, or ' \
+              '--container-id when using --string-matches.'
           raise Thor::Error, m if options[:string_matches] && id_options.any?
 
           m = 'You must specify only one of ' \
-              '--app-id, --database-id, or --proxy-id'
+              '--app-id, --database-id, --proxy-id or --container-id'
           raise Thor::Error, m if id_options.any? && !id_options.one?
 
           m = 'The options --start-date/--end-date cannot be used when ' \
@@ -64,7 +65,7 @@ module Aptible
             # Eliminate the extensions
             split_by_dot = file_name.split('.') - %w(log bck gz)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            properties[:uploaded_at] = split_by_dot.last
+            properties[:uploaded_at] = Time.parse("#{split_by_dot.last}Z")
           when 'v3'
             case properties[:type]
             when 'apps'
@@ -83,8 +84,8 @@ module Aptible
             # ['container_id', '.1', 'start_time', 'end_time']]
             split_by_dot = file_name.split('.') - %w(log gz archived)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            properties[:start_time] = split_by_dot[-2]
-            properties[:end_time] = split_by_dot[-1]
+            properties[:start_time] = Time.parse("#{split_by_dot[-2]}Z")
+            properties[:end_time] = Time.parse("#{split_by_dot[-1]}Z")
           else
             m = "Cannot determine aptible log naming schema from #{file}"
             raise Thor::Error, m
@@ -104,7 +105,7 @@ module Aptible
           end
 
           # Just write it to a file directly
-          location = File.join(path + file)
+          location = File.join(path + file.split('/').drop(4).join('/'))
           FileUtils.mkdir_p(File.dirname(location))
           File.open(location, 'wb') do |f|
             # Is this memory efficient?
@@ -153,19 +154,31 @@ module Aptible
             # TODO handle 'unknown' time ranges
             stack_logs = stack_logs.select do |f|
               info = info_from_path(f)
-              start_time = info[:start_time]
-              end_time = info[:end_time]
-              if start_time.nil? || end_time.nil?
-                m = "Cannot determine precise timestamps: #{f}"
+              first_log = info[:start_time]
+              last_log = info[:end_time]
+              if first_log.nil? || last_log.nil?
+                m = 'Cannot determine precise timestamps of file: ' \
+                    "#{f.split('/').drop(4).join('/')}"
                 CLI.logger.warn m
                 false
               else
-                (time_range.first < end_time) & (time_range.last > start_time)
+                time_match?(time_range, first_log, last_log)
               end
             end
           end
 
           stack_logs
+        end
+
+        def time_match?(time_range, start_timestamp, end_timestamp)
+          return false if time_range.last < start_timestamp
+          return false if time_range.first > end_timestamp
+          true
+        end
+
+        def gmt_date(date_string)
+          t_fmt = '%Y-%m-%d %Z'
+          Time.strptime("#{date_string} UTC", t_fmt)
         end
 
         def encryption_key(filesum, possible_keys)

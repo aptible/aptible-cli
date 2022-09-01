@@ -37,6 +37,19 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
   end
 
   describe '#info_from_path' do
+    context 'time zones are in UTC' do
+      it 'processes v2 upload time in UTC' do
+        result = subject.info_from_path(v2app)
+        expect(result[:uploaded_at].zone).to eq('UTC')
+      end
+
+      it 'processes v3 log times in UTC' do
+        result = subject.info_from_path(v3app)
+        expect(result[:start_time].zone).to eq('UTC')
+        expect(result[:end_time].zone).to eq('UTC')
+      end
+    end
+
     it 'can read app data from v2 paths' do
       result = subject.info_from_path(v2app)
       expect(result[:schema]).to eq('v2')
@@ -90,6 +103,7 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
         expect(result[:start_time]).to eq('2022-08-24T21:12:33')
         expect(result[:end_time]).to eq('2022-08-24T21:14:38')
       end
+
       it 'can read app data from v2 paths' do
         result = subject.info_from_path(v2app)
         expect(result[:schema]).to eq('v2')
@@ -135,12 +149,6 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
       opts = { app_id: 123, start_date: 'foo' }
       expect { subject.validate_log_search_options(opts) }
         .to raise_error(Thor::Error, /must pass both/)
-    end
-  end
-
-  describe '#decrypt_and_translate_s3_file' do
-    it 'retrieves, decrypts, and saves to a local file' do
-      skip 'Testing effort here is too high'
     end
   end
 
@@ -219,16 +227,50 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
     end
 
     it 'can find by other attributes of the log file like container id' do
-      # The function CAN do this, but the command the user
-      # runs cannot at this time
       attrs = { container_id: 'deadbeef' }
       result = subject.find_s3_files_by_attrs('us-east-1', 'bucket',
                                               'stack', attrs)
       expect(result).to match_array([v3app])
     end
+  end
 
-    it 'can find files by time range' do
-      skip 'TO DO WHILE REVIEW UNDERWAY'
+  describe '#time_match?' do
+    let(:first_log) { Time.parse('2022-08-01T00:00:00') }
+    let(:last_log) { Time.parse('2022-09-01T00:00:00') }
+    let(:before) { Time.parse('2022-07-01T00:00:00') }
+    let(:between) { Time.parse('2022-08-15T00:00:00') }
+    let(:after) { Time.parse('2022-10-01T00:00:00') }
+
+    context 'identifies files that may have lines within a range' do
+      it 'before before does not match' do
+        range = [before, before]
+        expect(subject.time_match?(range, first_log, last_log)).to be(false)
+      end
+
+      it 'before between matches' do
+        range = [before, between]
+        expect(subject.time_match?(range, first_log, last_log)).to be(true)
+      end
+
+      it 'between between matches' do
+        range = [between, between]
+        expect(subject.time_match?(range, first_log, last_log)).to be(true)
+      end
+
+      it 'before after matches' do
+        range = [before, after]
+        expect(subject.time_match?(range, first_log, last_log)).to be(true)
+      end
+
+      it 'between after matches' do
+        range = [between, after]
+        expect(subject.time_match?(range, first_log, last_log)).to be(true)
+      end
+
+      it 'after after does not match' do
+        range = [after, after]
+        expect(subject.time_match?(range, first_log, last_log)).to be(false)
+      end
     end
   end
 end
