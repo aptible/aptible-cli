@@ -58,13 +58,13 @@ module Aptible
                    desc: 'The strings to match in log file names.',
                    type: :array
             option :app_id,
-                   desc: 'The Application ID to downloads logs for.',
+                   desc: 'The Application ID to download logs for.',
                    type: :numeric
             option :database_id,
-                   desc: 'The Database ID to downloads logs for.',
+                   desc: 'The Database ID to download logs for.',
                    type: :numeric
             option :proxy_id,
-                   desc: 'The Endpoint ID to downloads logs for.',
+                   desc: 'The Endpoint ID to download logs for.',
                    type: :numeric
             option :container_id,
                    desc: 'The full (64 char) container ID to download logs for'
