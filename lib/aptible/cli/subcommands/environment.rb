@@ -52,14 +52,15 @@ module Aptible
               env.update!(handle: new_handle)
               m1 = "In order for the new environment handle (#{new_handle})"\
                    ' to appear in log drain and metric drain destinations,'\
-                   ' you must restart you must restart the apps/databases'\
-                   ' in this environment.'
-              m2 = 'Warning - Git remote addresses must be updated to match'\
-                   ' the new handle, if using Dockerfile deploy. '\
-                   "(ex: git@beta.aptible.com:#{new_handle}"\
+                   ' you must restart the apps and databases in this'\
+                   ' environment. Also be aware of the following resources'\
+                   ' that may need names adjusted:'
+              m2 = '* Log drain metadata'
+              m3 = '* Metric drain metadata'
+              m4 = "* Git remote URLs (ex: git@beta.aptible.com:#{new_handle}"\
                    '/APP_HANDLE.git)'
-              CLI.logger.warn m1
-              CLI.logger.info m2
+              m5 = '* Your own external scripts (e.g. for CI/CD)'
+              [m1, m2, m3, m4, m5].each { |val| CLI.logger.info val }
             end
           end
         end
