@@ -104,7 +104,7 @@ describe Aptible::CLI::Agent do
       end
     end
 
-    context 'using app/database/proxy  id' do
+    context 'using app/database/endpoint  id' do
       let(:files) { %w(file_1 file_2) }
 
       before do

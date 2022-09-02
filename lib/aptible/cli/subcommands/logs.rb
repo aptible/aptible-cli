@@ -29,10 +29,12 @@ module Aptible
               exit_with_ssh_portal(op, '-o', 'SendEnv=ACCESS_TOKEN', '-T')
             end
 
-            desc 'logs_from_archive --bucket NAME | --aws-region REGION | ' \
-                 '--stack NAAME --decryption-keys ONE [OR MORE] | ' \
-                 '--download-location | --string-matches ONE [OR MORE] |' \
-                 '--start-date YYYY-MM-DD | --end-date YYYY-MM-DD',
+            desc 'logs_from_archive --bucket NAME --region REGION ' \
+                 '--stack NAME --decryption-keys ONE [OR MORE] ' \
+                 '--download-location [ [ --string-matches ONE [OR MORE] ] ' \
+                 '| [ --app-id ID | --database-id ID | --endpoint-id ID | ' \
+                 '--container-id ID ] ' \
+                 '[ --start-date YYYY-MM-DD --end-date YYYY-MM-DD ] ]',
                  'Retrieves container logs from an S3 archive in your own ' \
                  'AWS account. You must provide your AWS credentials via ' \
                  'the environment variables AWS_ACCESS_KEY_ID and ' \
@@ -50,12 +52,13 @@ module Aptible
                    type: :string, required: true
             option :decryption_keys,
                    desc: 'The Aptible-provided keys for decryption. ' \
-                         '(Comma separated if multiple)',
+                         '(Space separated if multiple)',
                    type: :array, required: true
 
             # For identifying files to download
             option :string_matches,
-                   desc: 'The strings to match in log file names.',
+                   desc: 'The strings to match in log file names.' \
+                         '(Space separated if multiple)',
                    type: :array
             option :app_id,
                    desc: 'The Application ID to download logs for.',
@@ -63,17 +66,17 @@ module Aptible
             option :database_id,
                    desc: 'The Database ID to download logs for.',
                    type: :numeric
-            option :proxy_id,
+            option :endpoint_id,
                    desc: 'The Endpoint ID to download logs for.',
                    type: :numeric
             option :container_id,
                    desc: 'The full (64 char) container ID to download logs for'
             option :start_date,
-                   desc: 'Get logs starting from this (GMT) date ' \
+                   desc: 'Get logs starting from this (UTC) date ' \
                          '(format: YYYY-MM-DD)',
                    type: :string
             option :end_date,
-                   desc: 'Get logs before this (GMT) date (format: YYYY-MM-DD)',
+                   desc: 'Get logs before this (UTC) date (format: YYYY-MM-DD)',
                    type: :string
 
             # We don't download by default
@@ -90,7 +93,7 @@ module Aptible
               id_options = [
                 options[:app_id],
                 options[:database_id],
-                options[:proxy_id],
+                options[:endpoint_id],
                 options[:container_id]
               ]
 
@@ -98,12 +101,12 @@ module Aptible
 
               r_type = 'apps' if options[:app_id]
               r_type = 'databases' if options[:database_id]
-              r_type = 'proxy' if options[:proxy_id]
+              r_type = 'proxy' if options[:endpoint_id]
 
               if date_options.any?
                 begin
-                  start_date = gmt_date(options[:start_date])
-                  end_date = gmt_date(options[:end_date])
+                  start_date = utc_date(options[:start_date])
+                  end_date = utc_date(options[:end_date])
                 rescue ArgumentError
                   raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
                 end

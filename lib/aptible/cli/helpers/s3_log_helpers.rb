@@ -20,23 +20,23 @@ module Aptible
           id_options = [
             options[:app_id],
             options[:database_id],
-            options[:proxy_id],
+            options[:endpoint_id],
             options[:container_id]
           ]
           date_options = [options[:start_date], options[:end_date]]
           unless options[:string_matches] || id_options.any?
             m = 'You must specify an option to identify the logs to download,' \
                 ' either: --string-matches, --app-id, --database-id,' \
-                ' --proxy-id, or --container-id'
+                ' --endpoint-id, or --container-id'
             raise Thor::Error, m
           end
 
-          m = 'You cannot pass --app-id, --database-id, --proxy-id, or ' \
+          m = 'You cannot pass --app-id, --database-id, --endpoint-id, or ' \
               '--container-id when using --string-matches.'
           raise Thor::Error, m if options[:string_matches] && id_options.any?
 
           m = 'You must specify only one of ' \
-              '--app-id, --database-id, --proxy-id or --container-id'
+              '--app-id, --database-id, --endpoint-id or --container-id'
           raise Thor::Error, m if id_options.any? && !id_options.one?
 
           m = 'The options --start-date/--end-date cannot be used when ' \
@@ -45,41 +45,41 @@ module Aptible
 
           m = 'You must pass both --start-date and --end-date'
           raise Thor::Error, m if date_options.any? && !date_options.all?
+
+          if options[:container_id] && options[:container_id].length != 64
+            raise Thor::Error, 'You must specify the full 64 char container ID'
+          end
         end
 
         def info_from_path(file)
           properties = {}
-          # All schemas must conform up to the version
-          # $STACK/shareable/$VERSION/....
-          properties[:schema] = file.split('/')[2]
-          # So far, the SHASUM is always the top folder under the schema
-          properties[:shasum] = file.split('/')[3]
 
-          type_id = file.split('/')[4]
+          properties[:stack], _, properties[:schema],
+            properties[:shasum], type_id, *remainder = file.split('/')
+
           properties[:id] = type_id.split('-').last.to_i
           properties[:type] = type_id.split('-').first
 
           case properties[:schema]
           when 'v2'
-            file_name = file.split('/')[5]
             # Eliminate the extensions
-            split_by_dot = file_name.split('.') - %w(log bck gz)
+            split_by_dot = remainder.pop.split('.') - %w(log bck gz)
             properties[:container_id] = split_by_dot.first.delete!('-json')
             properties[:uploaded_at] = Time.parse("#{split_by_dot.last}Z")
           when 'v3'
             case properties[:type]
             when 'apps'
-              properties[:service_id] = file.split('/')[5].split('-').last.to_i
-              file_name = file.split('/')[6]
+              properties[:service_id] = remainder.first.split('-').last.to_i
+              file_name = remainder.second
             else
-              file_name = file.split('/')[5]
+              file_name = remainder.pop
             end
             # The file name may have differing number of elements due to
             # docker file log rotation. So we eliminate some useless items
             # and then work from the beginning or end of the remaining to find
             # known elements, ignoring any .1 .2 (or none at all) extension
             # found in the middle of the file name. EG:
-            # ['contaienr_id', 'start_time', 'end_time']
+            # ['container_id', 'start_time', 'end_time']
             # or
             # ['container_id', '.1', 'start_time', 'end_time']]
             split_by_dot = file_name.split('.') - %w(log gz archived)
@@ -176,7 +176,7 @@ module Aptible
           true
         end
 
-        def gmt_date(date_string)
+        def utc_date(date_string)
           t_fmt = '%Y-%m-%d %Z'
           Time.strptime("#{date_string} UTC", t_fmt)
         end

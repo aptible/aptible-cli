@@ -150,6 +150,12 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
       expect { subject.validate_log_search_options(opts) }
         .to raise_error(Thor::Error, /must pass both/)
     end
+
+    it 'Ensures you have provided a full container ID' do
+      opts = { container_id: 'too_short' }
+      expect { subject.validate_log_search_options(opts) }
+        .to raise_error(Thor::Error, /full 64 char/)
+    end
   end
 
   describe '#find_s3_files_by_string_match' do
@@ -235,6 +241,22 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
   end
 
   describe '#time_match?' do
+    # Here's a represenation of the test cases.  We keep the file timestamps
+    # fixed and move  --start-date/--end-date around to all possible combos.
+    # Note that we do foce the start to be earlier than the end, which keeps the
+    # logic here quite simple.
+
+    #      |  |se
+    #      | s|e
+    #     s|  |e
+    #      |se|
+    #     s|e |
+    #    se|  |
+
+    # s = start / lower bound of search
+    # e = end / upper bound of search
+    # |'s are the first and last timestamp in the file
+
     let(:first_log) { Time.parse('2022-08-01T00:00:00') }
     let(:last_log) { Time.parse('2022-09-01T00:00:00') }
     let(:before) { Time.parse('2022-07-01T00:00:00') }
