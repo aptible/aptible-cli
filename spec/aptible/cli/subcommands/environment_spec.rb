@@ -10,13 +10,13 @@ describe Aptible::CLI::Agent do
 
   let(:token) { double 'token' }
 
-  describe('#environment:list') do
-    before do
-      allow(subject).to receive(:fetch_token) { token }
-      allow(Aptible::Api::Account).to receive(:all).with(token: token)
-        .and_return([a1, a2])
-    end
+  before(:each) do
+    allow(subject).to receive(:fetch_token) { token }
+    allow(Aptible::Api::Account).to receive(:all).with(token: token)
+      .and_return([a1, a2])
+  end
 
+  describe('#environment:list') do
     it 'lists avaliable environments' do
       subject.send('environment:list')
 
@@ -26,12 +26,6 @@ describe Aptible::CLI::Agent do
   end
 
   describe('#environment:ca_cert') do
-    before do
-      allow(subject).to receive(:fetch_token) { token }
-      allow(Aptible::Api::Account).to receive(:all).with(token: token)
-        .and_return([a1, a2])
-    end
-
     it 'fetches certs for all avaliable environments' do
       subject.send('environment:ca_cert')
 
@@ -65,11 +59,6 @@ describe Aptible::CLI::Agent do
   end
 
   describe('#environment:rename') do
-    before do
-      allow(subject).to receive(:fetch_token) { token }
-      allow(Aptible::Api::Account).to receive(:all).with(token: token)
-        .and_return([a1, a2])
-    end
     it 'should rename properly' do
       expect(a1).to receive(:update!)
         .with(handle: 'foo-renamed').and_return(a1)
