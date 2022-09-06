@@ -41,6 +41,25 @@ module Aptible
                 end
               end
             end
+
+            desc 'environment:rename OLD_HANDLE NEW_HANDLE',
+                 'Rename an environment handle. In order for the new'\
+                 ' environment handle to appear in log drain/metric'\
+                 ' destinations, you must restart the apps/databases in'\
+                 ' this environment.'
+            define_method 'environment:rename' do |old_handle, new_handle|
+              env = ensure_environment(options.merge(environment: old_handle))
+              env.update!(handle: new_handle)
+              m1 = "In order for the new environment handle (#{new_handle})"\
+                   ' to appear in log drain and metric drain destinations,'\
+                   ' you must restart the apps and databases in this'\
+                   ' environment. Also be aware of the following resources'\
+                   ' that may need names adjusted:'
+              m2 = "* Git remote URLs (ex: git@beta.aptible.com:#{new_handle}"\
+                   '/APP_HANDLE.git)'
+              m3 = '* Your own external scripts (e.g. for CI/CD)'
+              [m1, m2, m3].each { |val| CLI.logger.info val }
+            end
           end
         end
       end
