@@ -55,12 +55,10 @@ module Aptible
                    ' you must restart the apps and databases in this'\
                    ' environment. Also be aware of the following resources'\
                    ' that may need names adjusted:'
-              m2 = '* Log drain metadata'
-              m3 = '* Metric drain metadata'
-              m4 = "* Git remote URLs (ex: git@beta.aptible.com:#{new_handle}"\
+              m2 = "* Git remote URLs (ex: git@beta.aptible.com:#{new_handle}"\
                    '/APP_HANDLE.git)'
-              m5 = '* Your own external scripts (e.g. for CI/CD)'
-              [m1, m2, m3, m4, m5].each { |val| CLI.logger.info val }
+              m3 = '* Your own external scripts (e.g. for CI/CD)'
+              [m1, m2, m3].each { |val| CLI.logger.info val }
             end
           end
         end
