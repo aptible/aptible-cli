@@ -66,7 +66,9 @@ describe Aptible::CLI::Agent do
       expect(captured_logs).to include(
         'In order for the new environment handle (foo-renamed)'
       )
-      expect(captured_logs).to include('* Log drain metadata')
+      expect(captured_logs).to include(
+        '* Your own external scripts (e.g. for CI/CD)'
+      )
       expect(captured_logs).to include(
         '* Git remote URLs (ex: git@beta.aptible.com:foo-renamed'
       )
