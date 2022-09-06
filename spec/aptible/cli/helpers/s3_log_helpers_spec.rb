@@ -295,4 +295,26 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
       end
     end
   end
+
+  describe '#utc_date' do
+    e = 'Please provide dates in YYYY-MM-DD format'
+
+    it 'converts strings to dates in UTC' do
+      result = subject.utc_date('2022-08-30')
+      expect(result).to be_a(Time)
+      expect(result).to eq(Time.utc(2022, 8, 30, 0, 0, 0))
+    end
+
+    it 'raises an error if the input is a valid date/tiem in wrong format' do
+      expect do
+        subject.utc_date('2022-08-30 11:32')
+      end.to raise_error(Thor::Error, e)
+    end
+
+    it 'raises an error if the input is wrong' do
+      expect do
+        subject.utc_date('foobar')
+      end.to raise_error(Thor::Error, e)
+    end
+  end
 end

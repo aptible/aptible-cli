@@ -179,6 +179,8 @@ module Aptible
         def utc_date(date_string)
           t_fmt = '%Y-%m-%d %Z'
           Time.strptime("#{date_string} UTC", t_fmt)
+        rescue ArgumentError
+          raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
         end
 
         def encryption_key(filesum, possible_keys)

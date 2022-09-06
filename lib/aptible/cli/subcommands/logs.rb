@@ -104,12 +104,8 @@ module Aptible
               r_type = 'proxy' if options[:endpoint_id]
 
               if date_options.any?
-                begin
-                  start_date = utc_date(options[:start_date])
-                  end_date = utc_date(options[:end_date])
-                rescue ArgumentError
-                  raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
-                end
+                start_date = utc_date(options[:start_date])
+                end_date = utc_date(options[:end_date])
                 if end_date < start_date
                   raise Thor::Error, 'End date must be after start date.'
                 end
