@@ -12,7 +12,10 @@ describe Aptible::CLI::Helpers::Database do
       Fabricate(:database_image, type: 'redis', version: '9.4')
     end
 
+    let(:token) { 'some-token' }
+
     before do
+      allow(subject).to receive(:fetch_token).and_return(token)
       allow(Aptible::Api::DatabaseImage).to receive(:all)
         .and_return([pg, redis])
     end
