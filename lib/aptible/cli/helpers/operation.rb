@@ -1,4 +1,5 @@
 require 'aptible/api'
+require 'net/http'
 
 module Aptible
   module CLI
