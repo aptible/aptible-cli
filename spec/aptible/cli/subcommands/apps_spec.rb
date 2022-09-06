@@ -197,6 +197,47 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#apps:rename' do
+    before do
+      allow(Aptible::Api::App).to receive(:all) { [app] }
+      allow(Aptible::Api::Account).to receive(:all) { [account] }
+    end
+
+    before(:each) do
+      allow(subject).to receive(:options)
+        .and_return(environment: account.handle)
+    end
+
+    context 'with environment and app' do
+      it 'should rename properly' do
+        expect(app).to receive(:update!)
+          .with(handle: 'hello2').and_return(app)
+        subject.send('apps:rename', 'hello', 'hello2')
+        expect(captured_logs).to include(
+          'In order for the new app name (hello2) to appear in log drain and '\
+          'metric drain destinations, you must restart the app.'
+        )
+        expect(captured_logs).to include(
+          "(git@beta.aptible.com:#{account.handle}/hello2.git)"
+        )
+      end
+      it 'should fail if app does not exist' do
+        expect { subject.send('apps:rename', 'hello2', 'hello3') }
+          .to raise_error(/Could not find app hello/)
+      end
+      it 'should raise error if update fails' do
+        response = Faraday::Response.new(status: 422)
+        error = HyperResource::ClientError.new('ActiveRecord::RecordInvalid:'\
+        ' Validation failed: Handle has already been taken, Handle has already'\
+        ' been taken', response: response)
+        expect(app).to receive(:update!)
+          .with(handle: 'hello2').and_raise(error)
+        expect { subject.send('apps:rename', 'hello', 'hello2') }
+          .to raise_error(HyperResource::ClientError)
+      end
+    end
+  end
+
   describe '#apps:scale' do
     before do
       allow(Aptible::Api::App).to receive(:all) { [app] }
