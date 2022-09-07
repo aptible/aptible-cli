@@ -75,7 +75,6 @@ module Aptible
           http.use_ssl = true
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res body with a 200 is target redirect location for download
-          # in approx ruby 2.4 or lower, location is in a different spot
           if !res || res.code != '200' || res.body.nil?
             raise Thor::Error, 'Unable to retrieve operation logs with 200.'
           end
