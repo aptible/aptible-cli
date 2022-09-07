@@ -51,7 +51,6 @@ module Aptible
 
         def operation_logs(operation)
           res = get_operation_logs_redirect(operation)
-          # note: res :location is the  header "location" for a 301
           s3_file_request = get_operation_logs_s3_file(res.body)
 
           m = "Printing out results of operation logs for #{operation.id}"
