@@ -80,7 +80,7 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#operation:logs' do
-    it 'sends operation logs (> r2.4) request when subcommand sent' do
+    it 'sends operation logs request when subcommand sent' do
       operation_id = SecureRandom.uuid
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(Fabricate(
@@ -88,8 +88,7 @@ describe Aptible::CLI::Agent do
         ))
 
       # stub out operations call
-      response = Net::HTTPSuccess.new(1.0, '301', 'OK')
-      response.add_field(:location, 'https://s3.aptible.com/not-real/s3')
+      response = instance_double(Net::HTTPResponse, body: 'https://s3.aptible.com/not-real/s3')
 
       # stub out s3 call
       s3_response = instance_double(Net::HTTPResponse, body: 'Mock logs')
@@ -97,6 +96,7 @@ describe Aptible::CLI::Agent do
       allow(Net::HTTP).to receive(:new).twice do |_, _, _|
         net_http_double
       end
+      expect(response).to receive(:code).and_return('200')
       expect(s3_response).to receive(:code).and_return('200')
       expect(net_http_double).to receive(:use_ssl=).twice
       expect(net_http_double).to receive(:request).twice do |request|
@@ -109,35 +109,7 @@ describe Aptible::CLI::Agent do
 
       subject.send('operation:logs', 1)
     end
-    it 'sends operation logs (<= r2.4) request when subcommand sent' do
-      operation_id = SecureRandom.uuid
-      expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
-        .and_return(Fabricate(
-                      :operation, status: 'succeeded', id: operation_id
-        ))
 
-      # stub out operations call
-      response = Net::HTTPSuccess.new(1.0, '301', 'OK')
-      response.add_field('location', 'https://s3.aptible.com/not-real/s3')
-
-      # stub out s3 call
-      s3_response = instance_double(Net::HTTPResponse, body: 'Mock logs')
-
-      allow(Net::HTTP).to receive(:new).twice do |_, _, _|
-        net_http_double
-      end
-      expect(s3_response).to receive(:code).and_return('200')
-      expect(net_http_double).to receive(:use_ssl=).twice
-      expect(net_http_double).to receive(:request).twice do |request|
-        if request.path == "/operations/#{operation_id}/logs"
-          response
-        elsif request.path == '/not-real/s3'
-          s3_response
-        end
-      end
-
-      subject.send('operation:logs', 1)
-    end
     it 'errors when operation is not found' do
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(nil)
@@ -169,9 +141,9 @@ describe Aptible::CLI::Agent do
         .and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs with 301.')
+        .to raise_error('Unable to retrieve operation logs with 200.')
     end
-    it 'errors when location header is empty' do
+    it 'errors when body is empty' do
       operation_id = SecureRandom.uuid
       expect(Aptible::Api::Operation).to receive(:find).with(1, token: token)
         .and_return(Fabricate(
@@ -179,15 +151,17 @@ describe Aptible::CLI::Agent do
         ))
 
       # stub out operations call
-      response = Net::HTTPSuccess.new(1.0, '301', 'OK')
+      response = instance_double(Net::HTTPResponse, body: nil)
+
       allow(Net::HTTP).to receive(:new) do |_, _, _|
         net_http_double
       end
+      expect(response).to receive(:code).and_return('200')
       expect(net_http_double).to receive(:use_ssl=)
       expect(net_http_double).to receive(:request).and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs with 301.')
+        .to raise_error('Unable to retrieve operation logs with 200.')
     end
     it 'errors when s3 itself returns an error code' do
       operation_id = SecureRandom.uuid
@@ -197,10 +171,10 @@ describe Aptible::CLI::Agent do
         ))
 
       # stub out operations call
-      response = Net::HTTPSuccess.new(1.0, '301', 'OK')
-      response.add_field(:location, 'https://s3.aptible.com/not-real/s3')
+      response = instance_double(Net::HTTPResponse, body: 'https://s3.aptible.com/not-real/s3')
 
       # stub out s3 call (to fail)
+      expect(response).to receive(:code).and_return('200')
       s3_response = Net::HTTPSuccess.new(1.0, '404', 'Not Found')
 
       allow(Net::HTTP).to receive(:new).twice do |_, _, _|
