@@ -52,7 +52,12 @@ module Aptible
         def operation_logs(operation)
           res = get_operation_logs_redirect(operation)
           # note: res :location is the  header "location" for a 301
-          s3_file_request = get_operation_logs_s3_file(res[:location])
+          location = if !res.header.try(:[], :location).nil?
+                       res.header.try(:[], :location)
+                     else
+                       res.header.try(:[], 'location')
+                     end
+          s3_file_request = get_operation_logs_s3_file(location)
 
           m = "Printing out results of operation logs for #{operation.id}"
           CLI.logger.info m
@@ -77,8 +82,8 @@ module Aptible
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res :location is the  header "location" for a 301
           # in approx ruby 2.4 or lower, location is in a different spot
-          if !res || res.code != '301' || res.header.try(:[], :location).nil? ||
-             res.header.try(:[], 'location').nil?
+          if !res || res.code != '301' || (res.header.try(:[], :location).nil?\
+            && res.header.try(:[], 'location').nil?)
             raise Thor::Error, 'Unable to retrieve operation logs with 301.'
           end
           res
