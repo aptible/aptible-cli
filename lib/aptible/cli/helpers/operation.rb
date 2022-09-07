@@ -37,7 +37,7 @@ module Aptible
           # If the portal is down, fall back to polling for success. If the
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
-          unless code.zero?
+          unless code == 0
             e = 'Disconnected from logs, waiting for operation to complete'
             CLI.logger.warn e
             poll_for_success(operation)
