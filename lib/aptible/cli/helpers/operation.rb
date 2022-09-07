@@ -37,7 +37,7 @@ module Aptible
           # If the portal is down, fall back to polling for success. If the
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
-          unless code == 0
+          unless code.zero?
             e = 'Disconnected from logs, waiting for operation to complete'
             CLI.logger.warn e
             poll_for_success(operation)
@@ -76,7 +76,9 @@ module Aptible
           http.use_ssl = true
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res :location is the  header "location" for a 301
-          if !res || res.code != '301' || !res[:location]
+          # in approx ruby 2.4 or lower, location is in a different spot
+          if !res || res.code != '301' || res.header.try(:[], :location).nil? ||
+             res.header.try(:[], 'location').nil?
             raise Thor::Error, 'Unable to retrieve operation logs with 301.'
           end
           res
