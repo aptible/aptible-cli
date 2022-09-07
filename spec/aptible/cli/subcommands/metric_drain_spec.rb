@@ -145,7 +145,7 @@ describe Aptible::CLI::Agent do
           drain_type: :datadog,
           drain_configuration: {
             api_key: 'foobar',
-            series_url: 'https://app.datadoghq.eu'
+            series_url: 'https://app.datadoghq.eu/api/v1/series'
           }
         }
         expect_provision_metric_drain(opts)
