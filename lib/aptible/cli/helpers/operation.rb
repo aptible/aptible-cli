@@ -76,7 +76,8 @@ module Aptible
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res body with a 200 is target redirect location for download
           if !res || res.code != '200' || res.body.nil?
-            raise Thor::Error, 'Unable to retrieve operation logs with 200.'
+            raise Thor::Error, 'Unable to retrieve the operation\'s logs.'\
+            'If the issue persists please contact support for assistance.'
           end
           res
         end
@@ -90,7 +91,8 @@ module Aptible
           res = http.request(Net::HTTP::Get.new(s3_uri.request_uri))
           if !res || res.code != '200'
             raise Thor::Error, 'Unable to retrieve operation logs, '\
-              "S3 returned response code #{res.code}"
+              "S3 returned response code #{res.code}. "\
+              'If the issue persists please contact support for assistance.'
           end
           res
         end

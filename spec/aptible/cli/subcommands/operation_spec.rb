@@ -141,7 +141,8 @@ describe Aptible::CLI::Agent do
         .and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs with 200.')
+        .to raise_error('Unable to retrieve the operation\'s logs.'\
+          'If the issue persists please contact support for assistance.')
     end
     it 'errors when body is empty' do
       operation_id = SecureRandom.uuid
@@ -161,7 +162,8 @@ describe Aptible::CLI::Agent do
       expect(net_http_double).to receive(:request).and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve operation logs with 200.')
+        .to raise_error('Unable to retrieve the operation\'s logs.'\
+          'If the issue persists please contact support for assistance.')
     end
     it 'errors when s3 itself returns an error code' do
       operation_id = SecureRandom.uuid
@@ -191,7 +193,9 @@ describe Aptible::CLI::Agent do
 
       expect { subject.send('operation:logs', 1) }
         .to raise_error('Unable to retrieve operation logs, '\
-                        'S3 returned response code 404')
+                        'S3 returned response code 404. '\
+                        'If the issue persists please contact support for '\
+                        'assistance.')
     end
   end
 end
