@@ -34,6 +34,21 @@ module Aptible
 
               attach_to_operation_logs(o)
             end
+
+            desc 'operation:logs OPERATION_ID', 'View logs for given operation'
+            define_method 'operation:logs' do |operation_id|
+              o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
+              raise "Operation ##{operation_id} not found" if o.nil?
+
+              unless %w(succeeded failed).include? o.status
+                e = 'Error - You can view the logs when operation is complete.'
+                raise Thor::Error, e
+              end
+
+              m = "Requesting operation logs for #{prettify_operation(o)}..."
+              CLI.logger.info m
+              operation_logs(o)
+            end
           end
         end
       end
