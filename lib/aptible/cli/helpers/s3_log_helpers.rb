@@ -65,7 +65,7 @@ module Aptible
             # Eliminate the extensions
             split_by_dot = remainder.pop.split('.') - %w(log bck gz)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            properties[:uploaded_at] = Time.parse("#{split_by_dot.last}Z")
+            properties[:uploaded_at] = utc_datetime(split_by_dot.last)
           when 'v3'
             case properties[:type]
             when 'apps'
@@ -84,8 +84,8 @@ module Aptible
             # ['container_id', '.1', 'start_time', 'end_time']]
             split_by_dot = file_name.split('.') - %w(log gz archived)
             properties[:container_id] = split_by_dot.first.delete!('-json')
-            properties[:start_time] = Time.parse("#{split_by_dot[-2]}Z")
-            properties[:end_time] = Time.parse("#{split_by_dot[-1]}Z")
+            properties[:start_time] = utc_datetime(split_by_dot[-2])
+            properties[:end_time] = utc_datetime(split_by_dot[-1])
           else
             m = "Cannot determine aptible log naming schema from #{file}"
             raise Thor::Error, m
@@ -171,6 +171,7 @@ module Aptible
         end
 
         def time_match?(time_range, start_timestamp, end_timestamp)
+          return false if start_timestamp.nil? || end_timestamp.nil?
           return false if time_range.last < start_timestamp
           return false if time_range.first > end_timestamp
           true
@@ -181,6 +182,12 @@ module Aptible
           Time.strptime("#{date_string} UTC", t_fmt)
         rescue ArgumentError
           raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
+        end
+
+        def utc_datetime(datetime_string)
+          Time.parse("#{datetime_string}Z")
+        rescue ArgumentError
+          nil
         end
 
         def encryption_key(filesum, possible_keys)
