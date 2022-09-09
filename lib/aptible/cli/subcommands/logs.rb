@@ -70,7 +70,7 @@ module Aptible
                    desc: 'The Endpoint ID to download logs for.',
                    type: :numeric
             option :container_id,
-                   desc: 'The full (64 char) container ID to download logs for'
+                   desc: 'The container ID to download logs for'
             option :start_date,
                    desc: 'Get logs starting from this (UTC) date ' \
                          '(format: YYYY-MM-DD)',

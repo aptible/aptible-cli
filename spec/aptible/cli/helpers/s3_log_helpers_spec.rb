@@ -151,10 +151,10 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
         .to raise_error(Thor::Error, /must pass both/)
     end
 
-    it 'Ensures you have provided a full container ID' do
-      opts = { container_id: 'too_short' }
+    it 'Ensures you have provided a long enough container ID' do
+      opts = { container_id: 'tooshort' }
       expect { subject.validate_log_search_options(opts) }
-        .to raise_error(Thor::Error, /full 64 char/)
+        .to raise_error(Thor::Error, /at lesat the first 12/)
     end
   end
 

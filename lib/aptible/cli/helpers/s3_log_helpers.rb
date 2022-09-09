@@ -46,8 +46,10 @@ module Aptible
           m = 'You must pass both --start-date and --end-date'
           raise Thor::Error, m if date_options.any? && !date_options.all?
 
-          if options[:container_id] && options[:container_id].length != 64
-            raise Thor::Error, 'You must specify the full 64 char container ID'
+          if options[:container_id] && options[:container_id].length < 12
+            m = 'You must specify at lesat the first 12 characters of the ' \
+                'container ID'
+            raise Thor::Error, m
           end
         end
 
@@ -145,7 +147,12 @@ module Aptible
           end
           attrs.each do |k, v|
             stack_logs = stack_logs.select do |f|
-              info_from_path(f)[k] == v
+              if k == :container_id
+                # Match short container IDs
+                info_from_path(f)[k].start_with?(v)
+              else
+                info_from_path(f)[k] == v
+              end
             end
           end
 
