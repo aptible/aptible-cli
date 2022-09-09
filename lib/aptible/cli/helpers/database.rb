@@ -154,6 +154,19 @@ module Aptible
           raise Thor::Error, err
         end
 
+        def validate_image_type(type)
+          available_types = []
+
+          Aptible::Api::DatabaseImage.all(token: fetch_token).each do |i|
+            return true if i.type == type
+            available_types << i.type
+          end
+
+          err = "No Database Image of type \"#{type}\""
+          err = "#{err}, valid types: #{available_types.uniq.join(', ')}"
+          raise Thor::Error, err
+        end
+
         def render_database(database, account)
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|

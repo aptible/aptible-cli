@@ -84,6 +84,7 @@ module Aptible
               version = options[:version]
 
               if version && type
+                validate_image_type(type)
                 image = find_database_image(type, version)
                 db_opts[:type] = image.type
                 db_opts[:database_image] = image
@@ -91,6 +92,7 @@ module Aptible
                 raise Thor::Error, '--type is required when passing --version'
               else
                 db_opts[:type] = type || 'postgresql'
+                validate_image_type(db_opts[:type])
               end
 
               database = account.create_database!(db_opts)
