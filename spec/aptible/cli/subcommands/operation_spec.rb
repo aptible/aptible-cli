@@ -141,7 +141,7 @@ describe Aptible::CLI::Agent do
         .and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve the operation\'s logs.'\
+        .to raise_error('Unable to retrieve the operation\'s logs. '\
           'If the issue persists please contact support for assistance.')
     end
     it 'errors when body is empty' do
@@ -162,7 +162,7 @@ describe Aptible::CLI::Agent do
       expect(net_http_double).to receive(:request).and_return(response)
 
       expect { subject.send('operation:logs', 1) }
-        .to raise_error('Unable to retrieve the operation\'s logs.'\
+        .to raise_error('Unable to retrieve the operation\'s logs. '\
           'If the issue persists please contact support for assistance.')
     end
     it 'errors when s3 itself returns an error code' do
