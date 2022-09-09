@@ -76,7 +76,7 @@ module Aptible
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res body with a 200 is target redirect location for download
           if !res || res.code != '200' || res.body.nil?
-            raise Thor::Error, 'Unable to retrieve the operation\'s logs.'\
+            raise Thor::Error, 'Unable to retrieve the operation\'s logs. '\
             'If the issue persists please contact support for assistance.'
           end
           res
