@@ -107,9 +107,10 @@ module Aptible
           end
 
           # Just write it to a file directly
-          location = File.join(path + file.split('/').drop(4).join('/'))
+          location = File.join(path, file.split('/').drop(4).join('/'))
           FileUtils.mkdir_p(File.dirname(location))
           File.open(location, 'wb') do |f|
+            CLI.logger.info location
             # Is this memory efficient?
             s3.get_object(bucket: bucket, key: file, response_target: f)
           end

@@ -152,7 +152,6 @@ module Aptible
                 # them if the user is explicit about where to save them.
                 files.each do |file|
                   shasum = info_from_path(file)[:shasum]
-                  CLI.logger.info file.split('/').drop(4).join('/')
                   decrypt_and_translate_s3_file(
                     file,
                     encryption_key(shasum, options[:decryption_keys]),
