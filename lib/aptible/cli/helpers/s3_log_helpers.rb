@@ -47,8 +47,14 @@ module Aptible
           raise Thor::Error, m if date_options.any? && !date_options.all?
 
           if options[:container_id] && options[:container_id].length < 12
-            m = 'You must specify at lesat the first 12 characters of the ' \
+            m = 'You must specify at least the first 12 characters of the ' \
                 'container ID'
+            raise Thor::Error, m
+          end
+
+          if options[:download_location] && !options[:decryption_keys]
+            m = 'You must provide decryption keys with the --decryption-keys' \
+                'option in order to download files.'
             raise Thor::Error, m
           end
         end
@@ -74,7 +80,7 @@ module Aptible
               properties[:service_id] = remainder.first.split('-').last.to_i
               file_name = remainder.second
             else
-              file_name = remainder.pop
+              file_name = remainder.first
             end
             # The file name may have differing number of elements due to
             # docker file log rotation. So we eliminate some useless items
@@ -159,7 +165,6 @@ module Aptible
 
           if time_range
             # select only logs within the time range
-            # TODO handle 'unknown' time ranges
             stack_logs = stack_logs.select do |f|
               info = info_from_path(f)
               first_log = info[:start_time]

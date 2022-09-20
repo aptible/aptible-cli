@@ -30,8 +30,9 @@ module Aptible
             end
 
             desc 'logs_from_archive --bucket NAME --region REGION ' \
-                 '--stack NAME --decryption-keys ONE [OR MORE] ' \
-                 '--download-location [ [ --string-matches ONE [OR MORE] ] ' \
+                 '--stack NAME [ --decryption-keys ONE [OR MORE] ] ' \
+                 '[ --download-location LOCATION ] ' \
+                 '[ [ --string-matches ONE [OR MORE] ] ' \
                  '| [ --app-id ID | --database-id ID | --endpoint-id ID | ' \
                  '--container-id ID ] ' \
                  '[ --start-date YYYY-MM-DD --end-date YYYY-MM-DD ] ]',
@@ -53,7 +54,7 @@ module Aptible
             option :decryption_keys,
                    desc: 'The Aptible-provided keys for decryption. ' \
                          '(Space separated if multiple)',
-                   type: :array, required: true
+                   type: :array
 
             # For identifying files to download
             option :string_matches,

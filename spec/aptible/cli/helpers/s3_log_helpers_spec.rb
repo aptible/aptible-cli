@@ -50,6 +50,14 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
       end
     end
 
+    it 'does not choke on v3 logs with unknown timestamps' do
+      path = "#{v3_pfx}/apps-321/service-123/deadbeef-json.log." \
+             'unknown.unknown.archived.gz'
+      result = subject.info_from_path(path)
+      expect(result[:start_time]).to be(nil)
+      expect(result[:end_time]).to be(nil)
+    end
+
     it 'can read app data from v2 paths' do
       result = subject.info_from_path(v2app)
       expect(result[:schema]).to eq('v2')
@@ -154,7 +162,13 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
     it 'Ensures you have provided a long enough container ID' do
       opts = { container_id: 'tooshort' }
       expect { subject.validate_log_search_options(opts) }
-        .to raise_error(Thor::Error, /at lesat the first 12/)
+        .to raise_error(Thor::Error, /at least the first 12/)
+    end
+
+    it 'Requires you to pass keys when downloading' do
+      opts = { app_id: 123, download_location: 'asdf' }
+      expect { subject.validate_log_search_options(opts) }
+        .to raise_error(Thor::Error, /You must provide decryption keys/)
     end
   end
 
