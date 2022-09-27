@@ -1,4 +1,4 @@
-require 'aws-sdk-s3'
+require 'aws-sdk'
 require 'shellwords'
 require 'time'
 
