@@ -215,7 +215,9 @@ module Aptible
         end
 
         def s3_client(region)
-          @s3_client ||= Aws::S3::Resource.new(region: region)
+          @s3_client ||= Kernel.silence_warnings do
+            Aws::S3::Resource.new(region: region)
+          end
         end
       end
     end
