@@ -5,6 +5,7 @@ module Aptible
         SITES = {
           'US1' => 'https://app.datadoghq.com',
           'US3' => 'https://us3.datadoghq.com',
+          'US5' => 'https://us5.datadoghq.com',
           'EU1' => 'https://app.datadoghq.eu',
           'US1-FED' => 'https://app.ddog-gov.com'
         }.freeze
