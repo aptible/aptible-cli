@@ -41,7 +41,7 @@ module Aptible
               git_ref = options[:git_commitish]
               if options[:git_detach]
                 if git_ref
-                  raise Thor::Error, 'The options --git-committish and ' \
+                  raise Thor::Error, 'The options --git-commitish and ' \
                                      '--git-detach are incompatible'
                 end
                 git_ref = NULL_SHA1
