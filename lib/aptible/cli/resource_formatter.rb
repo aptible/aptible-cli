@@ -50,8 +50,7 @@ module Aptible
             end
           end
 
-          if bu_operation && \
-             backup.manual && !backup.copied_from
+          if bu_operation && !backup.copied_from
             node.keyed_object('created_from_operation', 'id') do |n|
               inject_operation(n, bu_operation)
             end
