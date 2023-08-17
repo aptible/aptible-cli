@@ -235,6 +235,13 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_maintenance(node, maintenance_resource)
+          node.value('id', maintenance_resource.id)
+          node.value('handle', maintenance_resource.handle)
+          node.value('created_at', maintenance_resource.created_at)
+          node.value('maintenance_deadline', maintenance_resource.maintenance_deadline)
+        end
+
         private
 
         def attach_account(node, account)

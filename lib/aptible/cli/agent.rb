@@ -22,6 +22,7 @@ require_relative 'helpers/config_path'
 require_relative 'helpers/log_drain'
 require_relative 'helpers/metric_drain'
 require_relative 'helpers/s3_log_helpers'
+require_relative 'helpers/maintenance'
 
 require_relative 'subcommands/apps'
 require_relative 'subcommands/config'
@@ -39,6 +40,7 @@ require_relative 'subcommands/inspect'
 require_relative 'subcommands/endpoints'
 require_relative 'subcommands/log_drain'
 require_relative 'subcommands/metric_drain'
+require_relative 'subcommands/maintenance'
 
 module Aptible
   module CLI
@@ -65,6 +67,7 @@ module Aptible
       include Subcommands::Endpoints
       include Subcommands::LogDrain
       include Subcommands::MetricDrain
+      include Subcommands::Maintenance
 
       # Forward return codes on failures.
       def self.exit_on_failure?
