@@ -8,7 +8,11 @@ rvm:
   - "2.4"
   - "2.5"
   - "2.6"
+  - "2.7"
 
+before_install:
+  - ./cleanup_bundler
+  - gem install bundler -v '< 2'
 script:
   - bundle exec rake
   - bundle exec script/sync-readme-usage

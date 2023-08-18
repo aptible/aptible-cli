@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+# Newer rubies have Bundler 2.x installed as default so it can't be deleted
+# We need Bundler 1.x
+
+gempaths = `gem env gempath`.split(':')
+gempaths.each do |gempath|
+  # lookup bundler-*.gemspec files and delete them
+  # this is the only way to completely cleanup default bundler
+  # Note: the bundler gemspecs' paths are different for CRuby and JRuby
+  Dir.glob(gempath.strip + '/specifications/**/bundler-*.gemspec').each do |p|
+    File.delete(p)
+  end
+end
