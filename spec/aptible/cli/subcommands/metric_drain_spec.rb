@@ -86,7 +86,7 @@ describe Aptible::CLI::Agent do
     end
 
     context 'influxdb:custom' do
-      it 'creates a new InfluxDB metric drain' do
+      it 'creates a new InfluxDB v1 metric drain' do
         opts = {
           handle: 'test-influxdb-custom',
           drain_type: :influxdb,
@@ -108,6 +108,32 @@ describe Aptible::CLI::Agent do
         }
         subject.send('metric_drain:create:influxdb:custom',
                      'test-influxdb-custom')
+      end
+    end
+
+    context 'influxdb:customv2' do
+      it 'creates a new InfluxDB v2 metric drain' do
+        opts = {
+          handle: 'test-influxdb2-custom',
+          drain_type: :influxdb2,
+          drain_configuration: {
+            address: 'https://test.foo.com:443',
+            org: 'foobar',
+            authToken: 'bar',
+            bucket: 'foo'
+          }
+        }
+        expect_provision_metric_drain(opts)
+
+        subject.options = {
+          environment: account.handle,
+          bucket: 'foo',
+          token: 'bar',
+          org: 'foobar',
+          url: 'https://test.foo.com:443'
+        }
+        subject.send('metric_drain:create:influxdb:customv2',
+                     'test-influxdb2-custom')
       end
     end
 

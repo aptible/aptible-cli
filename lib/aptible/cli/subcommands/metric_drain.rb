@@ -85,6 +85,35 @@ module Aptible
               create_metric_drain(account, opts)
             end
 
+            desc 'metric_drain:create:influxdb:customv2 HANDLE '\
+                   '--org ORGANIZATION --token INFLUX_TOKEN ' \
+                   '--url URL_INCLUDING_PORT ' \
+                   '--bucket INFLUX_BUCKET_NAME ' \
+                   '--environment ENVIRONMENT',
+                 'Create an InfluxDB v2 Metric Drain'
+            option :bucket, type: :string
+            option :org, type: :string
+            option :token, type: :string
+            option :url, type: :string
+            option :environment
+            define_method 'metric_drain:create:influxdb:customv2' do |handle|
+              account = ensure_environment(options)
+
+              config = {
+                address: options[:url],
+                org: options[:org],
+                authToken: options[:token],
+                bucket: options[:bucket]
+              }
+              opts = {
+                handle: handle,
+                drain_configuration: config,
+                drain_type: :influxdb2
+              }
+
+              create_metric_drain(account, opts)
+            end
+
             desc 'metric_drain:create:datadog HANDLE '\
                  '--api_key DATADOG_API_KEY '\
                  '--site DATADOG_SITE ' \
