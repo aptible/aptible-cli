@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
   spec.add_dependency 'cbor'
   spec.add_dependency 'aws-sdk', '~> 2.0'
+  spec.add_dependency 'bigdecimal', '~> 1.3.5' # https://github.com/ruby/bigdecimal#which-version-should-you-select
 
   # Temporarily pin ffi until https://github.com/ffi/ffi/issues/868 is fixed
   spec.add_dependency 'ffi', '<= 1.14.1' if Gem.win_platform?
