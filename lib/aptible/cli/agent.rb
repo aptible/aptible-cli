@@ -21,6 +21,7 @@ require_relative 'helpers/security_key'
 require_relative 'helpers/config_path'
 require_relative 'helpers/log_drain'
 require_relative 'helpers/metric_drain'
+require_relative 'helpers/date_helpers'
 require_relative 'helpers/s3_log_helpers'
 require_relative 'helpers/maintenance'
 
@@ -51,6 +52,7 @@ module Aptible
       include Helpers::Ssh
       include Helpers::System
       include Helpers::ConfigPath
+      include Helpers::DateHelpers
       include Subcommands::Apps
       include Subcommands::Config
       include Subcommands::DB

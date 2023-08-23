@@ -10,7 +10,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::AppOrDatabase
-            include Helpers::S3LogHelpers
+            include Helpers::DateHelpers
 
             desc 'logs [--app APP | --database DATABASE]',
                  'Follows logs from a running app or database'
