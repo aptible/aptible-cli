@@ -237,7 +237,12 @@ module Aptible
           attach_account(node, account)
         end
 
-        def inject_maintenance(node, command_prefix, maintenance_resource, account)
+        def inject_maintenance(
+          node,
+          command_prefix,
+          maintenance_resource,
+          account
+        )
           node.value('id', maintenance_resource.id)
           raw_start, raw_end = maintenance_resource.maintenance_deadline
           window_start = utc_string(raw_start)
