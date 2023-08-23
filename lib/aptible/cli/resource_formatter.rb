@@ -239,10 +239,11 @@ module Aptible
 
         def inject_maintenance(node, maintenance_resource, account)
           node.value('id', maintenance_resource.id)
-          raw_window_start, raw_window_end = maintenance_resource.maintenance_deadline
-          window_start = utc_string(raw_window_start)
-          window_end = utc_string(raw_window_end)
-          label = "#{maintenance_resource.handle} between #{window_start} and #{window_end}"
+          raw_start, raw_end = maintenance_resource.maintenance_deadline
+          window_start = utc_string(raw_start)
+          window_end = utc_string(raw_end)
+          label = "#{maintenance_resource.handle} between #{window_start} "\
+                  "and #{window_end}"
           node.value('handle', label)
 
           attach_account(node, account)

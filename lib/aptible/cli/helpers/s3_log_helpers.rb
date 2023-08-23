@@ -192,7 +192,6 @@ module Aptible
           true
         end
 
-
         def encryption_key(filesum, possible_keys)
           # The key can be determined from the sum
           possible_keys.each do |k|
