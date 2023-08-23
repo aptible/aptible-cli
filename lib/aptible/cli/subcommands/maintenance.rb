@@ -18,7 +18,7 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
-                  'handle'
+                  'label'
                 ) do |node|
                   scoped_environments(options).each do |account|
                     m.select { |app| app.account.id == account.id }
@@ -26,7 +26,12 @@ module Aptible
                       next unless app.maintenance_deadline
                       found_maintenance = true
                       node.object do |n|
-                        ResourceFormatter.inject_maintenance(n, app, account)
+                        ResourceFormatter.inject_maintenance(
+                          n,
+                          'aptible restart --app',
+                          app,
+                          account
+                        )
                       end
                     end
                   end
@@ -48,7 +53,7 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
-                  'handle'
+                  'label'
                 ) do |node|
                   scoped_environments(options).each do |account|
                     m.select { |db| db.account.id == account.id }
@@ -56,7 +61,12 @@ module Aptible
                       next unless db.maintenance_deadline
                       found_maintenance = true
                       node.object do |n|
-                        ResourceFormatter.inject_maintenance(n, db, account)
+                        ResourceFormatter.inject_maintenance(
+                          n,
+                          'aptible db:restart',
+                          db,
+                          account
+                        )
                       end
                     end
                   end
