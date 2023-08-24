@@ -91,6 +91,15 @@ describe Aptible::CLI::Agent do
         expect(captured_output_text).to include(b_start_date_as_string)
         expect(captured_output_text).to include(b_end_date_as_string)
         expect(captured_output_text).not_to include('prod-postgres-db')
+
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible db:restart staging-redis-db --environment staging'
+          )
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible db:restart prod-elsearch-db --environment production'
+          )
       end
     end
 
@@ -114,6 +123,11 @@ describe Aptible::CLI::Agent do
         expect(captured_output_text).not_to include('=== production')
         expect(captured_output_text).not_to include('prod-elsearch-db')
         expect(captured_output_text).not_to include('prod-postgres-db')
+
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible db:restart staging-redis-db --environment staging'
+          )
       end
     end
 
@@ -162,6 +176,15 @@ describe Aptible::CLI::Agent do
         expect(captured_output_text).to include(b_start_date_as_string)
         expect(captured_output_text).to include(b_end_date_as_string)
         expect(captured_output_text).not_to include('prod-app-2')
+
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible restart --app staging-app-1 --environment staging'
+          )
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible restart --app prod-app-1 --environment production'
+          )
       end
     end
 
@@ -185,6 +208,11 @@ describe Aptible::CLI::Agent do
         expect(captured_output_text).not_to include('=== production')
         expect(captured_output_text).not_to include('prod-app-1')
         expect(captured_output_text).not_to include('prod-app-2')
+
+        expect(captured_output_json.to_s)
+          .to include(
+            'aptible restart --app staging-app-1 --environment staging'
+          )
       end
     end
 
