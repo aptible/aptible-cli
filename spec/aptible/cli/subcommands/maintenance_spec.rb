@@ -1,8 +1,5 @@
 require 'spec_helper'
 
-class SocatHelperMock < OpenStruct
-end
-
 describe Aptible::CLI::Agent do
   include Aptible::CLI::Helpers::DateHelpers
 
@@ -18,7 +15,6 @@ describe Aptible::CLI::Agent do
   let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
   let(:account) { Fabricate(:account, stack: stack) }
   let(:database) { Fabricate(:database, handle: handle, account: account) }
-  let(:socat_helper) { SocatHelperMock.new(port: 4242) }
   let(:staging) { Fabricate(:account, handle: 'staging') }
   let(:prod) { Fabricate(:account, handle: 'production') }
   let(:maintenance_dbs) do
