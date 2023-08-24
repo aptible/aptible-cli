@@ -5,6 +5,8 @@ module Aptible
   module CLI
     module Helpers
       module S3LogHelpers
+        include Helpers::DateHelpers
+
         def ensure_aws_creds
           cred_errors = []
           unless ENV['AWS_ACCESS_KEY_ID']
@@ -188,19 +190,6 @@ module Aptible
           return false if time_range.last < start_timestamp
           return false if time_range.first > end_timestamp
           true
-        end
-
-        def utc_date(date_string)
-          t_fmt = '%Y-%m-%d %Z'
-          Time.strptime("#{date_string} UTC", t_fmt)
-        rescue ArgumentError
-          raise Thor::Error, 'Please provide dates in YYYY-MM-DD format'
-        end
-
-        def utc_datetime(datetime_string)
-          Time.parse("#{datetime_string}Z")
-        rescue ArgumentError
-          nil
         end
 
         def encryption_key(filesum, possible_keys)

@@ -2,6 +2,8 @@ module Aptible
   module CLI
     module ResourceFormatter
       class << self
+        include Helpers::DateHelpers
+
         NO_NESTING = Object.new.freeze
 
         def inject_backup(node, backup, include_db: false)
@@ -231,6 +233,28 @@ module Aptible
           node.value('drain_type', metric_drain.drain_type)
           node.value('created_at', metric_drain.created_at)
           node.value('drain_configuration', metric_drain.drain_configuration)
+
+          attach_account(node, account)
+        end
+
+        def inject_maintenance(
+          node,
+          command_prefix,
+          maintenance_resource,
+          account
+        )
+          node.value('id', maintenance_resource.id)
+          raw_start, raw_end = maintenance_resource.maintenance_deadline
+          window_start = utc_string(raw_start)
+          window_end = utc_string(raw_end)
+          label = "#{maintenance_resource.handle} between #{window_start} "\
+                  "and #{window_end}"
+          restart_command = "#{command_prefix}"\
+                            " #{maintenance_resource.handle}"\
+                            " --environment #{account.handle}"
+          node.value('label', label)
+          node.value('handle', maintenance_resource.handle)
+          node.value('restart_command', restart_command)
 
           attach_account(node, account)
         end
