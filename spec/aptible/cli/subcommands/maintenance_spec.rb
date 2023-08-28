@@ -17,11 +17,13 @@ describe Aptible::CLI::Agent do
   let(:database) { Fabricate(:database, handle: handle, account: account) }
   let(:staging) { Fabricate(:account, handle: 'staging') }
   let(:prod) { Fabricate(:account, handle: 'production') }
+  let(:window_start) { '2073-09-05T22:00:00.000Z' }
+  let(:window_end) { '2073-09-05T23:00:00.000Z' }
   let(:maintenance_dbs) do
     [
-      [staging, 'staging-redis-db', [Time.now + 1.minute, Time.now + 2.minute]],
+      [staging, 'staging-redis-db', [window_start, window_end]],
       [staging, 'staging-postgres-db', nil],
-      [prod, 'prod-elsearch-db', [Time.now + 1.minute, Time.now + 2.minute]],
+      [prod, 'prod-elsearch-db', [window_start, window_end]],
       [prod, 'prod-postgres-db', nil]
     ].map do |a, h, m|
       Fabricate(
@@ -34,9 +36,9 @@ describe Aptible::CLI::Agent do
   end
   let(:maintenance_apps) do
     [
-      [staging, 'staging-app-1', [Time.now + 1.minute, Time.now + 2.minute]],
+      [staging, 'staging-app-1', [window_start, window_end]],
       [staging, 'staging-app-2', nil],
-      [prod, 'prod-app-1', [Time.now + 1.minute, Time.now + 2.minute]],
+      [prod, 'prod-app-1', [window_start, window_end]],
       [prod, 'prod-app-2', nil]
     ].map do |a, h, m|
       Fabricate(
@@ -66,26 +68,14 @@ describe Aptible::CLI::Agent do
 
         expect(captured_output_text).to include('=== staging')
         expect(captured_output_text).to include('staging-redis-db')
-        a_start_date_as_string = utc_string(
-          maintenance_dbs[0].maintenance_deadline[0].to_s
-        ).to_s
-        a_end_date_as_string = utc_string(
-          maintenance_dbs[0].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(a_start_date_as_string)
-        expect(captured_output_text).to include(a_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('staging-postgres-db')
 
         expect(captured_output_text).to include('=== production')
         expect(captured_output_text).to include('prod-elsearch-db')
-        b_start_date_as_string = utc_string(
-          maintenance_dbs[2].maintenance_deadline[0].to_s
-        ).to_s
-        b_end_date_as_string = utc_string(
-          maintenance_dbs[2].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(b_start_date_as_string)
-        expect(captured_output_text).to include(b_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('prod-postgres-db')
 
         expect(captured_output_json.to_s)
@@ -106,14 +96,8 @@ describe Aptible::CLI::Agent do
 
         expect(captured_output_text).to include('=== staging')
         expect(captured_output_text).to include('staging-redis-db')
-        a_start_date_as_string = utc_string(
-          maintenance_dbs[0].maintenance_deadline[0].to_s
-        ).to_s
-        a_end_date_as_string = utc_string(
-          maintenance_dbs[0].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(a_start_date_as_string)
-        expect(captured_output_text).to include(a_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('staging-postgres-db')
 
         expect(captured_output_text).not_to include('=== production')
@@ -151,26 +135,14 @@ describe Aptible::CLI::Agent do
 
         expect(captured_output_text).to include('=== staging')
         expect(captured_output_text).to include('staging-app-1')
-        a_start_date_as_string = utc_string(
-          maintenance_apps[0].maintenance_deadline[0].to_s
-        ).to_s
-        a_end_date_as_string = utc_string(
-          maintenance_apps[0].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(a_start_date_as_string)
-        expect(captured_output_text).to include(a_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('staging-app-2')
 
         expect(captured_output_text).to include('=== production')
         expect(captured_output_text).to include('prod-app-1')
-        b_start_date_as_string = utc_string(
-          maintenance_apps[2].maintenance_deadline[0].to_s
-        ).to_s
-        b_end_date_as_string = utc_string(
-          maintenance_apps[2].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(b_start_date_as_string)
-        expect(captured_output_text).to include(b_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('prod-app-2')
 
         expect(captured_output_json.to_s)
@@ -191,14 +163,8 @@ describe Aptible::CLI::Agent do
 
         expect(captured_output_text).to include('=== staging')
         expect(captured_output_text).to include('staging-app-1')
-        a_start_date_as_string = utc_string(
-          maintenance_apps[0].maintenance_deadline[0].to_s
-        ).to_s
-        a_end_date_as_string = utc_string(
-          maintenance_apps[0].maintenance_deadline[1].to_s
-        ).to_s
-        expect(captured_output_text).to include(a_start_date_as_string)
-        expect(captured_output_text).to include(a_end_date_as_string)
+        expect(captured_output_text).to include('2073-09-05 22:00:00 UTC')
+        expect(captured_output_text).to include('2073-09-05 23:00:00 UTC')
         expect(captured_output_text).not_to include('staging-app-2')
 
         expect(captured_output_text).not_to include('=== production')
