@@ -42,6 +42,7 @@ require_relative 'subcommands/endpoints'
 require_relative 'subcommands/log_drain'
 require_relative 'subcommands/metric_drain'
 require_relative 'subcommands/maintenance'
+require_relative 'subcommands/init'
 
 module Aptible
   module CLI
@@ -70,6 +71,7 @@ module Aptible
       include Subcommands::LogDrain
       include Subcommands::MetricDrain
       include Subcommands::Maintenance
+      include Subcommands::Init
 
       # Forward return codes on failures.
       def self.exit_on_failure?
