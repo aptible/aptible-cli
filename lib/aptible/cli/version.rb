@@ -1,5 +1,5 @@
 module Aptible
   module CLI
-    VERSION = '0.19.7'.freeze
+    VERSION = '0.19.8'.freeze
   end
 end
