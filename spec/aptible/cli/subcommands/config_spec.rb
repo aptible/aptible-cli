@@ -57,6 +57,64 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#config:get' do
+    it 'should show single environment variable specified' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: { 'FOO' => 'BAR', 'QUX' => 'two words' }
+      )
+      subject.send('config:get', 'FOO')
+
+      expect(captured_output_text).to match(/FOO=BAR/)
+      expect(captured_output_text).not_to match(/QUX=two\\ words/)
+
+      expected = [
+        {
+          'key' => 'FOO', 'value' => 'BAR',
+          'shell_export' => 'FOO=BAR'
+        }
+      ]
+
+      expect(captured_output_json).to match_array(expected)
+    end
+
+    it 'should show multiple environment variable specified' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: {
+          'FOO' => 'BAR',
+          'QUX' => 'two words',
+          'MIZ' => 'FIT'
+        }
+      )
+      subject.send('config:get', 'FOO', 'MIZ')
+
+      expect(captured_output_text).to match(/FOO=BAR/)
+      expect(captured_output_text).to match(/MIZ=FIT/)
+      expect(captured_output_text).not_to match(/QUX=two\\ words/)
+
+      expected = [
+        {
+          'key' => 'FOO', 'value' => 'BAR',
+          'shell_export' => 'FOO=BAR'
+        },
+        {
+          'key' => 'MIZ', 'value' => 'FIT',
+          'shell_export' => 'MIZ=FIT'
+        }
+      ]
+
+      expect(captured_output_json).to match_array(expected)
+    end
+
+    it 'should show empty line when env var not found' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: { 'FOO' => 'BAR', 'QUX' => 'two words' }
+      )
+      subject.send('config:get', 'MIZ')
+
+      expect(captured_output_text).to eq('')
+    end
+  end
+
   describe '#config:set' do
     it 'sets environment variables' do
       expect(app).to receive(:create_operation!)

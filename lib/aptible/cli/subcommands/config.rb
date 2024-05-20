@@ -42,11 +42,11 @@ module Aptible
                   env.each_pair do |k, v|
                     found = false
                     args.map do |arg|
-                      if arg == k
-                        found = true
-                      end
+                      found = true if arg == k
                     end
+
                     next unless found
+
                     list.object do |node|
                       node.value('key', k)
                       node.value('value', v)

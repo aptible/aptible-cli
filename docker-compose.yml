@@ -1,0 +1,10 @@
+services:
+  # docker compose run cli bash
+  # export APTIBLE_ACCESS_TOKEN=xxx
+  # bundle exec ./bin/aptible help
+  cli:
+    build: .
+    volumes:
+      - type: bind
+        source: .
+        target: /app
