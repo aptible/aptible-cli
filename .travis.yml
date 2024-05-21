@@ -13,6 +13,8 @@ rvm:
 before_install:
   - gem install bundler -v '< 2'
 script:
-  - bundle _1.17.3_ exec rake
-  - bundle _1.17.3_ exec script/sync-readme-usage
+  - bundle exec rake
+  - bundle exec script/sync-readme-usage
   - git diff --exit-code
+env:
+  - BUNDLER_VERSION=1.17.3
