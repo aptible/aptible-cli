@@ -11,9 +11,8 @@ rvm:
   - "2.7"
 
 before_install:
-  - ./cleanup_bundler
   - gem install bundler -v '< 2'
 script:
-  - bundle exec rake
-  - bundle exec script/sync-readme-usage
+  - bundle _1.17.3_ exec rake
+  - bundle _1.17.3_ exec script/sync-readme-usage
   - git diff --exit-code
