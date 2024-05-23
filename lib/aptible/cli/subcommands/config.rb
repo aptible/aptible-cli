@@ -29,8 +29,8 @@ module Aptible
               end
             end
 
-            desc 'config:get [VAR1] [VAR2] [...]',
-                 "Print specific keys within an app's current configuration"
+            desc 'config:get [VAR1]',
+                 "Print a specific key within an app's current configuration"
             app_options
             define_method 'config:get' do |*args|
               app = ensure_app(options)
@@ -38,22 +38,11 @@ module Aptible
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|
-                root.keyed_list('shell_export') do |list|
-                  env.each_pair do |k, v|
-                    found = false
-                    args.map do |arg|
-                      found = true if arg == k
-                    end
-
-                    next unless found
-
-                    list.object do |node|
-                      node.value('key', k)
-                      node.value('value', v)
-                      node.value('shell_export', "#{k}=#{Shellwords.escape(v)}")
-                    end
-                  end
-                end
+                key = args[0]
+                value = env
+                        .select { |k| k == key }
+                        .map { |_, v| v }
+                root.value(value)
               end
             end
 

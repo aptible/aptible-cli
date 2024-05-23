@@ -64,45 +64,9 @@ describe Aptible::CLI::Agent do
       )
       subject.send('config:get', 'FOO')
 
-      expect(captured_output_text).to match(/FOO=BAR/)
-      expect(captured_output_text).not_to match(/QUX=two\\ words/)
-
-      expected = [
-        {
-          'key' => 'FOO', 'value' => 'BAR',
-          'shell_export' => 'FOO=BAR'
-        }
-      ]
-
-      expect(captured_output_json).to match_array(expected)
-    end
-
-    it 'should show multiple environment variable specified' do
-      app.current_configuration = Fabricate(
-        :configuration, app: app, env: {
-          'FOO' => 'BAR',
-          'QUX' => 'two words',
-          'MIZ' => 'FIT'
-        }
-      )
-      subject.send('config:get', 'FOO', 'MIZ')
-
-      expect(captured_output_text).to match(/FOO=BAR/)
-      expect(captured_output_text).to match(/MIZ=FIT/)
-      expect(captured_output_text).not_to match(/QUX=two\\ words/)
-
-      expected = [
-        {
-          'key' => 'FOO', 'value' => 'BAR',
-          'shell_export' => 'FOO=BAR'
-        },
-        {
-          'key' => 'MIZ', 'value' => 'FIT',
-          'shell_export' => 'MIZ=FIT'
-        }
-      ]
-
-      expect(captured_output_json).to match_array(expected)
+      expect(captured_output_text).to match(/BAR/)
+      expect(captured_output_text).not_to match(/two\\ words/)
+      expect(captured_output_json).to match_array(['BAR'])
     end
 
     it 'should show empty line when env var not found' do
