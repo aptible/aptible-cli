@@ -247,14 +247,25 @@ module Aptible
           raw_start, raw_end = maintenance_resource.maintenance_deadline
           window_start = utc_string(raw_start)
           window_end = utc_string(raw_end)
-          label = "#{maintenance_resource.handle} between #{window_start} "\
+          label = "#{maintenance_resource.handle} between #{window_start} " \
                   "and #{window_end}"
-          restart_command = "#{command_prefix}"\
-                            " #{maintenance_resource.handle}"\
+          restart_command = "#{command_prefix}" \
+                            " #{maintenance_resource.handle}" \
                             " --environment #{account.handle}"
           node.value('label', label)
           node.value('handle', maintenance_resource.handle)
           node.value('restart_command', restart_command)
+
+          attach_account(node, account)
+        end
+
+        def inject_backup_retention_policy(node, policy, account)
+          node.value('id', policy.id)
+          node.value('daily', policy.daily)
+          node.value('monthly', policy.monthly)
+          node.value('yearly', policy.yearly)
+          node.value('make_copy', policy.make_copy)
+          node.value('keep_final', policy.keep_final)
 
           attach_account(node, account)
         end

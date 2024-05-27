@@ -11,5 +11,7 @@ group :test do
   gem 'webmock'
 end
 
+gem 'aptible-api', git: 'https://github.com/aptible/aptible-api-ruby.git', branch: 'backup-retention-policy'
+
 # Specify your gem's dependencies in aptible-cli.gemspec
 gemspec
