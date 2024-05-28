@@ -57,6 +57,28 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#config:get' do
+    it 'should show single environment variable specified' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: { 'FOO' => 'BAR', 'QUX' => 'two words' }
+      )
+      subject.send('config:get', 'FOO')
+
+      expect(captured_output_text).to match(/BAR/)
+      expect(captured_output_text).not_to match(/two\\ words/)
+      expect(captured_output_json).to match_array(['BAR'])
+    end
+
+    it 'should show empty line when env var not found' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: { 'FOO' => 'BAR', 'QUX' => 'two words' }
+      )
+      subject.send('config:get', 'MIZ')
+
+      expect(captured_output_text).to eq('')
+    end
+  end
+
   describe '#config:set' do
     it 'sets environment variables' do
       expect(app).to receive(:create_operation!)

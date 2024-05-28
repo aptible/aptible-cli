@@ -29,6 +29,23 @@ module Aptible
               end
             end
 
+            desc 'config:get [VAR1]',
+                 "Print a specific key within an app's current configuration"
+            app_options
+            define_method 'config:get' do |*args|
+              app = ensure_app(options)
+              config = app.current_configuration
+              env = config ? config.env : {}
+
+              Formatter.render(Renderer.current) do |root|
+                key = args[0]
+                value = env
+                        .select { |k| k == key }
+                        .map { |_, v| v }
+                root.value(value)
+              end
+            end
+
             desc 'config:add [VAR1=VAL1] [VAR2=VAL2] [...]',
                  'Add an ENV variable to an app'
             app_options
