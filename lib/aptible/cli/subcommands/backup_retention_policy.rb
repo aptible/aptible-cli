@@ -29,7 +29,9 @@ module Aptible
 
               Formatter.render(Renderer.current) do |root|
                 root.object do |node|
-                  ResourceFormatter.inject_backup_retention_policy(node, policy, account)
+                  ResourceFormatter.inject_backup_retention_policy(
+                    node, policy, account
+                  )
                 end
               end
             end
@@ -54,7 +56,8 @@ module Aptible
             option(
               :keep_final,
               type: :boolean,
-              desc: 'If final backups should be kept when databases are deprovisioned',
+              desc: 'If final backups should be kept when databases are '\
+                    'deprovisioned',
               default: true
             )
             define_method 'backup_retention_policy:set' do |env|
@@ -63,7 +66,9 @@ module Aptible
 
               Formatter.render(Renderer.current) do |root|
                 root.object do |node|
-                  ResourceFormatter.inject_backup_retention_policy(node, policy.reload, account)
+                  ResourceFormatter.inject_backup_retention_policy(
+                    node, policy.reload, account
+                  )
                 end
               end
             end
