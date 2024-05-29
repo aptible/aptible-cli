@@ -40,7 +40,7 @@ module Aptible
                  '[--daily DAILY_BACKUPS] [--monthly MONTHLY_BACKUPS] ' \
                  '[--yearly YEARLY_BACKUPS] [--make-copy|--no-make-copy] ' \
                  '[--keep-final|--no-keep-final]',
-                 'Show the current backup retention policy for the environment'
+                 "Set the environemnt's backup retention policy"
             option :daily, type: :numeric,
                            desc: 'Number of daily backups to retain',
                            default: 90
