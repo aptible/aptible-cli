@@ -17,14 +17,10 @@ module Aptible
               account = ensure_environment(environment: env)
               policy = account.backup_retention_policies.first
               unless policy
-                # Show the default policy
-                policy = Aptible::Api::BackupRetentionPolicy.new
-                policy.attributes[:id] = 'default'
-                policy.attributes[:daily] = 90
-                policy.attributes[:monthly] = 72
-                policy.attributes[:yearly] = 0
-                policy.attributes[:make_copy] = true
-                policy.attributes[:keep_final] = true
+                raise(
+                  Thor::Error,
+                  "Could not find backup retention policy for environment #{env}"
+                )
               end
 
               Formatter.render(Renderer.current) do |root|
@@ -43,26 +39,32 @@ module Aptible
                  "Set the environemnt's backup retention policy"
             option :daily, type: :numeric,
                            desc: 'Number of daily backups to retain',
-                           default: 90
+                           default: 1
             option :monthly, type: :numeric,
                              desc: 'Number of monthly backups to retain',
-                             default: 72
+                             default: 0
             option :yearly, type: :numeric,
-                            desc: 'Number of yarly backups to retain',
+                            desc: 'Number of yearly backups to retain',
                             default: 0
             option :make_copy, type: :boolean,
                                desc: 'If backup copies should be created',
-                               default: true
+                               default: false
             option(
               :keep_final,
               type: :boolean,
               desc: 'If final backups should be kept when databases are '\
                     'deprovisioned',
-              default: true
+              default: false
             )
             define_method 'backup_retention_policy:set' do |env|
               account = ensure_environment(environment: env)
-              policy = account.create_backup_retention_policy!(**options)
+              policy = account.create_backup_retention_policy!(
+                daily: options[:daily],
+                monthly: options[:monthly],
+                yearly: options[:yearly],
+                make_copy: options[:make_copy],
+                keep_final: options[:keep_final]
+              )
 
               Formatter.render(Renderer.current) do |root|
                 root.object do |node|
