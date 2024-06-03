@@ -11,9 +11,9 @@ GIT
 PATH
   remote: .
   specs:
-    aptible-cli (0.19.8)
+    aptible-cli (0.19.9)
       activesupport (>= 4.0, < 6.0)
-      aptible-api (~> 1.4)
+      aptible-api (~> 1.5.3)
       aptible-auth (~> 1.2.4)
       aptible-billing (~> 1.0)
       aptible-resource (~> 1.1)
@@ -35,7 +35,7 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
-    aptible-api (1.5.1)
+    aptible-api (1.5.3)
       aptible-auth (~> 1.0)
       aptible-resource (~> 1.0)
       gem_config
