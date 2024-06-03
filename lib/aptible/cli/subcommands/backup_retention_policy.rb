@@ -17,10 +17,8 @@ module Aptible
               account = ensure_environment(environment: env)
               policy = account.backup_retention_policies.first
               unless policy
-                raise(
-                  Thor::Error,
-                  "Could not find backup retention policy for environment #{env}"
-                )
+                raise Thor::Error, 'Could not find backup retention policy ' \
+                                   "for environment #{env}"
               end
 
               Formatter.render(Renderer.current) do |root|
