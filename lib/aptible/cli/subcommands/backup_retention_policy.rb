@@ -61,7 +61,7 @@ module Aptible
               # If an attribute isn't provided, use the value from the current
               # policy
               attrs = {}
-              %i[daily monthly yearly make_copy keep_final].each do |a|
+              %i(daily monthly yearly make_copy keep_final).each do |a|
                 opt = options[a]
                 attrs[a] = opt.nil? ? current_policy.try(a) : opt
               end
