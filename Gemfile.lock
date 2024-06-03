@@ -122,7 +122,8 @@ GEM
       rake
     rake (12.3.3)
     rchardet (1.8.0)
-    rexml (3.2.5)
+    rexml (3.2.8)
+      strscan (>= 3.0.9)
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -147,6 +148,7 @@ GEM
     stripe (4.24.0)
       faraday (~> 0.13)
       net-http-persistent (~> 3.0)
+    strscan (3.1.0)
     sync (0.5.0)
     term-ansicolor (1.8.0)
       tins (~> 1.0)
