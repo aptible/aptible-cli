@@ -34,7 +34,7 @@ module Aptible
                  '[--daily DAILY_BACKUPS] [--monthly MONTHLY_BACKUPS] ' \
                  '[--yearly YEARLY_BACKUPS] [--make-copy|--no-make-copy] ' \
                  '[--keep-final|--no-keep-final]',
-                 "Change the environemnt's backup retention policy"
+                 "Change the environment's backup retention policy"
             option :daily, type: :numeric,
                            desc: 'Number of daily backups to retain'
             option :monthly, type: :numeric,
