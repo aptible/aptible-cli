@@ -66,12 +66,11 @@ module Aptible
               opts = {
                 type: 'deploy',
                 env: env,
-                git_ref: git_ref
-              }.delete_if { |_, v| v.nil? || v.empty? }
-
-              opts[:container_count] = container_count if container_count
-              opts[:container_size] = container_size if container_size
-              opts[:instance_profile] = container_profile if container_profile
+                git_ref: git_ref,
+                container_count: options[:container_count],
+                container_size: options[:container_size],
+                instance_profile: options[:container_profile]
+              }.delete_if { |_, v| v.nil? || v.try(:empty?) }
 
               allow_it = [
                 opts[:git_ref],

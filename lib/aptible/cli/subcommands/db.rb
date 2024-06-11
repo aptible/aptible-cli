@@ -103,10 +103,10 @@ module Aptible
               op_opts = {
                 type: 'provision',
                 container_size: options[:container_size],
-                disk_size: options[:disk_size]
+                disk_size: options[:disk_size],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
-              opts[:instance_profile] = container_profile if container_profile
-              opts[:provisioned_iops] = iops if iops
 
               op = database.create_operation(op_opts)
 
@@ -171,10 +171,10 @@ module Aptible
                 size: options[:disk_size],
                 logical: options[:logical],
                 database_image: image || nil,
-                key_arn: options[:key_arn]
+                key_arn: options[:key_arn],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
-              opts[:instance_profile] = container_profile if container_profile
-              opts[:provisioned_iops] = iops if iops
 
               if options[:size]
                 m = 'You have used the "--size" option to specify a disk size.'\
@@ -295,10 +295,12 @@ module Aptible
 
             desc 'db:restart HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
+                 '[--volume-type [gp2, gp3]]',
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
+            option :container_profile, type: :string
             option :disk_size, type: :numeric
             option :size, type: :numeric
             option :iops, type: :numeric
@@ -338,7 +340,8 @@ module Aptible
               opts = {
                 type: 'modify',
                 provisioned_iops: options[:iops],
-                ebs_volume_type: options[:volume_type]
+                ebs_volume_type: options[:volume_type],
+                instance_profile: options[:container_profile]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.info "Modifying #{database.handle}..."

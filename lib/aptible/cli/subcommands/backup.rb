@@ -44,10 +44,10 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size],
                 destination_account: destination_account,
-                key_arn: options[:key_arn]
+                key_arn: options[:key_arn],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
-              opts[:instance_profile] = container_profile if container_profile
-              opts[:provisioned_iops] = iops if iops
 
               if options[:size]
                 m = 'You have used the "--size" option to specify a disk size.'\

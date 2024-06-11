@@ -160,6 +160,27 @@ describe Aptible::CLI::Agent do
         expect { subject.deploy }
           .to raise_error(/either from git.*docker/im)
       end
+
+      it 'allows providing scaling options' do
+        stub_options(
+          container_profile: 'm5',
+          container_size: 1024,
+          container_count: 2
+        )
+
+        expect(app).to receive(:create_operation!)
+          .with(
+            type: 'deploy',
+            container_size: 1024,
+            instance_profile: 'm5',
+            container_count: 2
+          )
+          .and_return(operation)
+        expect(subject).to receive(:attach_to_operation_logs)
+          .with(operation)
+
+        subject.deploy
+      end
     end
   end
 end

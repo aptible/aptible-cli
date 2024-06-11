@@ -70,6 +70,20 @@ describe Aptible::CLI::Agent do
       subject.send('db:create', 'foo')
     end
 
+    it 'creates a new DB with container profile and iops' do
+      expect_provision_database(
+        { handle: 'foo', type: 'postgresql' },
+        { instance_profile: 'm5', provisioned_iops: 4000 }
+      )
+
+      subject.options = {
+        type: 'postgresql',
+        container_profile: 'm5',
+        iops: 4000
+      }
+      subject.send('db:create', 'foo')
+    end
+
     it 'deprovisions the database if the operation cannot be created' do
       db = Fabricate(:database)
 
