@@ -54,6 +54,7 @@ module Aptible
             desc 'db:create HANDLE ' \
                  '[--type TYPE] [--version VERSION] ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--key-arn KEY_ARN]',
                  'Create a new database'
             option :type, type: :string
@@ -63,6 +64,8 @@ module Aptible
             option :size, type: :numeric
             option :key_arn, type: :string
             option :environment
+            option :container_profile, type: :string
+            option :iops, type: :numeric
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
 
@@ -102,6 +105,9 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size]
               }.delete_if { |_, v| v.nil? }
+              opts[:instance_profile] = container_profile if container_profile
+              opts[:provisioned_iops] = iops if iops
+
               op = database.create_operation(op_opts)
 
               if op.errors.any?
@@ -129,6 +135,7 @@ module Aptible
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--logical --version VERSION] [--key-arn KEY_ARN]',
                  'Create a replica/follower of a database'
             option :environment
@@ -138,6 +145,8 @@ module Aptible
             option :logical, type: :boolean
             option :version, type: :string
             option :key_arn, type: :string
+            option :container_profile, type: :string
+            option :iops, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
 
@@ -164,6 +173,8 @@ module Aptible
                 database_image: image || nil,
                 key_arn: options[:key_arn]
               }.delete_if { |_, v| v.nil? }
+              opts[:instance_profile] = container_profile if container_profile
+              opts[:provisioned_iops] = iops if iops
 
               if options[:size]
                 m = 'You have used the "--size" option to specify a disk size.'\

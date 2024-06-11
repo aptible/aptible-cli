@@ -29,6 +29,9 @@ module Aptible
                    desc: 'Detach this app from its git repository: ' \
                          'its Procfile, Dockerfile, and .aptible.yml will be ' \
                          'ignored until you deploy again with git'
+            option :container_count, type: :numeric
+            option :container_size, type: :numeric
+            option :container_profile, type: :string
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
                      type: :string, banner: var,
@@ -65,6 +68,10 @@ module Aptible
                 env: env,
                 git_ref: git_ref
               }.delete_if { |_, v| v.nil? || v.empty? }
+
+              opts[:container_count] = container_count if container_count
+              opts[:container_size] = container_size if container_size
+              opts[:instance_profile] = container_profile if container_profile
 
               allow_it = [
                 opts[:git_ref],
