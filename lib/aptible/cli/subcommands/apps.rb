@@ -47,16 +47,18 @@ module Aptible
             end
 
             desc 'apps:scale SERVICE ' \
-                 '[--container-count COUNT] [--container-size SIZE_MB]',
+                 '[--container-count COUNT] [--container-size SIZE_MB] [--container-profile PROFILE]',
                  'Scale a service'
             app_options
             option :container_count, type: :numeric
             option :container_size, type: :numeric
+            option :container_profile, type: :string
             define_method 'apps:scale' do |type|
               service = ensure_service(options, type)
 
               container_count = options[:container_count]
               container_size = options[:container_size]
+              container_profile = options[:container_profile]
 
               if options[:size]
                 m = 'You have used the "--size" option to specify a container '\
@@ -74,6 +76,7 @@ module Aptible
               opts = { type: 'scale' }
               opts[:container_count] = container_count if container_count
               opts[:container_size] = container_size if container_size
+              opts[:instance_profile] = container_profile if container_profile
 
               op = service.create_operation!(opts)
               attach_to_operation_logs(op)
