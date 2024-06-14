@@ -284,7 +284,7 @@ module Aptible
 
             desc 'db:restart HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
+                 '[--iops IOPS] [--volume-type [gp2, gp3, io2]]',
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
@@ -316,7 +316,7 @@ module Aptible
             end
 
             desc 'db:modify HANDLE ' \
-                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
+                 '[--iops IOPS] [--volume-type [gp2, gp3, io2]]',
                  'Modify a database disk'
             option :environment
             option :iops, type: :numeric
