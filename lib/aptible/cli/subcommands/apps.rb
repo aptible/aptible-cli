@@ -47,14 +47,14 @@ module Aptible
             end
 
             desc 'apps:scale SERVICE ' \
-                 '[--container-count COUNT] [--container-size SIZE_MB]' \
+                 '[--container-count COUNT] [--container-size SIZE_MB] ' \
                  '[--container-profile PROFILE]',
                  'Scale a service'
             app_options
             option :container_count, type: :numeric
             option :container_size, type: :numeric
             option :container_profile, type: :string,
-                                       desc: 'Supported types: m5 c5 r5'
+                                       desc: 'Examples: m5 c5 r5'
             define_method 'apps:scale' do |type|
               service = ensure_service(options, type)
 
