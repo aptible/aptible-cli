@@ -52,7 +52,9 @@ module Aptible
             handle: dest_handle,
             container_size: options[:container_size],
             disk_size: options[:size],
-            key_arn: options[:key_arn]
+            key_arn: options[:key_arn],
+            instance_profile: options[:instance_profile],
+            provisioned_iops: options[:provisioned_iops]
           }.reject { |_, v| v.nil? }
 
           if options[:logical]

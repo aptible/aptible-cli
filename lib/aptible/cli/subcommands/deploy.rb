@@ -31,7 +31,8 @@ module Aptible
                          'ignored until you deploy again with git'
             option :container_count, type: :numeric
             option :container_size, type: :numeric
-            option :container_profile, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Supported types: m5 c5 r5 t3'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
                      type: :string, banner: var,

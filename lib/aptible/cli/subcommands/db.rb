@@ -64,7 +64,8 @@ module Aptible
             option :size, type: :numeric
             option :key_arn, type: :string
             option :environment
-            option :container_profile, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Supported types: m5 c5 r5 t3'
             option :iops, type: :numeric
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
@@ -145,7 +146,8 @@ module Aptible
             option :logical, type: :boolean
             option :version, type: :string
             option :key_arn, type: :string
-            option :container_profile, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Supported types: m5 c5 r5 t3'
             option :iops, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
@@ -300,7 +302,8 @@ module Aptible
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
-            option :container_profile, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Supported types: m5 c5 r5 t3'
             option :disk_size, type: :numeric
             option :size, type: :numeric
             option :iops, type: :numeric
@@ -313,7 +316,8 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size],
                 provisioned_iops: options[:iops],
-                ebs_volume_type: options[:volume_type]
+                ebs_volume_type: options[:volume_type],
+                instance_profile: options[:container_profile]
               }.delete_if { |_, v| v.nil? }
 
               if options[:size]
