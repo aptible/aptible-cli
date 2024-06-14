@@ -116,6 +116,21 @@ describe Aptible::CLI::Agent do
         subject.send('backup:restore', 1)
       end
 
+      it 'accept scaling options' do
+        expect(backup).to receive(:create_operation!) do |options|
+          expect(options[:instance_profile]).to eq('m5')
+          expect(options[:provisioned_iops]).to eq(4000)
+          op
+        end
+
+        expect(subject).to receive(:attach_to_operation_logs).with(op) do
+          Fabricate(:database, account: account, handle: default_handle)
+        end
+
+        subject.options = { container_profile: 'm5', iops: 4000 }
+        subject.send('backup:restore', 1)
+      end
+
       it 'accepts an destination environment' do
         expect(backup).to receive(:create_operation!) do |options|
           expect(options[:handle]).to be_present

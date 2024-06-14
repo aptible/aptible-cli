@@ -54,6 +54,7 @@ module Aptible
             desc 'db:create HANDLE ' \
                  '[--type TYPE] [--version VERSION] ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--key-arn KEY_ARN]',
                  'Create a new database'
             option :type, type: :string
@@ -63,6 +64,9 @@ module Aptible
             option :size, type: :numeric
             option :key_arn, type: :string
             option :environment
+            option :container_profile, type: :string,
+                                       desc: 'Examples: m5 c5 r5'
+            option :iops, type: :numeric
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
 
@@ -100,8 +104,11 @@ module Aptible
               op_opts = {
                 type: 'provision',
                 container_size: options[:container_size],
-                disk_size: options[:disk_size]
+                disk_size: options[:disk_size],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
+
               op = database.create_operation(op_opts)
 
               if op.errors.any?
@@ -129,6 +136,7 @@ module Aptible
 
             desc 'db:replicate HANDLE REPLICA_HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--logical --version VERSION] [--key-arn KEY_ARN]',
                  'Create a replica/follower of a database'
             option :environment
@@ -138,6 +146,9 @@ module Aptible
             option :logical, type: :boolean
             option :version, type: :string
             option :key_arn, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Examples: m5 c5 r5'
+            option :iops, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
 
@@ -162,7 +173,9 @@ module Aptible
                 size: options[:disk_size],
                 logical: options[:logical],
                 database_image: image || nil,
-                key_arn: options[:key_arn]
+                key_arn: options[:key_arn],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
 
               if options[:size]
@@ -284,10 +297,13 @@ module Aptible
 
             desc 'db:restart HANDLE ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
-                 '[--iops IOPS] [--volume-type [gp2, gp3]]',
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
+                 '[--volume-type [gp2, gp3]]',
                  'Restart a database'
             option :environment
             option :container_size, type: :numeric
+            option :container_profile, type: :string,
+                                       desc: 'Examples: m5 c5 r5'
             option :disk_size, type: :numeric
             option :size, type: :numeric
             option :iops, type: :numeric
@@ -300,7 +316,8 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size],
                 provisioned_iops: options[:iops],
-                ebs_volume_type: options[:volume_type]
+                ebs_volume_type: options[:volume_type],
+                instance_profile: options[:container_profile]
               }.delete_if { |_, v| v.nil? }
 
               if options[:size]
@@ -327,7 +344,8 @@ module Aptible
               opts = {
                 type: 'modify',
                 provisioned_iops: options[:iops],
-                ebs_volume_type: options[:volume_type]
+                ebs_volume_type: options[:volume_type],
+                instance_profile: options[:container_profile]
               }.delete_if { |_, v| v.nil? }
 
               CLI.logger.info "Modifying #{database.handle}..."

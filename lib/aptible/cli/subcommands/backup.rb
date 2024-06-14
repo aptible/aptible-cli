@@ -10,6 +10,7 @@ module Aptible
             desc 'backup:restore BACKUP_ID ' \
                  '[--environment ENVIRONMENT_HANDLE] [--handle HANDLE] ' \
                  '[--container-size SIZE_MB] [--disk-size SIZE_GB] ' \
+                 '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--key-arn KEY_ARN]',
                  'Restore a backup'
             option :handle, desc: 'a name to use for the new database'
@@ -18,6 +19,9 @@ module Aptible
             option :size, type: :numeric
             option :disk_size, type: :numeric
             option :key_arn, type: :string
+            option :container_profile, type: :string,
+                                       desc: 'Examples: m5 c5 r5'
+            option :iops, type: :numeric
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
@@ -41,7 +45,9 @@ module Aptible
                 container_size: options[:container_size],
                 disk_size: options[:disk_size],
                 destination_account: destination_account,
-                key_arn: options[:key_arn]
+                key_arn: options[:key_arn],
+                instance_profile: options[:container_profile],
+                provisioned_iops: options[:iops]
               }.delete_if { |_, v| v.nil? }
 
               if options[:size]

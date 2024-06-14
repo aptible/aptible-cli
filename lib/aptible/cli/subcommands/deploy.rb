@@ -29,6 +29,16 @@ module Aptible
                    desc: 'Detach this app from its git repository: ' \
                          'its Procfile, Dockerfile, and .aptible.yml will be ' \
                          'ignored until you deploy again with git'
+            option :container_count, type: :numeric,
+                                     desc: 'This option only effects new ' \
+                                           'services, not existing ones.'
+            option :container_size, type: :numeric,
+                                    desc: 'This option only effects new ' \
+                                           'services, not existing ones.'
+            option :container_profile, type: :string,
+                                       desc: 'This option only effects new ' \
+                                             'services, not existing ones. ' \
+                                             'Examples: m5 c5 r5'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
                      type: :string, banner: var,
@@ -63,8 +73,11 @@ module Aptible
               opts = {
                 type: 'deploy',
                 env: env,
-                git_ref: git_ref
-              }.delete_if { |_, v| v.nil? || v.empty? }
+                git_ref: git_ref,
+                container_count: options[:container_count],
+                container_size: options[:container_size],
+                instance_profile: options[:container_profile]
+              }.delete_if { |_, v| v.nil? || v.try(:empty?) }
 
               allow_it = [
                 opts[:git_ref],
