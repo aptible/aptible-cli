@@ -32,7 +32,7 @@ module Aptible
             option :container_count, type: :numeric
             option :container_size, type: :numeric
             option :container_profile, type: :string,
-                                       desc: 'Supported types: m5 c5 r5 t3'
+                                       desc: 'Supported types: m5 c5 r5'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
                      type: :string, banner: var,
