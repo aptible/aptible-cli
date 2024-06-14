@@ -33,7 +33,7 @@ module Aptible
             option :container_size, type: :numeric
             option :container_profile, type: :string,
                                        desc: 'This option only effects new ' \
-                                             'services, not existing one.  ' \
+                                             'services, not existing ones. ' \
                                              'Examples: m5 c5 r5'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
