@@ -29,8 +29,12 @@ module Aptible
                    desc: 'Detach this app from its git repository: ' \
                          'its Procfile, Dockerfile, and .aptible.yml will be ' \
                          'ignored until you deploy again with git'
-            option :container_count, type: :numeric
-            option :container_size, type: :numeric
+            option :container_count, type: :numeric,
+                                     desc: 'This option only effects new ' \
+                                           'services, not existing ones.'
+            option :container_size, type: :numeric,
+                                    desc: 'This option only effects new ' \
+                                           'services, not existing ones.'
             option :container_profile, type: :string,
                                        desc: 'This option only effects new ' \
                                              'services, not existing ones. ' \
