@@ -69,7 +69,7 @@ module Aptible
               # If any of the attribues are missing, raise an error so that
               # we're not relying on the server's defaults
               if attrs.values.any?(&:nil?)
-                raise Thor::Error, "Environemnt #{env} does not have a " \
+                raise Thor::Error, "Environment #{env} does not have a " \
                                    'custom backup retention policy. Please ' \
                                    'specify all attributes to create one.'
               end
