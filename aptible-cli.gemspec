@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'aptible-auth', '~> 1.2.4'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'thor', '~> 0.20.0'
-  spec.add_dependency 'git', '< 1.10'
+  spec.add_dependency 'git', '< 2.2'
   spec.add_dependency 'term-ansicolor'
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
   spec.add_dependency 'cbor'
