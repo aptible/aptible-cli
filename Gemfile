@@ -5,7 +5,7 @@ gem 'pry',
     branch: 'aptible'
 
 gem 'activesupport', '~> 4.0'
-gem 'rack', '~> 1.0'
+gem 'rack', '~> 2.2'
 
 group :test do
   gem 'webmock'
