@@ -28,5 +28,6 @@ Fabricator(:account, from: :stub_account) do
   certificates { [] }
   log_drains { [] }
   metric_drains { [] }
+  backup_retention_policies { [] }
   created_at { Time.now }
 end
