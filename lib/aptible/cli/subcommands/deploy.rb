@@ -30,13 +30,13 @@ module Aptible
                          'its Procfile, Dockerfile, and .aptible.yml will be ' \
                          'ignored until you deploy again with git'
             option :container_count, type: :numeric,
-                                     desc: 'This option only effects new ' \
+                                     desc: 'This option only affects new ' \
                                            'services, not existing ones.'
             option :container_size, type: :numeric,
-                                    desc: 'This option only effects new ' \
+                                    desc: 'This option only affects new ' \
                                            'services, not existing ones.'
             option :container_profile, type: :string,
-                                       desc: 'This option only effects new ' \
+                                       desc: 'This option only affects new ' \
                                              'services, not existing ones. ' \
                                              'Examples: m5 c5 r5'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
