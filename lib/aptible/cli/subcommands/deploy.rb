@@ -38,7 +38,7 @@ module Aptible
             option :container_profile, type: :string,
                                        desc: 'This option only affects new ' \
                                              'services, not existing ones. ' \
-                                             'Examples: m5 c5 r5'
+                                             'Examples: m c r'
             DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
               option opt,
                      type: :string, banner: var,

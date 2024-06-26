@@ -65,7 +65,7 @@ module Aptible
             option :key_arn, type: :string
             option :environment
             option :container_profile, type: :string,
-                                       desc: 'Examples: m5 c5 r5'
+                                       desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'db:create' do |handle|
               account = ensure_environment(options)
@@ -147,7 +147,7 @@ module Aptible
             option :version, type: :string
             option :key_arn, type: :string
             option :container_profile, type: :string,
-                                       desc: 'Examples: m5 c5 r5'
+                                       desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
               source = ensure_database(options.merge(db: source_handle))
@@ -303,7 +303,7 @@ module Aptible
             option :environment
             option :container_size, type: :numeric
             option :container_profile, type: :string,
-                                       desc: 'Examples: m5 c5 r5'
+                                       desc: 'Examples: m c r'
             option :disk_size, type: :numeric
             option :size, type: :numeric
             option :iops, type: :numeric

@@ -20,7 +20,7 @@ module Aptible
             option :disk_size, type: :numeric
             option :key_arn, type: :string
             option :container_profile, type: :string,
-                                       desc: 'Examples: m5 c5 r5'
+                                       desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'backup:restore' do |backup_id|
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)

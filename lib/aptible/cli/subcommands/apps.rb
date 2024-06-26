@@ -54,7 +54,7 @@ module Aptible
             option :container_count, type: :numeric
             option :container_size, type: :numeric
             option :container_profile, type: :string,
-                                       desc: 'Examples: m5 c5 r5'
+                                       desc: 'Examples: m c r'
             define_method 'apps:scale' do |type|
               service = ensure_service(options, type)
 
