@@ -175,7 +175,7 @@ module Aptible
 
               WARNING: review the documentation on rate limits before using
               this command automatically
-              (http://go.aptible.com/managed-tls-rate-limits).
+              (https://www.aptible.com/docs/core-concepts/apps/connecting-to-apps/app-endpoints/managed-tls#rate-limits).
             LONGDESC
             app_options
             define_method 'endpoints:renew' do |hostname|
