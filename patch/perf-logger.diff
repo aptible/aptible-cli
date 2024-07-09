@@ -1,0 +1,23 @@
+diff --git a/lib/aptible/cli/agent.rb b/lib/aptible/cli/agent.rb
+index fd16382..c68bc73 100644
+--- a/lib/aptible/cli/agent.rb
++++ b/lib/aptible/cli/agent.rb
+@@ -1,5 +1,6 @@
+ require 'base64'
+ require 'uri'
++require 'logger'
+ 
+ require 'aptible/auth'
+ require 'thor'
+@@ -80,7 +81,10 @@ module Aptible
+ 
+       def initialize(*)
+         nag_toolbelt unless toolbelt?
+-        Aptible::Resource.configure { |conf| conf.user_agent = version_string }
++        Aptible::Resource.configure do |conf|
++          conf.user_agent = version_string
++          conf.logger = Logger.new(STDERR).tap { |l| l.level = Logger::INFO }
++        end
+         warn_sso_enforcement
+         super
+       end
