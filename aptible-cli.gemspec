@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'jwt', '~> 2.3.0'
   spec.add_dependency 'git', '< 1.10'
   spec.add_dependency 'rack', '~> 1.0'
-  spec.add_dependency 'term-ansicolor'
+  spec.add_dependency 'term-ansicolor', '~> 1.8.0'
   spec.add_dependency 'thor', '~> 0.20.0'
 
   # Temporarily pin ffi until https://github.com/ffi/ffi/issues/868 is fixed
