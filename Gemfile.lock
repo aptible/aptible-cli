@@ -12,6 +12,8 @@ PATH
       cbor
       chronic_duration (~> 0.10.6)
       git (< 1.10)
+      jwt (~> 2.3.0)
+      rack (~> 1.0)
       term-ansicolor
       thor (~> 0.20.0)
 
@@ -60,7 +62,6 @@ GEM
       aws-sdk-core (= 2.11.632)
     aws-sigv4 (1.9.1)
       aws-eventstream (~> 1, >= 1.0.2)
-    base64 (0.2.0)
     bigdecimal (1.3.5)
     cbor (0.5.9.8)
     chronic_duration (0.10.6)
@@ -109,8 +110,7 @@ GEM
       concurrent-ruby (~> 1.0)
     jmespath (1.6.2)
     json (2.7.2)
-    jwt (2.8.2)
-      base64
+    jwt (2.3.0)
     method_source (1.1.0)
     minitest (5.12.0)
     multi_json (1.15.0)
