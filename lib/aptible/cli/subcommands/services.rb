@@ -22,8 +22,10 @@ module Aptible
               end
             end
 
-            desc 'services:settings SERVICE',
-                 'Modify the zero-downtime deploy setting for a service'
+            desc 'services:settings SERVICE'\
+                   ' [--force-zero-downtime|--no-force-zero-downtime]'\
+                   ' [--simple-health-check|--no-simple-health-check]',
+                 'Modifies the zero-downtime deploy setting for a service'
             app_options
             option :force_zero_downtime,
                    type: :boolean, default: false,
