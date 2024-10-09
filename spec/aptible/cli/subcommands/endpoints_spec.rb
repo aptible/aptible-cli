@@ -452,6 +452,30 @@ describe Aptible::CLI::Agent do
       end
     end
 
+    describe 'endpoints:grpc:create' do
+      m = 'endpoints:grpc:create'
+      include_examples 'shared create app vhost examples', m
+      include_examples 'shared create tls vhost examples', m
+
+      it 'creates a gRPC Endpoint' do
+        expect_create_vhost(
+          service,
+          type: 'grpc',
+          platform: 'elb',
+          internal: false,
+          default: false,
+          ip_whitelist: []
+        )
+        subject.send(m, 'web')
+      end
+
+      it 'creates an Endpoint with a container Port' do
+        expect_create_vhost(service, container_port: 10)
+        stub_options(port: 10)
+        subject.send(m, 'web')
+      end
+    end
+
     shared_examples 'shared modify app vhost examples' do |m|
       it 'does not change anything if no options are passed' do
         v = Fabricate(:vhost, service: service)
@@ -567,6 +591,20 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:https:modify' do
       m = 'endpoints:https:modify'
+      include_examples 'shared modify app vhost examples', m
+      include_examples 'shared modify tls vhost examples', m
+
+      it 'allows updating the Container Port' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, container_port: 10)
+
+        stub_options(port: 10)
+        subject.send(m, v.external_host)
+      end
+    end
+
+    describe 'endpoints:grpc:modify' do
+      m = 'endpoints:grpc:modify'
       include_examples 'shared modify app vhost examples', m
       include_examples 'shared modify tls vhost examples', m
 

@@ -107,6 +107,36 @@ module Aptible
               modify_app_vhost(tls_modify_flags, options, hostname)
             end
 
+            grpc_create_flags = Helpers::Vhost::OptionSetBuilder.new do
+              app!
+              create!
+              port!
+              tls!
+            end
+
+            desc 'endpoints:grpc:create [--app APP] SERVICE',
+                 'Create an App gRPC Endpoint'
+            grpc_create_flags.declare_options(self)
+            define_method 'endpoints:grpc:create' do |type|
+              create_app_vhost(
+                grpc_create_flags, options, type,
+                type: 'grpc', platform: 'elb'
+              )
+            end
+
+            grpc_modify_flags = Helpers::Vhost::OptionSetBuilder.new do
+              app!
+              port!
+              tls!
+            end
+
+            desc 'endpoints:grpc:modify [--app APP] ENDPOINT_HOSTNAME',
+                 'Modify an App gRPC Endpoint'
+            grpc_modify_flags.declare_options(self)
+            define_method 'endpoints:grpc:modify' do |hostname|
+              modify_app_vhost(grpc_modify_flags, options, hostname)
+            end
+
             https_create_flags = Helpers::Vhost::OptionSetBuilder.new do
               app!
               create!
