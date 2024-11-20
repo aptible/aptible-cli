@@ -46,9 +46,24 @@ module Aptible
             end
 
             desc 'services:sizing_policy SERVICE '\
-                   '[--autoscaling-type (horizontal|vertical)] '\
+                   '--autoscaling-type (horizontal|vertical) '\
                    '[--metric-lookback-seconds SECONDS] '\
-                   '[--percentile PERCENTILE]',
+                   '[--percentile PERCENTILE] '\
+                   '[--post-scale-up-cooldown-seconds SECONDS] '\
+                   '[--post-scale-down-cooldown-seconds SECONDS] '\
+                   '[--post-release-cooldown-seconds SECONDS] '\
+                   '[--mem-cpu-ratio-r-threshold RATIO] '\
+                   '[--mem-cpu-ratio-c-threshold RATIO] '\
+                   '[--mem-scale-up-threshold THRESHOLD] '\
+                   '[--mem-scale-down-threshold THRESHOLD] '\
+                   '[--minimum-memory MEMORY] '\
+                   '[--maximum-memory MEMORY] '\
+                   '[--min-cpu-threshold THRESHOLD] '\
+                   '[--max-cpu-threshold THRESHOLD] '\
+                   '[--min-containers CONTAINERS] '\
+                   '[--max-containers CONTAINERS] '\
+                   '[--scale-up-step STEPS] '\
+                   '[--scale-down-step STEPS] ',
                  'Sets the sizing (autoscaling) policy for a service.'\
                    ' This is not incremental, all arguments must be sent'\
                    ' at once or they will be set to defaults.'
@@ -145,7 +160,8 @@ module Aptible
                    'will never exceed the configured minimum.'
             define_method 'services:sizing_policy' do |service|
               service = ensure_service(options, service)
-              args = options.except(:autoscaling_type)
+              ignored_attrs = %i(autoscaling_type app environment remote)
+              args = options.except(*ignored_attrs)
               args[:autoscaling] = options[:autoscaling_type]
 
               sizing_policy = service.service_sizing_policy
