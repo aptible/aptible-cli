@@ -44,6 +44,117 @@ module Aptible
 
               service.update!(**updates) if updates.any?
             end
+
+            desc 'services:sizing_policy SERVICE '\
+                   '[--autoscaling-type (horizontal|vertical)] '\
+                   '[--metric-lookback-seconds SECONDS] '\
+                   '[--percentile PERCENTILE]',
+                 'Sets the sizing (autoscaling) policy for a service.'\
+                   ' This is not incremental, all arguments must be sent'\
+                   ' at once or they will be set to defaults.'
+            app_options
+            option :autoscaling_type,
+                   type: :string,
+                   desc: 'The type of autoscaling. Must be either '\
+                   '"horizontal" or "vertical"'
+            option :metric_lookback_seconds,
+                   type: :numeric,
+                   desc: '(Default: 1800) The duration in seconds for '\
+                   'retrieving past performance metrics.'
+            option :percentile,
+                   type: :numeric,
+                   desc: '(Default: 99) The percentile for evaluating metrics.'
+            option :post_scale_up_cooldown_seconds,
+                   type: :numeric,
+                   desc: '(Default: 60) The waiting period in seconds after '\
+                   'an automated scale-up before another scaling action can '\
+                   'be considered.'
+            option :post_scale_down_cooldown_seconds,
+                   type: :numeric,
+                   desc: '(Default: 300) The waiting period in seconds after '\
+                   'an automated scale-down before another scaling action can '\
+                   'be considered.'
+            option :post_release_cooldown_seconds,
+                   type: :numeric,
+                   desc: '(Default: 300) The time in seconds to wait '\
+                   'following a deploy before another scaling action can '\
+                   'be considered.'
+            option :mem_cpu_ratio_r_threshold,
+                   type: :numeric,
+                   desc: '(Default: 4.0) Establishes the ratio of Memory '\
+                   '(in GB) to CPU (in CPUs) at which values exceeding the '\
+                   'threshold prompt a shift to an R (Memory Optimized) '\
+                   'profile.'
+            option :mem_cpu_ratio_c_threshold,
+                   type: :numeric,
+                   desc: '(Default: 2.0) Sets the Memory-to-CPU ratio '\
+                   'threshold, below which the service is transitioned to a '\
+                   'C (Compute Optimized) profile.'
+            option :mem_scale_up_threshold,
+                   type: :numeric,
+                   desc: '(Default: 0.9) Vertical autoscaling only - '\
+                   'Specifies the percentage of the current memory limit '\
+                   'at which the service’s memory usage triggers an '\
+                   'up-scaling action.'
+            option :mem_scale_down_threshold,
+                   type: :numeric,
+                   desc: '(Default: 0.75) Vertical autoscaling only - '\
+                   'Specifies the percentage of the current memory limit at '\
+                   'which the service’s memory usage triggers a '\
+                   'down-scaling action.'
+            option :minimum_memory,
+                   type: :numeric,
+                   desc: '(Default: 2048) Vertical autoscaling only - Sets '\
+                   'the lowest memory limit to which the service can be '\
+                   'scaled down by Autoscaler.'
+            option :maximum_memory,
+                   type: :numeric,
+                   desc: 'Vertical autoscaling only - Defines the upper '\
+                   'memory threshold, capping the maximum memory allocation'\
+                   ' possible through Autoscaler. If blank, the container can'\
+                   ' scale to the largest size available.'
+            option :min_cpu_threshold,
+                   type: :numeric,
+                   desc: 'Horizontal autoscaling only - Specifies the '\
+                   'percentage of the current CPU usage at which a '\
+                   'down-scaling action is triggered.'
+            option :max_cpu_threshold,
+                   type: :numeric,
+                   desc: 'Horizontal autoscaling only - Specifies the '\
+                   'percentage of the current CPU usage at which an '\
+                   'up-scaling action is triggered.'
+            option :min_containers,
+                   type: :numeric,
+                   desc: 'Horizontal autoscaling only - Sets the lowest'\
+                   ' container count to which the service can be scaled down.'
+            option :max_containers,
+                   type: :numeric,
+                   desc: 'Horizontal autoscaling only - Sets the highest '\
+                   'container count to which the service can be scaled up to.'
+            option :scale_up_step,
+                   type: :numeric,
+                   desc: '(Default: 1) Horizontal autoscaling only - Sets '\
+                   'the amount of containers to add when autoscaling (ex: a '\
+                   'value of 2 will go from 1->3->5). Container count will '\
+                   'never exceed the configured maximum.'
+            option :scale_down_step,
+                   type: :numeric,
+                   desc: '(Default: 1) Horizontal autoscaling only - Sets '\
+                   'the amount of containers to remove when autoscaling (ex:'\
+                   ' a value of 2 will go from 4->2->1). Container count '\
+                   'will never exceed the configured minimum.'
+            define_method 'services:sizing_policy' do |service|
+              service = ensure_service(options, service)
+              args = options.except(:autoscaling_type)
+              args[:autoscaling] = options[:autoscaling_type]
+
+              sizing_policy = service.service_sizing_policy
+              if sizing_policy
+                sizing_policy.update!(**args)
+              else
+                service.create_service_sizing_policy!(**args)
+              end
+            end
           end
         end
       end
