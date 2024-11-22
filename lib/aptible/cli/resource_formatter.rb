@@ -270,6 +270,35 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_service_sizing_policy(node, policy, service)
+          node.value('autoscaling_type', policy.autoscaling)
+          node.value('metric_lookback_seconds', policy.metric_lookback_seconds)
+          node.value('percentile', policy.percentile)
+          node.value('post_scale_up_cooldown_seconds',
+                     policy.post_scale_up_cooldown_seconds)
+          node.value('post_scale_down_cooldown_seconds',
+                     policy.post_scale_down_cooldown_seconds)
+          node.value('post_release_cooldown_seconds',
+                     policy.post_release_cooldown_seconds)
+          node.value('mem_cpu_ratio_r_threshold',
+                     policy.mem_cpu_ratio_r_threshold)
+          node.value('mem_cpu_ratio_c_threshold',
+                     policy.mem_cpu_ratio_c_threshold)
+          node.value('mem_scale_up_threshold', policy.mem_scale_up_threshold)
+          node.value('mem_scale_down_threshold',
+                     policy.mem_scale_down_threshold)
+          node.value('minimum_memory', policy.minimum_memory)
+          node.value('maximum_memory', policy.maximum_memory)
+          node.value('min_cpu_threshold', policy.min_cpu_threshold)
+          node.value('max_cpu_threshold', policy.max_cpu_threshold)
+          node.value('min_containers', policy.min_containers)
+          node.value('max_containers', policy.max_containers)
+          node.value('scale_up_step', policy.scale_up_step)
+          node.value('scale_down_step', policy.scale_down_step)
+
+          attach_service(node, service)
+        end
+
         private
 
         def attach_account(node, account)

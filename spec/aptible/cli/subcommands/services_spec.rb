@@ -79,6 +79,90 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#services:sizing_policy' do
+    let(:base_options) { { app: app.handle } }
+
+    it 'returns the sizing policy' do
+      stub_options
+      service = Fabricate(:service, app: app, process_type: 'foo')
+      sizing_policy = Fabricate(:service_sizing_policy)
+      expect(service).to receive(:service_sizing_policy)
+        .and_return(sizing_policy)
+
+      subject.send('services:sizing_policy', 'foo')
+
+      out = captured_output_text
+      expect(out).to match(/Autoscaling Type: vertical/i)
+      expect(out).to match(/Metric Lookback Seconds: 1800/i)
+      expect(out).to match(/Percentile: 99.0/i)
+      expect(out).to match(/Post Scale Up Cooldown Seconds: 60/i)
+      expect(out).to match(/Post Scale Down Cooldown Seconds: 300/i)
+      expect(out).to match(/Post Release Cooldown Seconds: 300/i)
+      expect(out).to match(/Mem Cpu Ratio R Threshold: 4/i)
+      expect(out).to match(/Mem Cpu Ratio C Threshold: 2/i)
+      expect(out).to match(/Mem Scale Up Threshold: 0.9/i)
+      expect(out).to match(/Mem Scale Down Threshold: 0.75/i)
+      expect(out).to match(/Minimum Memory: 2048/i)
+      expect(out).to match(/Maximum Memory:/i)
+      expect(out).to match(/Min Cpu Threshold: 0.4/i)
+      expect(out).to match(/Max Cpu Threshold: 0.9/i)
+      expect(out).to match(/Min Containers: 2/i)
+      expect(out).to match(/Max Containers: 5/i)
+      expect(out).to match(/Scale Up Step: 1/i)
+      expect(out).to match(/Scale Down Step: 1/i)
+    end
+
+    it 'raises an error if the environment has no policy' do
+      stub_options
+      service = Fabricate(:service, app: app, process_type: 'foo')
+      expect(service).to receive(:service_sizing_policy).and_return(nil)
+      expect { subject.send('services:sizing_policy', 'foo') }
+        .to raise_error(/does not have a service sizing policy set/)
+    end
+  end
+
+  describe '#services:sizing_policy:set' do
+    let(:base_options) { { app: app.handle } }
+    let(:args) do
+      {
+        autoscaling_type: 'vertical',
+        mem_scale_down_threshold: 0.5,
+        scale_up_step: 2,
+        post_scale_down_cooldown_seconds: 3,
+        percentile: 93.2
+      }
+    end
+
+    it 'updates existing sizing policy' do
+      stub_options(**args)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+      sizing_policy = double(sizing_policy)
+      expect(service).to receive(:service_sizing_policy)
+        .and_return(sizing_policy)
+
+      api_args = args.except(:autoscaling_type)
+      api_args[:autoscaling] = args[:autoscaling_type]
+
+      expect(sizing_policy).to receive(:update!)
+        .with(**api_args)
+
+      subject.send('services:sizing_policy:set', 'foo')
+    end
+
+    it 'creates a new sizing policy if necessary' do
+      stub_options(**args)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      api_args = args.except(:autoscaling_type)
+      api_args[:autoscaling] = args[:autoscaling_type]
+
+      expect(service).to receive(:create_service_sizing_policy!)
+        .with(**api_args)
+
+      subject.send('services:sizing_policy:set', 'foo')
+    end
+  end
+
   def stub_options(**opts)
     allow(subject).to receive(:options).and_return(base_options.merge(opts))
   end
