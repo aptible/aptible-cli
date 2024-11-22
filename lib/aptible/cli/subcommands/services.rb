@@ -45,7 +45,28 @@ module Aptible
               service.update!(**updates) if updates.any?
             end
 
-            desc 'services:sizing_policy SERVICE '\
+            desc 'services:sizing_policy SERVICE',
+                 'Returns the associated sizing policy, if any'
+            app_options
+            define_method 'services:sizing_policy' do |service|
+              service = ensure_service(options, service)
+              policy = service.service_sizing_policy
+
+              unless policy
+                raise Thor::Error, "Service #{service} does not have a " \
+                  'service sizing policy set'
+              end
+
+              Formatter.render(Renderer.current) do |root|
+                root.object do |node|
+                  ResourceFormatter.inject_service_sizing_policy(
+                    node, policy, service
+                  )
+                end
+              end
+            end
+
+            desc 'services:sizing_policy:set SERVICE '\
                    '--autoscaling-type (horizontal|vertical) '\
                    '[--metric-lookback-seconds SECONDS] '\
                    '[--percentile PERCENTILE] '\
@@ -158,7 +179,7 @@ module Aptible
                    'the amount of containers to remove when autoscaling (ex:'\
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
-            define_method 'services:sizing_policy' do |service|
+            define_method 'services:sizing_policy:set' do |service|
               service = ensure_service(options, service)
               ignored_attrs = %i(autoscaling_type app environment remote)
               args = options.except(*ignored_attrs)
