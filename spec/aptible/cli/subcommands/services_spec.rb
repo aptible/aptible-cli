@@ -119,6 +119,19 @@ describe Aptible::CLI::Agent do
       expect { subject.send('services:sizing_policy', 'foo') }
         .to raise_error(/does not have a service sizing policy set/)
     end
+
+    it 'is aliased to autoscaling_policy' do
+      stub_options
+      service = Fabricate(:service, app: app, process_type: 'foo')
+      sizing_policy = Fabricate(:service_sizing_policy)
+      expect(service).to receive(:service_sizing_policy)
+        .and_return(sizing_policy)
+
+      subject.send('services:autoscaling_policy', 'foo')
+
+      out = captured_output_text
+      expect(out).to match(/Autoscaling Type: vertical/i)
+    end
   end
 
   describe '#services:sizing_policy:set' do
@@ -160,6 +173,19 @@ describe Aptible::CLI::Agent do
         .with(**api_args)
 
       subject.send('services:sizing_policy:set', 'foo')
+    end
+
+    it 'is aliased to autoscaling_policy:set' do
+      stub_options(**args)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      api_args = args.except(:autoscaling_type)
+      api_args[:autoscaling] = args[:autoscaling_type]
+
+      expect(service).to receive(:create_service_sizing_policy!)
+        .with(**api_args)
+
+      subject.send('services:autoscaling_policy:set', 'foo')
     end
   end
 
