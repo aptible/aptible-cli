@@ -45,10 +45,10 @@ module Aptible
               service.update!(**updates) if updates.any?
             end
 
-            desc 'services:sizing_policy SERVICE',
+            desc 'services:autoscaling_policy SERVICE',
                  'Returns the associated sizing policy, if any'
             app_options
-            define_method 'services:sizing_policy' do |service|
+            define_method 'services:autoscaling_policy' do |service|
               service = ensure_service(options, service)
               policy = service.service_sizing_policy
 
@@ -65,8 +65,12 @@ module Aptible
                 end
               end
             end
+            no_commands do
+              alias_method 'services:sizing_policy',
+                           'services:autoscaling_policy'
+            end
 
-            desc 'services:sizing_policy:set SERVICE '\
+            desc 'services:autoscaling_policy:set SERVICE '\
                    '--autoscaling-type (horizontal|vertical) '\
                    '[--metric-lookback-seconds SECONDS] '\
                    '[--percentile PERCENTILE] '\
@@ -179,7 +183,7 @@ module Aptible
                    'the amount of containers to remove when autoscaling (ex:'\
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
-            define_method 'services:sizing_policy:set' do |service|
+            define_method 'services:autoscaling_policy:set' do |service|
               service = ensure_service(options, service)
               ignored_attrs = %i(autoscaling_type app environment remote)
               args = options.except(*ignored_attrs)
@@ -191,6 +195,10 @@ module Aptible
               else
                 service.create_service_sizing_policy!(**args)
               end
+            end
+            no_commands do
+              alias_method 'services:sizing_policy:set',
+                           'services:autoscaling_policy:set'
             end
           end
         end
