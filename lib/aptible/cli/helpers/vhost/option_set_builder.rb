@@ -20,7 +20,7 @@ module Aptible
 
           def declare_options(thor)
             thor.instance_exec(self) do |builder|
-              option :environment
+              option :environment, aliases: '--env'
 
               if builder.database?
                 option :database
