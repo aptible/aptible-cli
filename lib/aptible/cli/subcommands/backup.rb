@@ -71,7 +71,7 @@ module Aptible
             desc 'backup:list DB_HANDLE', 'List backups for a database'
             option :environment, aliases: '--env'
             option :max_age,
-                   default: '1mo',
+                   default: '99y',
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
               age = ChronicDuration.parse(options[:max_age])
@@ -97,7 +97,7 @@ module Aptible
             desc 'backup:orphaned', 'List backups associated with ' \
                                     'deprovisioned databases'
             option :environment, aliases: '--env'
-            option :max_age, default: '1y',
+            option :max_age, default: '99y',
                              desc: 'Limit backups returned '\
                                    '(example usage: 1w, 1y, etc.)'
             define_method 'backup:orphaned' do
