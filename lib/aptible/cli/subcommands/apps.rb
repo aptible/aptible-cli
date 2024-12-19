@@ -73,7 +73,7 @@ module Aptible
                  container_profile.nil?
                 m = 'Provide at least --container-count, --container-size, ' \
                     'or --container-profile'
-                raise Thor::Error m
+                raise Thor::Error, m
               end
 
               # We don't validate any parameters here: API will do that for us.
