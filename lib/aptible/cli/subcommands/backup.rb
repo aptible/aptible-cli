@@ -14,7 +14,8 @@ module Aptible
                  '[--key-arn KEY_ARN]',
                  'Restore a backup'
             option :handle, desc: 'a name to use for the new database'
-            option :environment, desc: 'a different environment to restore to'
+            option :environment, aliases: '--env',
+                                 desc: 'a different environment to restore to'
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, type: :numeric
@@ -68,7 +69,7 @@ module Aptible
             end
 
             desc 'backup:list DB_HANDLE', 'List backups for a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :max_age,
                    default: '1mo',
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
@@ -95,7 +96,7 @@ module Aptible
 
             desc 'backup:orphaned', 'List backups associated with ' \
                                     'deprovisioned databases'
-            option :environment
+            option :environment, aliases: '--env'
             option :max_age, default: '1y',
                              desc: 'Limit backups returned '\
                                    '(example usage: 1w, 1y, etc.)'

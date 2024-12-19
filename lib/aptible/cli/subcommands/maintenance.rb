@@ -11,7 +11,7 @@ module Aptible
             desc 'maintenance:apps',
                  'List Apps impacted by maintenance schedules where '\
                  'restarts are required'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'maintenance:apps' do
               found_maintenance = false
               m = maintenance_apps
@@ -46,7 +46,7 @@ module Aptible
             desc 'maintenance:dbs',
                  'List Databases impacted by maintenance schedules where '\
                  'restarts are required'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'maintenance:dbs' do
               found_maintenance = false
               m = maintenance_databases
