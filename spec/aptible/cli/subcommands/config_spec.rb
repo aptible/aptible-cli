@@ -109,6 +109,17 @@ describe Aptible::CLI::Agent do
       subject.send('config:unset', 'FOO')
     end
 
+    it 'unsets environment variables even if the user passes a value' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '' })
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:unset', 'FOO=whoops')
+    end
+
     it 'rejects environment variables that start with -' do
       expect { subject.send('config:rm', '-foo') }
         .to raise_error(/invalid argument/im)
