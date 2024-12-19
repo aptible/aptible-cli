@@ -15,7 +15,7 @@ module Aptible
         module ClassMethods
           def app_options
             option :app
-            option :environment
+            option :environment, aliases: '--env'
             option :remote, aliases: '-r'
           end
         end
