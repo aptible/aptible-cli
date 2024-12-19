@@ -157,6 +157,7 @@ module Aptible
           node.value('command', service.command || 'CMD')
           node.value('container_count', service.container_count)
           node.value('container_size', service.container_memory_limit_mb)
+          node.value('container_profile', service.instance_class.to_s[/[a-z]/])
 
           attach_app(node, app)
         end

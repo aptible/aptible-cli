@@ -37,11 +37,17 @@ module Aptible
 
         def ensure_default_environment
           environments = Aptible::Api::Account.all(token: fetch_token)
-          return environments.first if environments.count == 1
-
-          raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
-            Multiple environments available, please specify with --environment
-          ERR
+          case environments.count
+          when 0
+            e = 'No environments. Go to https://app.aptible.com/ to proceed'
+            raise Thor::Error, e
+          when 1
+            return environments.first
+          else
+            raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
+              Multiple environments available, please specify with --environment or --env
+            ERR
+          end
         end
       end
     end

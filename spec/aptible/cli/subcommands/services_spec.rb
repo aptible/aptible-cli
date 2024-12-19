@@ -46,6 +46,14 @@ describe Aptible::CLI::Agent do
       expect(captured_output_text.split("\n")).to include('Container Count: 3')
     end
 
+    it 'lists container profile' do
+      Fabricate(:service, app: app, instance_class: 'u7')
+      subject.send('services')
+
+      expect(captured_output_text.split("\n"))
+        .to include('Container Profile: u')
+    end
+
     it 'lists multiple services' do
       Fabricate(:service, app: app, process_type: 'foo')
       Fabricate(:service, app: app, process_type: 'bar')

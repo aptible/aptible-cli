@@ -19,11 +19,11 @@ module Aptible
               option :drain_databases, default: true, type: :boolean
               option :drain_ephemeral_sessions, default: true, type: :boolean
               option :drain_proxies, default: true, type: :boolean
-              option :environment
+              option :environment, aliases: '--env'
             end
 
             desc 'log_drain:list', 'List all Log Drains'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'log_drain:list' do
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
@@ -137,7 +137,7 @@ module Aptible
 
             desc 'log_drain:deprovision HANDLE --environment ENVIRONMENT',
                  'Deprovisions a log drain'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'log_drain:deprovision' do |handle|
               account = ensure_environment(options)
               drain = ensure_log_drain(account, handle)

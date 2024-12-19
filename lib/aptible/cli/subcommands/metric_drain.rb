@@ -18,7 +18,7 @@ module Aptible
             include Helpers::MetricDrain
 
             desc 'metric_drain:list', 'List all Metric Drains'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'metric_drain:list' do
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
@@ -40,7 +40,7 @@ module Aptible
                  '--db DATABASE_HANDLE --environment ENVIRONMENT',
                  'Create an InfluxDB Metric Drain'
             option :db, type: :string
-            option :environment
+            option :environment, aliases: '--env'
 
             define_method 'metric_drain:create:influxdb' do |handle|
               account = ensure_environment(options)
@@ -66,7 +66,7 @@ module Aptible
             option :password, type: :string
             option :url, type: :string
             option :db, type: :string
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:custom' do |handle|
               account = ensure_environment(options)
 
@@ -95,7 +95,7 @@ module Aptible
             option :org, type: :string
             option :token, type: :string
             option :url, type: :string
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:customv2' do |handle|
               account = ensure_environment(options)
 
@@ -121,7 +121,7 @@ module Aptible
                  'Create a Datadog Metric Drain'
             option :api_key, type: :string
             option :site, type: :string
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'metric_drain:create:datadog' do |handle|
               account = ensure_environment(options)
 
@@ -150,7 +150,7 @@ module Aptible
 
             desc 'metric_drain:deprovision HANDLE --environment ENVIRONMENT',
                  'Deprovisions a Metric Drain'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'metric_drain:deprovision' do |handle|
               account = ensure_environment(options)
               drain = ensure_metric_drain(account, handle)

@@ -9,7 +9,7 @@ module Aptible
             include Helpers::Token
 
             desc 'apps', 'List all applications'
-            option :environment
+            option :environment, aliases: '--env'
             def apps
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
@@ -28,7 +28,7 @@ module Aptible
             end
 
             desc 'apps:create HANDLE', 'Create a new application'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'apps:create' do |handle|
               environment = ensure_environment(options)
               app = environment.create_app(handle: handle)
@@ -69,9 +69,11 @@ module Aptible
                 raise Thor::Error, m
               end
 
-              if container_count.nil? && container_size.nil?
-                raise Thor::Error,
-                      'Provide at least --container-count or --container-size'
+              if container_count.nil? && container_size.nil? &&
+                 container_profile.nil?
+                m = 'Provide at least --container-count, --container-size, ' \
+                    'or --container-profile'
+                raise Thor::Error, m
               end
 
               # We don't validate any parameters here: API will do that for us.
@@ -104,7 +106,7 @@ module Aptible
                  ' ENVIRONMENT_HANDLE]', 'Rename an app handle. In order'\
                  ' for the new app handle to appear in log drain and metric'\
                  ' drain destinations, you must restart the app.'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'apps:rename' do |old_handle, new_handle|
               env = ensure_environment(options)
               app = ensure_app(options.merge(app: old_handle))
