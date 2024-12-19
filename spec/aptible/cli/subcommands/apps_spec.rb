@@ -93,11 +93,13 @@ describe Aptible::CLI::Agent do
 
       s1 = Fabricate(
         :service,
-        app: app, process_type: 's1', command: 'true', container_count: 2
+        app: app, process_type: 's1', command: 'true', container_count: 2,
+        instance_class: 'm5'
       )
       s2 = Fabricate(
         :service,
-        app: app, process_type: 's2', container_memory_limit_mb: 2048
+        app: app, process_type: 's2', container_memory_limit_mb: 2048,
+        instance_class: 'r5'
       )
 
       expected_json = [
@@ -118,6 +120,7 @@ describe Aptible::CLI::Agent do
               'id' => s1.id,
               'command' => s1.command,
               'container_count' => s1.container_count,
+              'container_profile' => 'm',
               'container_size' => s1.container_memory_limit_mb,
               'created_at' => fmt_time(s1.created_at)
             },
@@ -126,6 +129,7 @@ describe Aptible::CLI::Agent do
               'id' => s2.id,
               'command' => 'CMD',
               'container_count' => s2.container_count,
+              'container_profile' => 'r',
               'container_size' => s2.container_memory_limit_mb,
               'created_at' => fmt_time(s2.created_at)
             }

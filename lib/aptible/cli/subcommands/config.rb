@@ -1,5 +1,4 @@
 require 'shellwords'
-
 module Aptible
   module CLI
     module Subcommands
@@ -72,6 +71,7 @@ module Aptible
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
               env = Hash[args.map do |arg|
+                arg = arg.split('=')[0]
                 validate_env_key!(arg)
                 [arg, '']
               end]

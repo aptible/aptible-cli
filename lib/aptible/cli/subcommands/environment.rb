@@ -8,7 +8,7 @@ module Aptible
             include Helpers::Token
 
             desc 'environment:list', 'List all environments'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'environment:list' do
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list(
@@ -25,7 +25,7 @@ module Aptible
 
             desc 'environment:ca_cert',
                  'Retrieve the CA certificate associated with the environment'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'environment:ca_cert' do
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
