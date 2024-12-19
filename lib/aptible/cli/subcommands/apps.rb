@@ -69,9 +69,11 @@ module Aptible
                 raise Thor::Error, m
               end
 
-              if container_count.nil? && container_size.nil?
-                raise Thor::Error,
-                      'Provide at least --container-count or --container-size'
+              if container_count.nil? && container_size.nil? &&
+                 container_profile.nil?
+                m = 'Provide at least --container-count, --container-size, ' \
+                    'or --container-profile'
+                raise Thor::Error m
               end
 
               # We don't validate any parameters here: API will do that for us.
