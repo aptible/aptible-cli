@@ -205,7 +205,8 @@ module Aptible
                            'services:autoscaling_policy:set'
             end
 
-            map 'services:sizing_policy:set' => 'services:autoscaling_policy:set'
+            map 'services:sizing_policy:set' =>
+                'services:autoscaling_policy:set'
           end
         end
       end
