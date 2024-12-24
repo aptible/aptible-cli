@@ -65,7 +65,8 @@ module Aptible
                 end
               end
             end
-            desc 'services:sizing_policy', 'Alias for services:autoscaling_policy'
+            desc 'services:sizing_policy',
+                 'Alias for services:autoscaling_policy'
             alias_method 'services:sizing_policy',
                          'services:autoscaling_policy'
 
@@ -195,7 +196,8 @@ module Aptible
                 service.create_service_sizing_policy!(**args)
               end
             end
-            desc 'services:sizing_policy:set', 'Alias for services:autoscaling_policy:set'
+            desc 'services:sizing_policy:set',
+                 'Alias for services:autoscaling_policy:set'
             alias_method 'services:sizing_policy:set',
                          'services:autoscaling_policy:set'
           end
