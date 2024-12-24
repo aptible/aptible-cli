@@ -65,10 +65,13 @@ module Aptible
                 end
               end
             end
-            desc 'services:sizing_policy',
-                 'Alias for services:autoscaling_policy'
-            alias_method 'services:sizing_policy',
-                         'services:autoscaling_policy'
+
+            no_commands do
+              alias_method 'services:sizing_policy',
+                           'services:autoscaling_policy'
+            end
+
+            map 'services:sizing_policy' => 'services:autoscaling_policy'
 
             desc 'services:autoscaling_policy:set SERVICE '\
                    '--autoscaling-type (horizontal|vertical) '\
@@ -196,10 +199,14 @@ module Aptible
                 service.create_service_sizing_policy!(**args)
               end
             end
-            desc 'services:sizing_policy:set',
-                 'Alias for services:autoscaling_policy:set'
-            alias_method 'services:sizing_policy:set',
-                         'services:autoscaling_policy:set'
+
+            no_commands do
+              alias_method 'services:sizing_policy:set',
+                           'services:autoscaling_policy:set'
+            end
+
+            map 'services:sizing_policy:set' =>
+                'services:autoscaling_policy:set'
           end
         end
       end
