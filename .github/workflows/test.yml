@@ -48,3 +48,18 @@ jobs:
                contains(needs.*.result, 'failure')
             || contains(needs.*.result, 'cancelled')
           }}
+
+  report-version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Report version
+        run: |
+          curl -sS -X POST -u "$ENFORCER_USERNAME:$ENFORCER_PASSWORD" \
+           -H "Content-Type: application/json" \
+           -d '{"name":"aptible-cli", "type":"client", "version": "${{ github.sha }}"}' \
+          "$ENFORCER_API/repo_version"
+        env:
+          ENFORCER_API: https://app-83237.aptible-test-leeroy.com
+          ENFORCER_USERNAME: aptible
+          ENFORCER_PASSWORD: ${{ secrets.ENFORCER_PASSWORD }}
