@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    aptible-cli (0.24.1)
+    aptible-cli (0.24.2)
       activesupport (>= 4.0, < 6.0)
       aptible-api (~> 1.6.5)
       aptible-auth (~> 1.2.5)

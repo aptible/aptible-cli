@@ -142,7 +142,8 @@ describe Aptible::CLI::Agent do
 
       expect { subject.send('operation:logs', 1) }
         .to raise_error('Unable to retrieve the operation\'s logs. '\
-          'If the issue persists please contact support for assistance.')
+          'If the issue persists please contact support for assistance, ' \
+          "or view them at https://app.aptible.com/operations/#{operation_id}")
     end
     it 'errors when body is empty' do
       operation_id = SecureRandom.uuid
@@ -163,7 +164,8 @@ describe Aptible::CLI::Agent do
 
       expect { subject.send('operation:logs', 1) }
         .to raise_error('Unable to retrieve the operation\'s logs. '\
-          'If the issue persists please contact support for assistance.')
+          'If the issue persists please contact support for assistance, ' \
+          "or view them at https://app.aptible.com/operations/#{operation_id}")
     end
     it 'errors when s3 itself returns an error code' do
       operation_id = SecureRandom.uuid
