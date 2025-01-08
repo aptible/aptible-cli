@@ -38,9 +38,10 @@ module Aptible
           # operation failed, poll_for_success will immediately fall through to
           # the error message.
           unless code == 0
-            lines = ['Disconnected from logs, waiting for operation to complete',
-            "Once complete, the logs can be viewed here: #{ui_log_url(operation)}"]
-            lines.each{|e| CLI.logger.warn e}
+            msg = ['Disconnected from logs, waiting for operation to complete',
+                   'Once complete, the logs can be viewed here:',
+                   "    #{ui_log_url(operation)}"]
+            msg.each { |e| CLI.logger.warn e }
             poll_for_success(operation)
           end
         end
@@ -77,8 +78,8 @@ module Aptible
           res = http.request(Net::HTTP::Get.new(uri.request_uri, headers))
           # note: res body with a 200 is target redirect location for download
           if !res || res.code != '200' || res.body.nil?
-            raise Thor::Error, 'Unable to retrieve the operation\'s logs. '\
-            'If the issue persists please contact support for assistance, or '
+            raise Thor::Error, 'Unable to retrieve the operation\'s logs. ' \
+            'If the issue persists please contact support for assistance, or ' \
             "view them at #{ui_log_url(operation)}"
           end
           res
