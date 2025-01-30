@@ -21,18 +21,17 @@ module Aptible
             'cmd' => cmd,
             'options' => options
           }
-          response = nil
-
           begin
-            uri = URI("https://tuna.aptible.com/www/e")
-            response = client.get(uri, {
+            uri = URI('https://tuna.aptible.com/www/e')
+            client.get(
+              uri,
               'id' => SecureRandom.uuid,
               'user_id' => user_or_org_id,
               'type' => 'cli_telemetry',
               'url' => sub,
               'value' => value
-            })
-          rescue => e
+            )
+          rescue
             # since this is just for telemetry we don't want to notify
             # user of an error
             # puts "Error: #{e.message}"

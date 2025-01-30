@@ -14,7 +14,7 @@ module Aptible
       end
 
       def self.current
-        case self.format 
+        case format
         when 'json'
           Json.new
         when 'text'
