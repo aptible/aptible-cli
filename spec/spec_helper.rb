@@ -78,9 +78,12 @@ end
 RSpec.configure do |config|
   config.before(:each) do
     reset_spec_harness
-    allow(subject)
-      .to receive(:telemetry)
-      .and_return nil
+    begin
+      allow(subject)
+        .to receive(:telemetry)
+        .and_return nil
+    rescue
+    end
   end
 
   config.include(SpecHarness)
