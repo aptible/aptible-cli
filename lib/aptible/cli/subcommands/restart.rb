@@ -6,6 +6,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Telemetry
 
             desc 'restart', 'Restart all services associated with an app'
             option :simulate_oom,
@@ -20,6 +21,8 @@ module Aptible
                          'default.'
             app_options
             def restart
+              telemetry(__method__, options)
+
               app = ensure_app(options)
               type = 'restart'
 

@@ -16,10 +16,13 @@ module Aptible
             include Helpers::Token
             include Helpers::Database
             include Helpers::MetricDrain
+            include Helpers::Telemetry
 
             desc 'metric_drain:list', 'List all Metric Drains'
             option :environment, aliases: '--env'
             define_method 'metric_drain:list' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
@@ -43,6 +46,8 @@ module Aptible
             option :environment, aliases: '--env'
 
             define_method 'metric_drain:create:influxdb' do |handle|
+              telemetry(__method__, options)
+
               account = ensure_environment(options)
               database = ensure_database(options)
 
@@ -68,6 +73,8 @@ module Aptible
             option :db, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:custom' do |handle|
+              telemetry(__method__, options)
+
               account = ensure_environment(options)
 
               config = {
@@ -97,6 +104,8 @@ module Aptible
             option :url, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:customv2' do |handle|
+              telemetry(__method__, options)
+
               account = ensure_environment(options)
 
               config = {
@@ -123,6 +132,8 @@ module Aptible
             option :site, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:datadog' do |handle|
+              telemetry(__method__, options)
+
               account = ensure_environment(options)
 
               config = {
@@ -152,6 +163,8 @@ module Aptible
                  'Deprovisions a Metric Drain'
             option :environment, aliases: '--env'
             define_method 'metric_drain:deprovision' do |handle|
+              telemetry(__method__, options)
+
               account = ensure_environment(options)
               drain = ensure_metric_drain(account, handle)
               op = drain.create_operation(type: :deprovision)

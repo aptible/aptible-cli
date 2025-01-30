@@ -10,10 +10,13 @@ module Aptible
           thor.class_eval do
             include Helpers::Environment
             include Term::ANSIColor
+            include Helpers::Telemetry
 
             desc 'backup_retention_policy [ENVIRONMENT_HANDLE]',
                  'Show the current backup retention policy for the environment'
             define_method 'backup_retention_policy' do |env|
+              telemetry(__method__, options)
+
               account = ensure_environment(environment: env)
               policy = account.backup_retention_policies.first
               unless policy
@@ -52,6 +55,8 @@ module Aptible
                    desc: 'Do not prompt for confirmation if the new policy ' \
                          'retains fewer backups than the current policy'
             define_method 'backup_retention_policy:set' do |env|
+              telemetry(__method__, options)
+
               if options.empty?
                 raise Thor::Error,
                       'Please specify at least one attribute to change'

@@ -9,8 +9,12 @@ module Aptible
     module Renderer
       FORMAT_VAR = 'APTIBLE_OUTPUT_FORMAT'.freeze
 
+      def self.format
+        ENV[FORMAT_VAR]
+      end
+
       def self.current
-        case (format = ENV[FORMAT_VAR])
+        case self.format 
         when 'json'
           Json.new
         when 'text'

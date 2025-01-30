@@ -6,6 +6,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Token
             include Helpers::Database
+            include Helpers::Telemetry
 
             desc 'backup:restore BACKUP_ID ' \
                  '[--environment ENVIRONMENT_HANDLE] [--handle HANDLE] ' \
@@ -24,6 +25,8 @@ module Aptible
                                        desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'backup:restore' do |backup_id|
+              telemetry(__method__, options)
+
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
 
@@ -74,6 +77,8 @@ module Aptible
                    default: '99y',
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
+              telemetry(__method__, options)
+
               age = ChronicDuration.parse(options[:max_age])
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
@@ -101,6 +106,8 @@ module Aptible
                              desc: 'Limit backups returned '\
                                    '(example usage: 1w, 1y, etc.)'
             define_method 'backup:orphaned' do
+              telemetry(__method__, options)
+
               age = ChronicDuration.parse(options[:max_age])
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
@@ -126,6 +133,8 @@ module Aptible
             desc 'backup:purge BACKUP_ID',
                  'Permanently delete a backup and any copies of it'
             define_method 'backup:purge' do |backup_id|
+              telemetry(__method__, options)
+
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
 

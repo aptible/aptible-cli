@@ -8,6 +8,7 @@ require 'chronic_duration'
 
 require_relative 'helpers/ssh'
 require_relative 'helpers/token'
+require_relative 'helpers/telemetry'
 require_relative 'helpers/operation'
 require_relative 'helpers/environment'
 require_relative 'helpers/app'
