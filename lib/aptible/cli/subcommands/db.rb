@@ -21,10 +21,28 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_database do |db|
+                  acc_map = {}
+                  accounts = scoped_environments(options, Renderer.format!='json')
+                  accounts.each do |account|
+                    acc_map[account.links.self.href] = account
+                  end
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_database do |db|
+                        node.object do |n|
+                          ResourceFormatter.inject_database(n, db, account)
+                        end
+                      end
+                    end
+                  else
+                    Aptible::Api::Database.all(
+                      token: fetch_token,
+                      href: '/databases?per_page=5000&no_embed=true'
+                    ).each do |db|
+                      account = acc_map[db.links.account.href]
                       node.object do |n|
-                        ResourceFormatter.inject_database(n, db, account)
+                        ResourceFormatter.inject_database_minimal(n, db, account)
                       end
                     end
                   end

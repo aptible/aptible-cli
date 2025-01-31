@@ -16,8 +16,26 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_app do |app|
+                  acc_map = {}
+                  accounts = scoped_environments(options, Renderer.format!='json')
+                  accounts.each do |account|
+                    acc_map[account.links.self.href] = account
+                  end
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_app do |app|
+                        node.object do |n|
+                          ResourceFormatter.inject_app(n, app, account)
+                        end
+                      end
+                    end
+                  else
+                    Aptible::Api::App.all(
+                      token: fetch_token,
+                      href: '/apps?per_page=5000&no_embed=true'
+                    ).each do |app|
+                      account = acc_map[app.links.account.href]
                       node.object do |n|
                         ResourceFormatter.inject_app(n, app, account)
                       end

@@ -6,7 +6,7 @@ module Aptible
       module Environment
         include Helpers::Token
 
-        def scoped_environments(options)
+        def scoped_environments(options, no_embed=false)
           if options[:environment]
             if (environment = environment_from_handle(options[:environment]))
               [environment]
@@ -14,7 +14,15 @@ module Aptible
               raise Thor::Error, 'Specified account does not exist'
             end
           else
-            Aptible::Api::Account.all(token: fetch_token)
+            href = '/accounts'
+            if no_embed
+              href = '/accounts?per_page=5000&no_embed=true'
+            end
+
+            Aptible::Api::Account.all(
+              token: fetch_token,
+              href: href
+            )
           end
         end
 

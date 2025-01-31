@@ -108,6 +108,13 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_database_minimal(node, database, account)
+          node.value('id', database.id)
+          node.value('handle', database.handle)
+          node.value('created_at', database.created_at)
+          attach_account(node, account)
+        end
+
         def inject_database(node, database, account)
           node.value('id', database.id)
           node.value('handle', database.handle)
