@@ -30,11 +30,19 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.log_drains.each do |drain|
-                      node.object do |n|
-                        ResourceFormatter.inject_log_drain(n, drain, account)
-                      end
+                  acc_map = {}
+                  accounts = scoped_environments(options)
+                  accounts.each do |account|
+                    acc_map[account.links.self.href] = account
+                  end
+
+                  Aptible::Api::LogDrain.all(
+                    token: fetch_token,
+                    href: '/log_drains?per_page=5000'
+                  ).each do |drain|
+                    account = acc_map[drain.links.account.href]
+                    node.object do |n|
+                      ResourceFormatter.inject_log_drain(n, drain, account)
                     end
                   end
                 end

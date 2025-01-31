@@ -35,7 +35,14 @@ module Aptible
           if environment
             databases = environment.databases
           else
-            databases = Aptible::Api::Database.all(token: fetch_token)
+            href = '/databases'
+            if Renderer.format != 'json'
+              href = '/databases?per_page=5000&no_embed=true'
+            end
+            databases = Aptible::Api::Database.all(
+              token: fetch_token,
+              href: href 
+            )
           end
           databases.select { |a| a.handle == handle }
         end

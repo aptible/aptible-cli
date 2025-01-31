@@ -6,7 +6,15 @@ module Aptible
       module Environment
         include Helpers::Token
 
-        def scoped_environments(options, no_embed=false)
+        def get_environment_href
+          href = '/accounts'
+          if Renderer.format != 'json'
+            href = '/accounts?per_page=5000&no_embed=true'
+          end
+          href
+        end
+
+        def scoped_environments(options)
           if options[:environment]
             if (environment = environment_from_handle(options[:environment]))
               [environment]
@@ -14,11 +22,7 @@ module Aptible
               raise Thor::Error, 'Specified account does not exist'
             end
           else
-            href = '/accounts'
-            if no_embed
-              href = '/accounts?per_page=5000&no_embed=true'
-            end
-
+            href = get_environment_href 
             Aptible::Api::Account.all(
               token: fetch_token,
               href: href
@@ -38,13 +42,19 @@ module Aptible
 
         def environment_from_handle(handle)
           return nil unless handle
-          Aptible::Api::Account.all(token: fetch_token).find do |a|
+          href = get_environment_href 
+
+          Aptible::Api::Account.all(token: fetch_token, href: href).find do |a|
             a.handle == handle
           end
         end
 
         def ensure_default_environment
-          environments = Aptible::Api::Account.all(token: fetch_token)
+          href = get_environment_href 
+          environments = Aptible::Api::Account.all(
+            token: fetch_token,
+            href: href
+          )
           case environments.count
           when 0
             e = 'No environments. Go to https://app.aptible.com/ to proceed'

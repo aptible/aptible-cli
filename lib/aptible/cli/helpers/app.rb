@@ -156,7 +156,11 @@ module Aptible
           if environment
             environment.apps
           else
-            Aptible::Api::App.all(token: fetch_token)
+            href = '/apps'
+            if Renderer.format != 'json'
+              href = '/apps?per_page=5000&no_embed=true'
+            end
+            Aptible::Api::App.all(token: fetch_token, href: href)
           end.select { |a| a.handle == handle }
         end
 
