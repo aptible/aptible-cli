@@ -30,4 +30,12 @@ Fabricator(:account, from: :stub_account) do
   metric_drains { [] }
   backup_retention_policies { [] }
   created_at { Time.now }
+  links do |attrs|
+    hash = {
+      self: OpenStruct.new(
+        href: "/accounts/#{attrs[:id]}"
+      )
+    }
+    OpenStruct.new(hash)
+  end
 end

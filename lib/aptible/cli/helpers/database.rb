@@ -40,18 +40,18 @@ module Aptible
         end
 
         def databases_all
-          databases = Aptible::Api::Database.all(
+          Aptible::Api::Database.all(
             token: fetch_token,
             href: databases_href
           )
         end
 
         def databases_from_handle(handle, environment)
-          if environment
-            databases = environment.databases
-          else
-            databases = databases_all
-          end
+          databases = if environment
+                        environment.databases
+                      else
+                        databases_all
+                      end
           databases.select { |a| a.handle == handle }
         end
 

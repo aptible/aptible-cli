@@ -31,5 +31,14 @@ Fabricator(:app, from: :stub_app) do
   errors { Aptible::Resource::Errors.new }
   created_at { Time.now }
 
+  links do |attrs|
+    hash = {
+      account: OpenStruct.new(
+        href: "/accounts/#{attrs[:account].id}"
+      )
+    }
+    OpenStruct.new(hash)
+  end
+
   after_create { |app| app.account.apps << app }
 end
