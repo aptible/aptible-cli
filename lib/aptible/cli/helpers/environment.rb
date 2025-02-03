@@ -6,7 +6,7 @@ module Aptible
       module Environment
         include Helpers::Token
 
-        def get_environment_href
+        def environment_href
           href = '/accounts'
           if Renderer.format != 'json'
             href = '/accounts?per_page=5000&no_embed=true'
@@ -22,7 +22,7 @@ module Aptible
               raise Thor::Error, 'Specified account does not exist'
             end
           else
-            href = get_environment_href 
+            href = environment_href
             Aptible::Api::Account.all(
               token: fetch_token,
               href: href
@@ -42,15 +42,14 @@ module Aptible
 
         def environment_from_handle(handle)
           return nil unless handle
-          href = get_environment_href 
-
+          href = environment_href
           Aptible::Api::Account.all(token: fetch_token, href: href).find do |a|
             a.handle == handle
           end
         end
 
         def ensure_default_environment
-          href = get_environment_href 
+          href = environment_href
           environments = Aptible::Api::Account.all(
             token: fetch_token,
             href: href

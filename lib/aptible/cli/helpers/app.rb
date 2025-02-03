@@ -151,16 +151,27 @@ module Aptible
           service
         end
 
+        def apps_href
+          href = '/apps'
+          if Renderer.format != 'json'
+            href = '/apps?per_page=5000&no_embed=true'
+          end
+          href
+        end
+
+        def apps_all
+          Aptible::Api::App.all(
+            token: fetch_token,
+            href: apps_href
+          )
+        end
+
         def apps_from_handle(handle, environment)
           # TODO: This should probably use each_app for more efficiency.
           if environment
             environment.apps
           else
-            href = '/apps'
-            if Renderer.format != 'json'
-              href = '/apps?per_page=5000&no_embed=true'
-            end
-            Aptible::Api::App.all(token: fetch_token, href: href)
+            apps_all
           end.select { |a| a.handle == handle }
         end
 

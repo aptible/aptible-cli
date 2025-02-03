@@ -36,13 +36,14 @@ module Aptible
                       end
                     end
                   else
-                    Aptible::Api::Database.all(
-                      token: fetch_token,
-                      href: '/databases?per_page=5000&no_embed=true'
-                    ).each do |db|
+                    databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       node.object do |n|
-                        ResourceFormatter.inject_database_minimal(n, db, account)
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          account
+                        )
                       end
                     end
                   end

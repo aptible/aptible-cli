@@ -31,10 +31,7 @@ module Aptible
                       end
                     end
                   else
-                    Aptible::Api::App.all(
-                      token: fetch_token,
-                      href: '/apps?per_page=5000&no_embed=true'
-                    ).each do |app|
+                    apps_all.each do |app|
                       account = acc_map[app.links.account.href]
                       node.object do |n|
                         ResourceFormatter.inject_app(n, app, account)
