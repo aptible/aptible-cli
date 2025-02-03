@@ -48,6 +48,14 @@ module Aptible
           end
         end
 
+        def environment_map(accounts)
+          acc_map = {}
+          accounts.each do |account|
+            acc_map[account.links.self.href] = account
+          end
+          acc_map
+        end
+
         def ensure_default_environment
           href = environment_href
           environments = Aptible::Api::Account.all(

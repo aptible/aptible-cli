@@ -21,11 +21,8 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  acc_map = {}
                   accounts = scoped_environments(options)
-                  accounts.each do |account|
-                    acc_map[account.links.self.href] = account
-                  end
+                  acc_map = environment_map(accounts)
 
                   if Renderer.format == 'json'
                     accounts.each do |account|
