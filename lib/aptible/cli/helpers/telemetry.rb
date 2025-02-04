@@ -13,7 +13,14 @@ module Aptible
           parsed_url = URI.parse(sub)
           path_components = parsed_url.path.split('/')
           user_or_org_id = path_components.last
-          client = HTTPClient.new
+          # https://github.com/aptible/aptible-resource/blob/7c3a79e6eee9c88aa7dbf332e550508f22a5b08d/lib/hyper_resource/modules/http.rb#L21
+          client = HTTPClient.new.tap do |c|
+            c.cookie_manager = nil
+            c.connect_timeout = 30
+            c.send_timeout = 45
+            c.keep_alive_timeout = 15
+            c.ssl_config.set_default_paths
+          end
 
           value = {
             'email' => token_hash[0]['email'],
@@ -21,6 +28,7 @@ module Aptible
             'cmd' => cmd,
             'options' => options
           }
+
           begin
             uri = URI('https://tuna.aptible.com/www/e')
             client.get(
@@ -34,7 +42,6 @@ module Aptible
           rescue
             # since this is just for telemetry we don't want to notify
             # user of an error
-            # puts "Error: #{e.message}"
           end
         end
       end
