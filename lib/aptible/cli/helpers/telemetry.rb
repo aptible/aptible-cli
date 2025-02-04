@@ -9,6 +9,7 @@ module Aptible
         def telemetry(cmd, options = {})
           token_hash = decode_token
           format = Renderer.format
+          format = 'text' if format.nil?
           sub = token_hash[0]['sub']
           parsed_url = URI.parse(sub)
           path_components = parsed_url.path.split('/')
@@ -26,7 +27,14 @@ module Aptible
             'email' => token_hash[0]['email'],
             'format' => format,
             'cmd' => cmd,
-            'options' => options
+            'options' => options,
+            'version' => version_string,
+            # https://stackoverflow.com/a/73973555
+            'github' => ENV['GITHUB_ACTIONS'],
+            'gitlab' => ENV['GITLAB_CI'],
+            'travis' => ENV['TRAVIS'],
+            'circleci' => ENV['CIRCLECI'],
+            'ci' => ENV['CI']
           }
 
           begin
