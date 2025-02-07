@@ -33,6 +33,8 @@ module Aptible
                     href: '/metric_drains?per_page=5000'
                   ).each do |drain|
                     account = acc_map[drain.links.account.href]
+                    next if account.nil?
+
                     node.object do |n|
                       ResourceFormatter.inject_metric_drain(n, drain, account)
                     end

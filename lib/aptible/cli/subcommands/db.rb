@@ -36,6 +36,7 @@ module Aptible
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
+
                       node.object do |n|
                         ResourceFormatter.inject_database_minimal(
                           n,

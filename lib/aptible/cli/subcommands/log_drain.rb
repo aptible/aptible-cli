@@ -38,6 +38,8 @@ module Aptible
                     href: '/log_drains?per_page=5000'
                   ).each do |drain|
                     account = acc_map[drain.links.account.href]
+                    next if account.nil?
+
                     node.object do |n|
                       ResourceFormatter.inject_log_drain(n, drain, account)
                     end

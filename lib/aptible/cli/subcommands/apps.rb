@@ -30,6 +30,8 @@ module Aptible
                   else
                     apps_all.each do |app|
                       account = acc_map[app.links.account.href]
+                      next if account.nil?
+
                       node.object do |n|
                         ResourceFormatter.inject_app(n, app, account)
                       end
