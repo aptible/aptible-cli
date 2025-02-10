@@ -110,12 +110,8 @@ module Aptible
             end
           end
 
-          apps = apps_from_handle(s.app_handle, environment)
-
-          case apps.count
-          when 1
-            return apps.first
-          when 0
+          app = app_from_handle(s.app_handle, environment)
+          if app.nil?
             err_bits = ['Could not find app', s.app_handle]
             if environment
               err_bits << 'in environment'
@@ -125,11 +121,9 @@ module Aptible
             end
             err_bits << s.explain
             raise Thor::Error, err_bits.join(' ')
-          else
-            err = "Multiple apps named #{s.app_handle} exist, please specify " \
-                  'with --environment'
-            raise Thor::Error, err
           end
+
+          app
         end
 
         def ensure_service(options, type)
@@ -166,13 +160,24 @@ module Aptible
           )
         end
 
-        def apps_from_handle(handle, environment)
-          # TODO: This should probably use each_app for more efficiency.
-          if environment
-            environment.apps
-          else
-            apps_all
-          end.select { |a| a.handle == handle }
+        def app_from_handle(handle, environment)
+          url = "/search/app?handle=#{handle}"
+          url += "&environment=#{environment.handle}" unless environment.nil?
+
+          begin
+            return Aptible::Api::App.find_by_url(
+              url,
+              token: fetch_token
+            )
+          rescue => e
+            if e.body['error'] == 'unprocessable_entity'
+              err = "Multiple apps named #{handle} exist, please specify " \
+                    'with --environment'
+              raise Thor::Error, err
+            end
+          end
+
+          nil
         end
 
         def extract_env(args)
