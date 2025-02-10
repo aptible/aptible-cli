@@ -1,5 +1,6 @@
 require 'base64'
 require 'uri'
+require 'logger'
 
 require 'aptible/auth'
 require 'thor'
@@ -81,7 +82,13 @@ module Aptible
 
       def initialize(*)
         nag_toolbelt unless toolbelt?
-        Aptible::Resource.configure { |conf| conf.user_agent = version_string }
+        Aptible::Resource.configure do |conf|
+          conf.user_agent = version_string
+          level = Logger::WARN
+          debug_level = ENV['APTIBLE_DEBUG']
+          level = debug_level if debug_level
+          conf.logger.tap { |l| l.level = level }
+        end
         warn_sso_enforcement
         super
       end

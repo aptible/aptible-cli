@@ -31,6 +31,9 @@ describe Aptible::CLI::Agent do
   describe '#apps' do
     it 'lists an app in an account' do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      allow(Aptible::Api::App)
+        .to receive(:all)
+        .and_return([app])
       subject.send('apps')
 
       expect(captured_output_text)
@@ -40,8 +43,11 @@ describe Aptible::CLI::Agent do
     it 'lists multiple apps in an account' do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
       app2 = Fabricate(:app, handle: 'foobar', account: account)
-      subject.send('apps')
+      allow(Aptible::Api::App)
+        .to receive(:all)
+        .and_return([app, app2])
 
+      subject.send('apps')
       expect(captured_output_text)
         .to eq("=== #{account.handle}\n#{app.handle}\n#{app2.handle}\n")
     end
@@ -54,6 +60,9 @@ describe Aptible::CLI::Agent do
       app21 = Fabricate(:app, account: account2, handle: 'app21')
       app22 = Fabricate(:app, account: account2, handle: 'app21')
 
+      allow(Aptible::Api::App)
+        .to receive(:all)
+        .and_return([app11, app21, app22])
       allow(Aptible::Api::Account).to receive(:all)
         .and_return([account1, account2])
 
@@ -77,6 +86,7 @@ describe Aptible::CLI::Agent do
       app2 = Fabricate(:app, account: account2, handle: 'app2')
       allow(subject).to receive(:options)
         .and_return(environment: account2.handle)
+      allow(Aptible::Api::App).to receive(:all).and_return([app2])
 
       allow(Aptible::Api::Account).to receive(:all)
         .and_return([account, account2])
@@ -90,6 +100,7 @@ describe Aptible::CLI::Agent do
       account = Fabricate(:account, handle: 'account')
       app = Fabricate(:app, account: account, handle: 'app')
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      allow(Aptible::Api::App).to receive(:all).and_return([app])
 
       s1 = Fabricate(
         :service,
@@ -148,6 +159,7 @@ describe Aptible::CLI::Agent do
       app = Fabricate(:app, account: account, handle: 'app',
                             last_deploy_operation: op)
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
+      allow(Aptible::Api::App).to receive(:all).and_return([app])
 
       expected_json = [
         {

@@ -55,7 +55,7 @@ describe Aptible::CLI::Agent do
       token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all)
-        .with(token: token)
+        .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::MaintenanceDatabase).to receive(:all)
         .with(token: token)
@@ -123,7 +123,8 @@ describe Aptible::CLI::Agent do
     before do
       token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
-      allow(Aptible::Api::Account).to receive(:all).with(token: token)
+      allow(Aptible::Api::Account).to receive(:all)
+        .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::MaintenanceApp).to receive(:all).with(token: token)
         .and_return(maintenance_apps)

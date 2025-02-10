@@ -8,7 +8,9 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token) { token }
-    allow(Aptible::Api::Account).to receive(:all).with(token: token)
+    allow(Aptible::Api::Account)
+      .to receive(:all)
+      .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
   end
 
@@ -60,7 +62,9 @@ describe Aptible::CLI::Agent do
     let!(:db) { Fabricate(:database, handle: 'mydb', account: a1) }
 
     before do
-      allow(Aptible::Api::Database).to receive(:all).with(token: token)
+      allow(Aptible::Api::Database)
+        .to receive(:all)
+        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
         .and_return([db])
       allow(db).to receive(:class).and_return(Aptible::Api::Database)
       stub_options
@@ -185,7 +189,9 @@ describe Aptible::CLI::Agent do
     let!(:service) { Fabricate(:service, app: app, process_type: 'web') }
 
     before do
-      allow(Aptible::Api::App).to receive(:all).with(token: token)
+      allow(Aptible::Api::App)
+        .to receive(:all)
+        .with(token: token, href: '/apps?per_page=5000&no_embed=true')
         .and_return([app])
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options

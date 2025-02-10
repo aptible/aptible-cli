@@ -24,10 +24,28 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_database do |db|
+                  accounts = scoped_environments(options)
+                  acc_map = environment_map(accounts)
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_database do |db|
+                        node.object do |n|
+                          ResourceFormatter.inject_database(n, db, account)
+                        end
+                      end
+                    end
+                  else
+                    databases_all.each do |db|
+                      account = acc_map[db.links.account.href]
+                      next if account.nil?
+
                       node.object do |n|
-                        ResourceFormatter.inject_database(n, db, account)
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          account
+                        )
                       end
                     end
                   end

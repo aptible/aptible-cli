@@ -28,11 +28,18 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.metric_drains.each do |drain|
-                      node.object do |n|
-                        ResourceFormatter.inject_metric_drain(n, drain, account)
-                      end
+                  accounts = scoped_environments(options)
+                  acc_map = environment_map(accounts)
+
+                  Aptible::Api::MetricDrain.all(
+                    token: fetch_token,
+                    href: '/metric_drains?per_page=5000'
+                  ).each do |drain|
+                    account = acc_map[drain.links.account.href]
+                    next if account.nil?
+
+                    node.object do |n|
+                      ResourceFormatter.inject_metric_drain(n, drain, account)
                     end
                   end
                 end

@@ -12,7 +12,9 @@ describe Aptible::CLI::Agent do
 
   before(:each) do
     allow(subject).to receive(:fetch_token) { token }
-    allow(Aptible::Api::Account).to receive(:all).with(token: token)
+    allow(Aptible::Api::Account)
+      .to receive(:all)
+      .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
   end
 

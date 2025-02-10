@@ -9,9 +9,11 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(Aptible::Api::App).to receive(:all)
-      .with(token: token).and_return([app])
+      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
+      .and_return([app])
     allow(Aptible::Api::Account).to receive(:all)
-      .with(token: token).and_return([account])
+      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
+      .and_return([account])
   end
 
   before { allow(subject).to receive(:options) { { app: app.handle } } }

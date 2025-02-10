@@ -19,6 +19,14 @@ Fabricator(:database, from: :stub_database) do
   database_image
   disk { Fabricate(:database_disk) }
   service { nil }
+  links do |attrs|
+    hash = {
+      account: OpenStruct.new(
+        href: "/accounts/#{attrs[:account].id}"
+      )
+    }
+    OpenStruct.new(hash)
+  end
 
   backups { [] }
   database_credentials { [] }

@@ -19,8 +19,22 @@ module Aptible
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_app do |app|
+                  accounts = scoped_environments(options)
+                  acc_map = environment_map(accounts)
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_app do |app|
+                        node.object do |n|
+                          ResourceFormatter.inject_app(n, app, account)
+                        end
+                      end
+                    end
+                  else
+                    apps_all.each do |app|
+                      account = acc_map[app.links.account.href]
+                      next if account.nil?
+
                       node.object do |n|
                         ResourceFormatter.inject_app(n, app, account)
                       end
