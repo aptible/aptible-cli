@@ -7,6 +7,7 @@ module Aptible
             include Helpers::Token
             include Helpers::Database
             include Helpers::LogDrain
+            include Helpers::Telemetry
 
             drain_flags = '--environment ENVIRONMENT ' \
                           '[--drain-apps true/false] ' \
@@ -25,6 +26,8 @@ module Aptible
             desc 'log_drain:list', 'List all Log Drains'
             option :environment, aliases: '--env'
             define_method 'log_drain:list' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
@@ -49,6 +52,8 @@ module Aptible
             option :db, type: :string
             option :pipeline, type: :string
             define_method 'log_drain:create:elasticsearch' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               account = ensure_environment(options)
               database = ensure_database(options)
 
@@ -73,6 +78,8 @@ module Aptible
             drain_options
             option :url, type: :string
             define_method 'log_drain:create:datadog' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               msg = 'Must be in the format of ' \
                     '"https://http-intake.logs.datadoghq.com' \
                     '/v1/input/<DD_API_KEY>".'
@@ -86,6 +93,7 @@ module Aptible
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:https' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
               create_https_based_log_drain(handle, options)
             end
 
@@ -96,6 +104,7 @@ module Aptible
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:sumologic' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
               create_https_based_log_drain(handle, options)
             end
 
@@ -106,6 +115,8 @@ module Aptible
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:logdna' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               msg = 'Must be in the format of ' \
                     '"https://logs.logdna.com/aptible/ingest/<INGESTION KEY>".'
               create_https_based_log_drain(handle, options, url_format_msg: msg)
@@ -119,6 +130,7 @@ module Aptible
             option :port, type: :string
             drain_options
             define_method 'log_drain:create:papertrail' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
               create_syslog_based_log_drain(handle, options)
             end
 
@@ -132,6 +144,7 @@ module Aptible
             option :token, type: :string
             drain_options
             define_method 'log_drain:create:syslog' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
               create_syslog_based_log_drain(handle, options)
             end
 
@@ -139,6 +152,7 @@ module Aptible
                  'Deprovisions a log drain'
             option :environment, aliases: '--env'
             define_method 'log_drain:deprovision' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
               account = ensure_environment(options)
               drain = ensure_log_drain(account, handle)
               op = drain.create_operation(type: :deprovision)

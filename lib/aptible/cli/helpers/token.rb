@@ -1,4 +1,5 @@
 require 'aptible/auth'
+require 'jwt'
 
 require_relative 'config_path'
 
@@ -45,6 +46,11 @@ module Aptible
 
         def token_file
           File.join(aptible_config_path, 'tokens.json').freeze
+        end
+
+        def decode_token
+          tok = fetch_token
+          JWT.decode(tok, nil, false)
         end
       end
     end

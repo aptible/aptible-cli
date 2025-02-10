@@ -7,12 +7,15 @@ module Aptible
             include Helpers::Environment
             include Helpers::Maintenance
             include Helpers::Token
+            include Helpers::Telemetry
 
             desc 'maintenance:apps',
                  'List Apps impacted by maintenance schedules where '\
                  'restarts are required'
             option :environment, aliases: '--env'
             define_method 'maintenance:apps' do
+              telemetry(__method__, options)
+
               found_maintenance = false
               m = maintenance_apps
               Formatter.render(Renderer.current) do |root|
@@ -48,6 +51,8 @@ module Aptible
                  'restarts are required'
             option :environment, aliases: '--env'
             define_method 'maintenance:dbs' do
+              telemetry(__method__, options)
+
               found_maintenance = false
               m = maintenance_databases
               Formatter.render(Renderer.current) do |root|

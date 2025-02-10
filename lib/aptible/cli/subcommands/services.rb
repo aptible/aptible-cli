@@ -5,10 +5,13 @@ module Aptible
         def self.included(thor)
           thor.class_eval do
             include Helpers::App
+            include Helpers::Telemetry
 
             desc 'services', 'List Services for an App'
             app_options
             def services
+              telemetry(__method__, options)
+
               app = ensure_app(options)
 
               Formatter.render(Renderer.current) do |root|
@@ -35,6 +38,8 @@ module Aptible
                    type: :boolean, default: false,
                    desc: 'Use a simple uptime healthcheck during deployments'
             define_method 'services:settings' do |service|
+              telemetry(__method__, options.merge(service: service))
+
               service = ensure_service(options, service)
               updates = {}
               updates[:force_zero_downtime] =
@@ -49,6 +54,8 @@ module Aptible
                  'Returns the associated sizing policy, if any'
             app_options
             define_method 'services:autoscaling_policy' do |service|
+              telemetry(__method__, options.merge(service: service))
+
               service = ensure_service(options, service)
               policy = service.service_sizing_policy
 
@@ -187,6 +194,8 @@ module Aptible
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
             define_method 'services:autoscaling_policy:set' do |service|
+              telemetry(__method__, options.merge(service: service))
+
               service = ensure_service(options, service)
               ignored_attrs = %i(autoscaling_type app environment remote)
               args = options.except(*ignored_attrs)

@@ -7,10 +7,13 @@ module Aptible
             include Helpers::App
             include Helpers::Environment
             include Helpers::Token
+            include Helpers::Telemetry
 
             desc 'apps', 'List all applications'
             option :environment, aliases: '--env'
             def apps
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
@@ -30,6 +33,8 @@ module Aptible
             desc 'apps:create HANDLE', 'Create a new application'
             option :environment, aliases: '--env'
             define_method 'apps:create' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               environment = ensure_environment(options)
               app = environment.create_app(handle: handle)
 
@@ -56,6 +61,8 @@ module Aptible
             option :container_profile, type: :string,
                                        desc: 'Examples: m c r'
             define_method 'apps:scale' do |type|
+              telemetry(__method__, options.merge(type: type))
+
               service = ensure_service(options, type)
 
               container_count = options[:container_count]
@@ -89,6 +96,8 @@ module Aptible
             desc 'apps:deprovision', 'Deprovision an app'
             app_options
             define_method 'apps:deprovision' do
+              telemetry(__method__, options)
+
               app = ensure_app(options)
               CLI.logger.info "Deprovisioning #{app.handle}..."
               op = app.create_operation!(type: 'deprovision')
@@ -108,6 +117,12 @@ module Aptible
                  ' drain destinations, you must restart the app.'
             option :environment, aliases: '--env'
             define_method 'apps:rename' do |old_handle, new_handle|
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
+
               env = ensure_environment(options)
               app = ensure_app(options.merge(app: old_handle))
               app.update!(handle: new_handle)
