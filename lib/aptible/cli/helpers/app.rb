@@ -180,6 +180,8 @@ module Aptible
           rescue => e
             return [nil, nil] if e.body['error'] == 'unprocessable_entity'
           end
+
+          []
         end
 
         def extract_env(args)

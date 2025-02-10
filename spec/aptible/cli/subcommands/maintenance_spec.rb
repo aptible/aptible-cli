@@ -51,15 +51,15 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#maintenance:dbs' do
+    token = 'the-token'
     before do
-      token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::MaintenanceDatabase).to receive(:all)
         .with(token: token)
-        .and_return(maintenance_dbs)
+        .and_return(maintenance_dbs) 
     end
 
     context 'when no account is specified' do
@@ -91,6 +91,9 @@ describe Aptible::CLI::Agent do
 
     context 'when a valid account is specified' do
       it 'prints out the database handles for the account' do
+        allow(Aptible::Api::Account).to receive(:find_by_url)
+          .with('/search/account?handle=staging', token: token)
+          .and_return(staging)
         subject.options = { environment: 'staging' }
         subject.send('maintenance:dbs')
 
@@ -113,6 +116,9 @@ describe Aptible::CLI::Agent do
 
     context 'when an invalid account is specified' do
       it 'prints out an error' do
+        allow(Aptible::Api::Account).to receive(:find_by_url)
+          .with('/search/account?handle=foo', token: token)
+          .and_return(nil)
         subject.options = { environment: 'foo' }
         expect { subject.send('maintenance:dbs') }
           .to raise_error('Specified account does not exist')
@@ -120,14 +126,14 @@ describe Aptible::CLI::Agent do
     end
   end
   describe '#maintenance:apps' do
+    token = 'the-token'
     before do
-      token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::MaintenanceApp).to receive(:all).with(token: token)
-        .and_return(maintenance_apps)
+        .and_return(maintenance_apps) 
     end
 
     context 'when no account is specified' do
@@ -159,6 +165,9 @@ describe Aptible::CLI::Agent do
 
     context 'when a valid account is specified' do
       it 'prints out the app handles for the account' do
+        allow(Aptible::Api::Account).to receive(:find_by_url)
+          .with('/search/account?handle=staging', token: token)
+          .and_return(staging)
         subject.options = { environment: 'staging' }
         subject.send('maintenance:apps')
 
@@ -181,6 +190,9 @@ describe Aptible::CLI::Agent do
 
     context 'when an invalid account is specified' do
       it 'prints out an error' do
+        expect(Aptible::Api::Account).to receive(:find_by_url)
+          .with('/search/account?handle=foo', token: token)
+          .and_return(nil)
         subject.options = { environment: 'foo' }
         expect { subject.send('maintenance:apps') }
           .to raise_error('Specified account does not exist')

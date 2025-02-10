@@ -7,9 +7,9 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:fetch_token) { token }
     allow(Aptible::Api::App)
-      .to receive(:all)
-      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
-      .and_return([app])
+      .to receive(:find_by_url)
+      .with('/search/app?handle=hello', token: token)
+      .and_return(app)
   end
 
   describe '#services' do

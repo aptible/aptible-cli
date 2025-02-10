@@ -61,6 +61,8 @@ module Aptible
           rescue => e
             return [nil, nil] if e.body['error'] == 'unprocessable_entity'
           end
+
+          []
         end
 
         def clone_database(source, dest_handle)
