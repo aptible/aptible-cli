@@ -19,11 +19,16 @@ module Aptible
             raise Thor::Error,
                   "Could not find environment #{environment_handle}"
           end
-          database = database_from_handle(db_handle, environment)
-          if database.nil?
+          databases = databases_from_handle(db_handle, environment)
+          case databases.count
+          when 1
+            return databases[0]
+          when 0
             raise Thor::Error, "Could not find database #{db_handle}"
+          else
+            err = 'Multiple databases exist, please specify with --environment'
+            raise Thor::Error, err
           end
-          database
         end
 
         def databases_href
@@ -46,19 +51,18 @@ module Aptible
           url += "&environment=#{environment.handle}" unless environment.nil?
 
           begin
-            return Aptible::Api::Database.find_by_url(
+            db = Aptible::Api::Database.find_by_url(
               url,
               token: fetch_token
             )
+            return [] if db.nil?
+
+            return [db]
           rescue => e
             if e.body['error'] == 'unprocessable_entity'
-              err = "Multiple databases named #{handle} exist, " \
-                    'please specify with --environment'
-              raise Thor::Error, err
+              return [nil, nil]
             end
           end
-
-          nil
         end
 
         def clone_database(source, dest_handle)
