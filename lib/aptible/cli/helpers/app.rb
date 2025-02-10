@@ -178,9 +178,7 @@ module Aptible
 
             return [app]
           rescue => e
-            if e.body['error'] == 'unprocessable_entity'
-              return [nil, nil]
-            end
+            return [nil, nil] if e.body['error'] == 'unprocessable_entity'
           end
         end
 
