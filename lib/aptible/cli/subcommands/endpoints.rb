@@ -21,7 +21,7 @@ module Aptible
                  'Create a Database Endpoint'
             database_create_flags.declare_options(self)
             define_method 'endpoints:database:create' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               database = ensure_database(options.merge(db: handle))
               service = database.service
@@ -45,7 +45,7 @@ module Aptible
                  'Modify a Database Endpoint'
             database_modify_flags.declare_options(self)
             define_method 'endpoints:database:modify' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               database = ensure_database(options.merge(db: options[:database]))
               vhost = find_vhost(each_service(database), hostname)
@@ -64,7 +64,7 @@ module Aptible
                  'Create an App TCP Endpoint'
             tcp_create_flags.declare_options(self)
             define_method 'endpoints:tcp:create' do |type|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(type: type))
 
               create_app_vhost(
                 tcp_create_flags, options, type,
@@ -81,7 +81,7 @@ module Aptible
                  'Modify an App TCP Endpoint'
             tcp_modify_flags.declare_options(self)
             define_method 'endpoints:tcp:modify' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               modify_app_vhost(tcp_modify_flags, options, hostname)
             end
@@ -97,7 +97,7 @@ module Aptible
                  'Create an App TLS Endpoint'
             tls_create_flags.declare_options(self)
             define_method 'endpoints:tls:create' do |type|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(type: type))
 
               create_app_vhost(
                 tls_create_flags, options, type,
@@ -115,7 +115,7 @@ module Aptible
                  'Modify an App TLS Endpoint'
             tls_modify_flags.declare_options(self)
             define_method 'endpoints:tls:modify' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               modify_app_vhost(tls_modify_flags, options, hostname)
             end
@@ -131,7 +131,7 @@ module Aptible
                  'Create an App gRPC Endpoint'
             grpc_create_flags.declare_options(self)
             define_method 'endpoints:grpc:create' do |type|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(type: type))
 
               create_app_vhost(
                 grpc_create_flags, options, type,
@@ -149,7 +149,7 @@ module Aptible
                  'Modify an App gRPC Endpoint'
             grpc_modify_flags.declare_options(self)
             define_method 'endpoints:grpc:modify' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               modify_app_vhost(grpc_modify_flags, options, hostname)
             end
@@ -165,7 +165,7 @@ module Aptible
                  'Create an App HTTPS Endpoint'
             https_create_flags.declare_options(self)
             define_method 'endpoints:https:create' do |type|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(type: type))
 
               create_app_vhost(
                 https_create_flags, options, type,
@@ -183,7 +183,7 @@ module Aptible
                  'Modify an App HTTPS Endpoint'
             https_modify_flags.declare_options(self)
             define_method 'endpoints:https:modify' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
               modify_app_vhost(https_modify_flags, options, hostname)
             end
 
@@ -213,7 +213,7 @@ module Aptible
                  'Deprovision an App or Database Endpoint'
             app_or_database_options
             define_method 'endpoints:deprovision' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               resource = ensure_app_or_database(options)
               vhost = find_vhost(each_service(resource), hostname)
@@ -233,7 +233,7 @@ module Aptible
             LONGDESC
             app_options
             define_method 'endpoints:renew' do |hostname|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(hostname: hostname))
 
               app = ensure_app(options)
               vhost = find_vhost(app.each_service, hostname)

@@ -25,7 +25,7 @@ module Aptible
                                        desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'backup:restore' do |backup_id|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(backup_id: backup_id))
 
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
@@ -77,7 +77,7 @@ module Aptible
                    default: '99y',
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               age = ChronicDuration.parse(options[:max_age])
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
@@ -133,7 +133,7 @@ module Aptible
             desc 'backup:purge BACKUP_ID',
                  'Permanently delete a backup and any copies of it'
             define_method 'backup:purge' do |backup_id|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(backup_id: backup_id))
 
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?

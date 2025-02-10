@@ -10,7 +10,7 @@ module Aptible
 
             desc 'operation:cancel OPERATION_ID', 'Cancel a running operation'
             define_method 'operation:cancel' do |operation_id|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(operation_id: operation_id))
 
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
@@ -23,7 +23,7 @@ module Aptible
             desc 'operation:follow OPERATION_ID',
                  'Follow logs of a running operation'
             define_method 'operation:follow' do |operation_id|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(operation_id: operation_id))
 
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?
@@ -42,7 +42,7 @@ module Aptible
 
             desc 'operation:logs OPERATION_ID', 'View logs for given operation'
             define_method 'operation:logs' do |operation_id|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(operation_id: operation_id))
 
               o = Aptible::Api::Operation.find(operation_id, token: fetch_token)
               raise "Operation ##{operation_id} not found" if o.nil?

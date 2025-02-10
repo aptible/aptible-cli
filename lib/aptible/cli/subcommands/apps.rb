@@ -33,7 +33,7 @@ module Aptible
             desc 'apps:create HANDLE', 'Create a new application'
             option :environment, aliases: '--env'
             define_method 'apps:create' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               environment = ensure_environment(options)
               app = environment.create_app(handle: handle)
@@ -61,7 +61,7 @@ module Aptible
             option :container_profile, type: :string,
                                        desc: 'Examples: m c r'
             define_method 'apps:scale' do |type|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(type: type))
 
               service = ensure_service(options, type)
 
@@ -117,7 +117,11 @@ module Aptible
                  ' drain destinations, you must restart the app.'
             option :environment, aliases: '--env'
             define_method 'apps:rename' do |old_handle, new_handle|
-              telemetry(__method__, options)
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
 
               env = ensure_environment(options)
               app = ensure_app(options.merge(app: old_handle))

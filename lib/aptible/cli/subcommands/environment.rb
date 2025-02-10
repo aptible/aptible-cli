@@ -53,7 +53,11 @@ module Aptible
                  ' destinations, you must restart the apps/databases in'\
                  ' this environment.'
             define_method 'environment:rename' do |old_handle, new_handle|
-              telemetry(__method__, options)
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
 
               env = ensure_environment(options.merge(environment: old_handle))
               env.update!(handle: new_handle)

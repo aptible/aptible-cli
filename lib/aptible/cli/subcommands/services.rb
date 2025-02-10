@@ -38,7 +38,7 @@ module Aptible
                    type: :boolean, default: false,
                    desc: 'Use a simple uptime healthcheck during deployments'
             define_method 'services:settings' do |service|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(service: service))
 
               service = ensure_service(options, service)
               updates = {}
@@ -54,7 +54,7 @@ module Aptible
                  'Returns the associated sizing policy, if any'
             app_options
             define_method 'services:autoscaling_policy' do |service|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(service: service))
 
               service = ensure_service(options, service)
               policy = service.service_sizing_policy
@@ -194,7 +194,7 @@ module Aptible
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
             define_method 'services:autoscaling_policy:set' do |service|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(service: service))
 
               service = ensure_service(options, service)
               ignored_attrs = %i(autoscaling_type app environment remote)

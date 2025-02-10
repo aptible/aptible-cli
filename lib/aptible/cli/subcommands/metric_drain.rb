@@ -46,7 +46,7 @@ module Aptible
             option :environment, aliases: '--env'
 
             define_method 'metric_drain:create:influxdb' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               account = ensure_environment(options)
               database = ensure_database(options)
@@ -73,7 +73,7 @@ module Aptible
             option :db, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:custom' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               account = ensure_environment(options)
 
@@ -104,7 +104,7 @@ module Aptible
             option :url, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:influxdb:customv2' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               account = ensure_environment(options)
 
@@ -132,7 +132,7 @@ module Aptible
             option :site, type: :string
             option :environment, aliases: '--env'
             define_method 'metric_drain:create:datadog' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               account = ensure_environment(options)
 
@@ -163,7 +163,7 @@ module Aptible
                  'Deprovisions a Metric Drain'
             option :environment, aliases: '--env'
             define_method 'metric_drain:deprovision' do |handle|
-              telemetry(__method__, options)
+              telemetry(__method__, options.merge(handle: handle))
 
               account = ensure_environment(options)
               drain = ensure_metric_drain(account, handle)
