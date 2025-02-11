@@ -126,9 +126,9 @@ module Aptible
                    'be considered.'
             option :post_release_cooldown_seconds,
                    type: :numeric,
-                   desc: '(Default: 300) The time in seconds to wait '\
-                   'following a deploy before another scaling action can '\
-                   'be considered.'
+                   desc: '(Default: 60) The time in seconds to ignore in '\
+                   'metrics following a deploy to allow for service '\
+                   'stabilization.'
             option :mem_cpu_ratio_r_threshold,
                    type: :numeric,
                    desc: '(Default: 4.0) Establishes the ratio of Memory '\
