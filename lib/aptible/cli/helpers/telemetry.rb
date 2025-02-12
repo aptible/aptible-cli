@@ -23,12 +23,18 @@ module Aptible
             c.ssl_config.set_default_paths
           end
 
+          opts = options.dup
+          opts.delete(:private_registry_password)
+          opts.delete(:private_registry_username)
+          opts.delete(:private_registry_email)
+
           value = {
             'email' => token_hash[0]['email'],
             'format' => format,
             'cmd' => cmd,
-            'options' => options,
+            'options' => opts,
             'version' => version_string,
+            'os' => RUBY_PLATFORM,
             # https://stackoverflow.com/a/73973555
             'github' => ENV['GITHUB_ACTIONS'],
             'gitlab' => ENV['GITLAB_CI'],
@@ -45,7 +51,7 @@ module Aptible
               'user_id' => user_or_org_id,
               'type' => 'cli_telemetry',
               'url' => sub,
-              'value' => value
+              'value' => value.to_json
             )
           rescue
             # since this is just for telemetry we don't want to notify
