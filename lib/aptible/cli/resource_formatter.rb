@@ -71,6 +71,15 @@ module Aptible
           node.value('id', account.id)
           node.value('handle', account.handle)
           node.value('created_at', account.created_at)
+
+          stack = account.stack
+
+          node.keyed_object('stack', 'name') do |n|
+            n.value('name', stack.name)
+            n.value('id', stack.id)
+            n.value('region', stack.region)
+            n.value('outbound_ip_addresses', stack.outbound_ip_addresses)
+          end
         end
 
         def inject_operation(node, operation)
@@ -145,6 +154,8 @@ module Aptible
           if database.service
             node.value('container_size', \
                        database.service.container_memory_limit_mb)
+            node.value('container_profile', \
+                       database.service.instance_class.to_s[/[a-z]/])
           end
         end
 
