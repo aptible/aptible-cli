@@ -46,8 +46,9 @@ describe Aptible::CLI::Agent do
           'created_at' => fmt_time(a2.created_at)
         }
       ]
-      expect(captured_output_json.map! { |account| account.except('id') })
-        .to eq(expected_accounts)
+      expect(
+        captured_output_json.map! { |account| account.except('id', 'stack') }
+      ).to eq(expected_accounts)
     end
 
     it 'fetches certs for specified environment' do

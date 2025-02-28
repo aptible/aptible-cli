@@ -118,7 +118,13 @@ describe Aptible::CLI::Agent do
           'environment' => {
             'id' => account.id,
             'handle' => account.handle,
-            'created_at' => fmt_time(account.created_at)
+            'created_at' => fmt_time(account.created_at),
+            'stack' => {
+              'id' => nil,
+              'name' => 'foo',
+              'outbound_ip_addresses' => nil,
+              'region' => nil
+            }
           },
           'handle' => app.handle,
           'id' => app.id,
@@ -166,7 +172,13 @@ describe Aptible::CLI::Agent do
           'environment' => {
             'id' => account.id,
             'handle' => account.handle,
-            'created_at' => fmt_time(account.created_at)
+            'created_at' => fmt_time(account.created_at),
+            'stack' => {
+              'id' => nil,
+              'name' => 'foo',
+              'outbound_ip_addresses' => nil,
+              'region' => nil
+            }
           },
           'handle' => app.handle,
           'id' => app.id,
