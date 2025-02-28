@@ -11,9 +11,9 @@ module Aptible
 
             drain_flags = '--environment ENVIRONMENT ' \
                           '[--drain-apps true/false] ' \
-                          '[--drain_databases true/false] ' \
-                          '[--drain_ephemeral_sessions true/false] ' \
-                          '[--drain_proxies true/false]'
+                          '[--drain-databases true/false] ' \
+                          '[--drain-ephemeral-sessions true/false] ' \
+                          '[--drain-proxies true/false]'
 
             def self.drain_options
               option :drain_apps, default: true, type: :boolean
@@ -118,7 +118,7 @@ module Aptible
             desc 'log_drain:create:logdna HANDLE ' \
                  '--url LOGDNA_URL ' \
                  + drain_flags,
-                 'Create a LogDNA Log Drain'
+                 'Create a LogDNA/Mezmo Log Drain'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:logdna' do |handle|
@@ -145,7 +145,7 @@ module Aptible
                  '--host SYSLOG_HOST --port SYSLOG_PORT ' \
                  '[--token TOKEN] ' \
                  + drain_flags,
-                 'Create a Papertrail Log Drain'
+                 'Create a Syslog Log Drain'
             option :host, type: :string
             option :port, type: :string
             option :token, type: :string
