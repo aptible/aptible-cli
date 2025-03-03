@@ -134,7 +134,7 @@ module Aptible
           attach_account(node, account)
 
           if database.disk
-            node.value('volume_type', database.disk.ebs_volume_type)
+            node.value('disk_type', database.disk.ebs_volume_type)
             node.value('disk_size', database.disk.size)
             node.value('disk_modification_progress',
                        database.disk.modification_progress)
