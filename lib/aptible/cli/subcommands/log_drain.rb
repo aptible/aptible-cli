@@ -10,20 +10,20 @@ module Aptible
             include Helpers::Telemetry
 
             drain_flags = '--environment ENVIRONMENT ' \
-                          '[--drain-apps true/false] ' \
-                          '[--drain-databases true/false] ' \
-                          '[--drain-ephemeral-sessions true/false] ' \
-                          '[--drain-proxies true/false]'
+                          '[--drain-apps|--no-drain-apps] ' \
+                          '[--drain-databases|--no-drain-databases] ' \
+                          '[--drain-ephemeral-sessions|--no-drain-ephemeral-sessions] ' \
+                          '[--drain-proxies|--no-drain-proxies]'
 
             def self.drain_options
-              option :drain_apps, default: true, type: :boolean
-              option :drain_databases, default: true, type: :boolean
-              option :drain_ephemeral_sessions, default: true, type: :boolean
-              option :drain_proxies, default: true, type: :boolean
+              option :drain_apps, type: :boolean
+              option :drain_databases, type: :boolean
+              option :drain_ephemeral_sessions, type: :boolean
+              option :drain_proxies, type: :boolean
               option :environment, aliases: '--env'
             end
 
-            desc 'log_drain:list', 'List all Log Drains'
+            desc 'log_drain:list', 'List all Log Drains for an environment'
             option :environment, aliases: '--env'
             define_method 'log_drain:list' do
               telemetry(__method__, options)
@@ -54,7 +54,7 @@ module Aptible
             desc 'log_drain:create:elasticsearch HANDLE '\
                  '--db DATABASE_HANDLE ' \
                  + drain_flags,
-                 'Create an Elasticsearch Log Drain'
+                 'Create an Elasticsearch Log Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             drain_options
             option :db, type: :string
             option :pipeline, type: :string
@@ -68,10 +68,10 @@ module Aptible
                 handle: handle,
                 database_id: database.id,
                 logging_token: options[:pipeline],
-                drain_apps: options[:drain_apps],
-                drain_databases: options[:drain_databases],
-                drain_ephemeral_sessions: options[:drain_ephemeral_sessions],
-                drain_proxies: options[:drain_proxies],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true,
                 drain_type: :elasticsearch_database
               }
 
@@ -81,7 +81,7 @@ module Aptible
             desc 'log_drain:create:datadog HANDLE ' \
                  '--url DATADOG_URL ' \
                  + drain_flags,
-                 'Create a Datadog Log Drain'
+                 'Create a Datadog Log Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             drain_options
             option :url, type: :string
             define_method 'log_drain:create:datadog' do |handle|
@@ -101,24 +101,44 @@ module Aptible
             drain_options
             define_method 'log_drain:create:https' do |handle|
               telemetry(__method__, options.merge(handle: handle))
-              create_https_based_log_drain(handle, options)
+
+              opts = {
+                handle: handle,
+                environment: options[:environment],
+                url: options[:url],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true
+              }
+              create_https_based_log_drain(handle, opts)
             end
 
             desc 'log_drain:create:sumologic HANDLE ' \
                  '--url SUMOLOGIC_URL ' \
                  + drain_flags,
-                 'Create a Sumologic Drain'
+                 'Create a Sumologic Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:sumologic' do |handle|
               telemetry(__method__, options.merge(handle: handle))
-              create_https_based_log_drain(handle, options)
+
+              opts = {
+                handle: handle,
+                environment: options[:environment],
+                url: options[:url],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true
+              }
+              create_https_based_log_drain(handle, opts)
             end
 
             desc 'log_drain:create:logdna HANDLE ' \
                  '--url LOGDNA_URL ' \
                  + drain_flags,
-                 'Create a LogDNA/Mezmo Log Drain'
+                 'Create a LogDNA/Mezmo Log Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:logdna' do |handle|
@@ -126,33 +146,66 @@ module Aptible
 
               msg = 'Must be in the format of ' \
                     '"https://logs.logdna.com/aptible/ingest/<INGESTION KEY>".'
-              create_https_based_log_drain(handle, options, url_format_msg: msg)
+              
+              opts = {
+                handle: handle,
+                environment: options[:environment],
+                url: options[:url],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true
+              }
+              create_https_based_log_drain(handle, opts, url_format_msg: msg)
             end
 
             desc 'log_drain:create:papertrail HANDLE ' \
                  '--host PAPERTRAIL_HOST --port PAPERTRAIL_PORT ' \
                  + drain_flags,
-                 'Create a Papertrail Log Drain'
+                 'Create a Papertrail Log Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             option :host, type: :string
             option :port, type: :string
             drain_options
             define_method 'log_drain:create:papertrail' do |handle|
               telemetry(__method__, options.merge(handle: handle))
-              create_syslog_based_log_drain(handle, options)
+
+              opts = {
+                handle: handle,
+                environment: options[:environment],
+                host: options[:host],
+                port: options[:port],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true
+              }
+              create_syslog_based_log_drain(handle, opts)
             end
 
             desc 'log_drain:create:syslog HANDLE ' \
                  '--host SYSLOG_HOST --port SYSLOG_PORT ' \
                  '[--token TOKEN] ' \
                  + drain_flags,
-                 'Create a Syslog Log Drain'
+                 'Create a Syslog Log Drain. Apps, Databases, Ephemeral Sessions, and Proxies are drained by default'
             option :host, type: :string
             option :port, type: :string
             option :token, type: :string
             drain_options
             define_method 'log_drain:create:syslog' do |handle|
               telemetry(__method__, options.merge(handle: handle))
-              create_syslog_based_log_drain(handle, options)
+              opts = {
+                handle: handle,
+                environment: options[:environment],
+                host: options[:host],
+                port: options[:port],
+                token: options[:token],
+                drain_apps: options[:drain_apps] || true,
+                drain_databases: options[:drain_databases] || true,
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions] || true,
+                drain_proxies: options[:drain_proxies] || true
+              }
+
+              create_syslog_based_log_drain(handle, opts)
             end
 
             desc 'log_drain:deprovision HANDLE --environment ENVIRONMENT',
