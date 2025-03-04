@@ -56,7 +56,8 @@ module Aptible
                  '--db DATABASE_HANDLE ' \
                  + drain_flags,
                  'Create an Elasticsearch Log Drain. By default, App,' \
-                 +'Database, Ephemeral Session, and Proxy logs will be drained.'
+                 +'Database, Ephemeral Session, and Proxy logs will be sent' \
+                 +'to your chosen destination.'
             drain_options
             option :db, type: :string
             option :pipeline, type: :string
@@ -84,7 +85,8 @@ module Aptible
                  '--url DATADOG_URL ' \
                  + drain_flags,
                  'Create a Datadog Log Drain. By default, App, Database,' \
-                 + 'Ephemeral Session, and Proxy logs will be drained.'
+                 + 'Ephemeral Session, and Proxy logs will be sent' \
+                 + 'to your chosen destination.'
             drain_options
             option :url, type: :string
             define_method 'log_drain:create:datadog' do |handle|
@@ -111,7 +113,8 @@ module Aptible
                  '--url SUMOLOGIC_URL ' \
                  + drain_flags,
                  'Create a Sumologic Drain. By default, App, Database,' \
-                 + 'Ephemeral Session, and Proxy logs will be drained.'
+                 + 'Ephemeral Session, and Proxy logs will be sent' \
+                 + 'to your chosen destination.'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:sumologic' do |handle|
@@ -123,7 +126,8 @@ module Aptible
                  '--url LOGDNA_URL ' \
                  + drain_flags,
                  'Create a LogDNA/Mezmo Log Drain. By default, App, Database,' \
-                 + 'Ephemeral Session, and Proxy logs will be drained.'
+                 + 'Ephemeral Session, and Proxy logs will be sent' \
+                 + 'to your chosen destination.'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:logdna' do |handle|
@@ -138,7 +142,8 @@ module Aptible
                  '--host PAPERTRAIL_HOST --port PAPERTRAIL_PORT ' \
                  + drain_flags,
                  'Create a Papertrail Log Drain. By default, App, Database,' \
-                 + 'Ephemeral Session, and Proxy logs will be drained.'
+                 + 'Ephemeral Session, and Proxy logs will be sent' \
+                 + 'to your chosen destination.'
             option :host, type: :string
             option :port, type: :string
             drain_options
@@ -152,7 +157,8 @@ module Aptible
                  '[--token TOKEN] ' \
                  + drain_flags,
                  'Create a Syslog Log Drain. By default, App, Database,' \
-                 + 'Ephemeral Session, and Proxy logs will be drained.'
+                 + 'Ephemeral Session, and Proxy logs will be sent' \
+                 + 'to your chosen destination.'
             option :host, type: :string
             option :port, type: :string
             option :token, type: :string
