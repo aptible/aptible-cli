@@ -19,11 +19,57 @@ describe Aptible::CLI::Agent do
   end
 
   describe('#environment:list') do
-    it 'lists avaliable environments' do
+    it 'lists available environments' do
       subject.send('environment:list')
 
       expect(captured_output_text.split("\n")).to include('foo')
       expect(captured_output_text.split("\n")).to include('bar')
+    end
+
+    it 'includes stack information in JSON output' do
+      stack1 = Fabricate(
+        :stack,
+        name: 'stack1',
+        region: 'us-east-1',
+        outbound_ip_addresses: ['1.1.1.1']
+      )
+      stack2 = Fabricate(
+        :stack,
+        name: 'stack2',
+        region: 'us-west-1',
+        outbound_ip_addresses: ['2.2.2.2']
+      )
+      a1.stack = stack1
+      a2.stack = stack2
+
+      subject.send('environment:list')
+
+      expected_json = [
+        {
+          'id' => a1.id,
+          'handle' => 'foo',
+          'created_at' => fmt_time(a1.created_at),
+          'stack' => {
+            'id' => stack1.id,
+            'name' => 'stack1',
+            'region' => 'us-east-1',
+            'outbound_ip_addresses' => ['1.1.1.1']
+          }
+        },
+        {
+          'id' => a2.id,
+          'handle' => 'bar',
+          'created_at' => fmt_time(a2.created_at),
+          'stack' => {
+            'id' => stack2.id,
+            'name' => 'stack2',
+            'region' => 'us-west-1',
+            'outbound_ip_addresses' => ['2.2.2.2']
+          }
+        }
+      ]
+
+      expect(captured_output_json).to eq(expected_json)
     end
   end
 
