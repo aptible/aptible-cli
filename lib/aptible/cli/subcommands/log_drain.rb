@@ -125,9 +125,9 @@ module Aptible
             desc 'log_drain:create:logdna HANDLE ' \
                  '--url LOGDNA_URL ' \
                  + drain_flags,
-                 'Create a LogDNA/Mezmo Log Drain. By default, App, Database, ' \
-                 + 'Ephemeral Session, and Proxy logs will be sent ' \
-                 + 'to your chosen destination.'
+                 'Create a LogDNA/Mezmo Log Drain. By default, App, ' \
+                 + 'Database, Ephemeral Session, and Proxy logs ' \
+                 + 'will be sent to your chosen destination.'
             option :url, type: :string
             drain_options
             define_method 'log_drain:create:logdna' do |handle|
