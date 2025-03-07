@@ -67,10 +67,22 @@ module Aptible
           attach_account(node, account)
         end
 
-        def inject_account(node, account)
+        def inject_account(node, account, include_stack = false)
           node.value('id', account.id)
           node.value('handle', account.handle)
           node.value('created_at', account.created_at)
+
+          if include_stack && account.stack
+            node.keyed_object('stack', 'name') do |n|
+              n.value('name', account.stack.name)
+              n.value('id', account.stack.id)
+              n.value('region', account.stack.region)
+              n.value(
+                'outbound_ip_addresses',
+                account.stack.outbound_ip_addresses
+              )
+            end
+          end
         end
 
         def inject_operation(node, operation)
@@ -145,6 +157,8 @@ module Aptible
           if database.service
             node.value('container_size', \
                        database.service.container_memory_limit_mb)
+            node.value('container_profile', \
+                       database.service.instance_class.to_s[/[a-z]/])
           end
         end
 
@@ -309,10 +323,10 @@ module Aptible
 
         private
 
-        def attach_account(node, account)
+        def attach_account(node, account, include_stack = false)
           return if NO_NESTING.eql?(account)
           node.keyed_object('environment', 'handle') do |n|
-            inject_account(n, account)
+            inject_account(n, account, include_stack)
           end
         end
 

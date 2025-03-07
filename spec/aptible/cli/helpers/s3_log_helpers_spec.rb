@@ -184,7 +184,7 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
       ]
     )
     before do
-      subject.stub(:s3_client) do
+      allow(subject).to receive(:s3_client) do
         Aws::S3::Resource.new(region: 'us-east-1', client: client_stub)
       end
     end
@@ -227,7 +227,7 @@ describe Aptible::CLI::Helpers::S3LogHelpers do
           { key: v3app }
         ]
       )
-      subject.stub(:s3_client) do
+      allow(subject).to receive(:s3_client) do
         Aws::S3::Resource.new(region: 'us-east-1', client: client_stub)
       end
     end

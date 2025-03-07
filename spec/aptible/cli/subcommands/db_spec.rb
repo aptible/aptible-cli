@@ -23,7 +23,7 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
     end
     before do
-      subject.stub(:validate_image_type) { true }
+      allow(subject).to receive(:validate_image_type).and_return(true)
     end
 
     def expect_provision_database(create_opts, provision_opts = {})

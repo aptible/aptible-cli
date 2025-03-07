@@ -19,7 +19,7 @@ module Aptible
                 ) do |node|
                   scoped_environments(options).each do |account|
                     node.object do |n|
-                      ResourceFormatter.inject_account(n, account)
+                      ResourceFormatter.inject_account(n, account, true)
                     end
                   end
                 end
