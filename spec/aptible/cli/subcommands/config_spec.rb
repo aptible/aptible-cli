@@ -127,4 +127,61 @@ describe Aptible::CLI::Agent do
         .to raise_error(/invalid argument/im)
     end
   end
+
+  describe '#config:unset' do
+    it 'unsets environment variables' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '' })
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:unset', 'FOO')
+    end
+
+    it 'unsets environment variables even if the user passes a value' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '' })
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:unset', 'FOO=whoops')
+    end
+
+    it 'rejects environment variables that start with -' do
+      expect { subject.send('config:rm', '-foo') }
+        .to raise_error(/invalid argument/im)
+    end
+  end
+
+  describe '#config:clear' do
+    it 'clears all environment variables' do
+      app.current_configuration = Fabricate(
+        :configuration, app: app, env: { 'FOO' => 'BAR', 'BAZ' => 'QUX' }
+      )
+
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '', 'BAZ' => '' })
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:clear')
+    end
+
+    it 'handles apps with no configuration' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: {})
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:clear')
+    end
+  end
 end

@@ -97,6 +97,27 @@ module Aptible
               telemetry(__method__, options)
               send('config:rm', *args)
             end
+
+            desc 'config:clear',
+                 'Remove all ENV variables from an app'
+            app_options
+            define_method 'config:clear' do
+              telemetry(__method__, options)
+
+              app = ensure_app(options)
+              config = app.current_configuration
+              env = config ? config.env : {}
+
+              # Create a hash of all current env vars set to empty string
+              clear_env = Hash[env.keys.map { |k| [k, ''] }]
+
+              operation = app.create_operation!(
+                type: 'configure',
+                env: clear_env
+              )
+              CLI.logger.info 'Clearing all configuration and restarting app...'
+              attach_to_operation_logs(operation)
+            end
           end
         end
       end
