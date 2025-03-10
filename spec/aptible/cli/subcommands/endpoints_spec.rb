@@ -12,6 +12,10 @@ describe Aptible::CLI::Agent do
       .to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
+    allow(Aptible::Api::Account)
+      .to receive(:find_by_url)
+      .with('/accounts/account?handle=aptible', token: token)
+      .and_return(a1)
   end
 
   def expect_create_certificate(account, options)
@@ -66,17 +70,29 @@ describe Aptible::CLI::Agent do
         .to receive(:all)
         .with(token: token, href: '/databases?per_page=5000&no_embed=true')
         .and_return([db])
+      allow(Aptible::Api::Database)
+        .to receive(:find_by_url)
+        .with("/search/database?handle=#{db.handle}", token: token)
+        .and_return(db)
       allow(db).to receive(:class).and_return(Aptible::Api::Database)
       stub_options
     end
 
     describe 'endpoints:database:create' do
       it 'fails if the DB does not exist' do
+        allow(Aptible::Api::Database)
+          .to receive(:find_by_url)
+          .with("/search/database?handle=some", token: token)
+          .and_return(nil)
         expect { subject.send('endpoints:database:create', 'some') }
           .to raise_error(/could not find database some/im)
       end
 
       it 'fails if the DB is not in the account' do
+        allow(Aptible::Api::Database)
+          .to receive(:find_by_url)
+          .with("/search/database?handle=mydb&environment=bar", token: token)
+          .and_return(nil)
         stub_options(environment: 'bar')
         expect { subject.send('endpoints:database:create', 'mydb') }
           .to raise_error(/could not find database mydb/im)

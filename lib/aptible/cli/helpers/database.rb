@@ -22,7 +22,7 @@ module Aptible
           databases = databases_from_handle(db_handle, environment)
           case databases.count
           when 1
-            return databases.first
+            return databases[0]
           when 0
             raise Thor::Error, "Could not find database #{db_handle}"
           else
@@ -47,12 +47,22 @@ module Aptible
         end
 
         def databases_from_handle(handle, environment)
-          databases = if environment
-                        environment.databases
-                      else
-                        databases_all
-                      end
-          databases.select { |a| a.handle == handle }
+          url = "/search/database?handle=#{handle}"
+          url += "&environment=#{environment.handle}" unless environment.nil?
+
+          begin
+            db = Aptible::Api::Database.find_by_url(
+              url,
+              token: fetch_token
+            )
+            return [] if db.nil?
+
+            return [db]
+          rescue => e
+            return [nil, nil] if e.body['error'] == 'unprocessable_entity'
+          end
+
+          []
         end
 
         def clone_database(source, dest_handle)

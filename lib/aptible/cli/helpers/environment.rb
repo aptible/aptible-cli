@@ -42,10 +42,12 @@ module Aptible
 
         def environment_from_handle(handle)
           return nil unless handle
-          href = environment_href
-          Aptible::Api::Account.all(token: fetch_token, href: href).find do |a|
-            a.handle == handle
-          end
+
+          url = "/search/account?handle=#{handle}"
+          Aptible::Api::Account.find_by_url(
+            url,
+            token: fetch_token
+          )
         end
 
         def environment_map(accounts)

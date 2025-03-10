@@ -17,6 +17,10 @@ describe Aptible::CLI::Agent do
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
+
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with('/search/account?handle=aptible', token: token)
+      .and_return(account)
   end
 
   describe '#metric_drain:list' do
@@ -80,9 +84,13 @@ describe Aptible::CLI::Agent do
     end
 
     context 'influxdb' do
-      let(:db) { Fabricate(:database, account: account, id: 5) }
+      let(:db) { Fabricate(:database, account: account, id: 5) } 
 
       it 'creates a new InfluxDB metric drain' do
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/search/database?handle=#{db.handle}&environment=aptible", token: token)
+          .and_return(db)
+
         opts = {
           handle: 'test-influxdb',
           drain_type: :influxdb_database,
