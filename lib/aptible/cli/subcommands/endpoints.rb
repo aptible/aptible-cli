@@ -198,6 +198,7 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.list do |list|
                   each_service(resource) do |service|
+                    next if service.nil?
                     service.each_vhost do |vhost|
                       list.object do |node|
                         ResourceFormatter.inject_vhost(node, vhost, service)
