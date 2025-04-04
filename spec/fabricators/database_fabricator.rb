@@ -34,8 +34,10 @@ Fabricator(:database, from: :stub_database) do
 
   after_create do |database, transients|
     database.account.databases << database
-    database.service = transients[:service] || Fabricate(
-      :service, app: nil, database: database
-    )
+    unless status == 'provisioning'
+      database.service = transients[:service] || Fabricate(
+        :service, app: nil, database: database
+      )
+    end
   end
 end

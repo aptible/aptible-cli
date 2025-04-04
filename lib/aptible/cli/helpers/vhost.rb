@@ -33,8 +33,18 @@ module Aptible
           klass = resource.class
 
           if klass == Aptible::Api::App
+            # We could also raise the error here, but it would technically be a
+            # breaking change:we currently return an empty list if the App is
+            # not provisioned.
+            # if resource.services.empty?
+            #   raise Thor::Error, 'App is not provisioned'
+            # end
             resource.each_service(&block)
           elsif klass == Aptible::Api::Database
+            if resource.service.nil?
+              raise Thor::Error, 'Database is not provisioned'
+            end
+
             [resource.service].each(&block)
           else
             raise "Unexpected resource: #{klass}"
