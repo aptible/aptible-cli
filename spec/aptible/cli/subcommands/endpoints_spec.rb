@@ -60,13 +60,19 @@ describe Aptible::CLI::Agent do
     end
 
     let!(:db) { Fabricate(:database, handle: 'mydb', account: a1) }
+    let!(:incomplete) do
+      Fabricate(:database, handle: 'incomplete',
+                           status: 'provisioning',
+                           account: a1)
+    end
 
     before do
       allow(Aptible::Api::Database)
         .to receive(:all)
         .with(token: token, href: '/databases?per_page=5000&no_embed=true')
-        .and_return([db])
+        .and_return([db, incomplete])
       allow(db).to receive(:class).and_return(Aptible::Api::Database)
+      allow(incomplete).to receive(:class).and_return(Aptible::Api::Database)
       stub_options
     end
 
@@ -74,6 +80,12 @@ describe Aptible::CLI::Agent do
       it 'fails if the DB does not exist' do
         expect { subject.send('endpoints:database:create', 'some') }
           .to raise_error(/could not find database some/im)
+      end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:database:create', 'incomplete') }
+          .to raise_error(/database is not provisioned/im)
       end
 
       it 'fails if the DB is not in the account' do
@@ -137,6 +149,12 @@ describe Aptible::CLI::Agent do
         expect { subject.send('endpoints:database:modify', v.external_host) }
           .to raise_error(/conflicting.*no-ip-whitelist.*ip-whitelist/im)
       end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:database:modify', 'something') }
+          .to raise_error(/database is not provisioned/im)
+      end
     end
 
     describe 'endpoints:list' do
@@ -155,6 +173,12 @@ describe Aptible::CLI::Agent do
 
         expect(lines[0]).not_to eq("\n")
         expect(lines[-1]).not_to eq("\n")
+      end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:list') }
+          .to raise_error(/database is not provisioned/im)
       end
     end
 
@@ -175,6 +199,12 @@ describe Aptible::CLI::Agent do
 
         expect { subject.send('endpoints:deprovision', 'foo.io') }
           .to raise_error(/endpoint.*foo\.io.*does not exist/im)
+      end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:deprovision', 'foo') }
+          .to raise_error(/database is not provisioned/im)
       end
     end
   end
