@@ -349,7 +349,28 @@ module Aptible
           "v#{Aptible::CLI::VERSION}"
         ]
         bits << 'toolbelt' if toolbelt?
+        bits << "(#{ci_string})" if ci?
         bits.join ' '
+      end
+
+      def ci_string
+        if ENV['GITHUB_ACTIONS'] == 'true'
+          'GitHub Actions'
+        elsif ENV['CIRCLECI'] == 'true'
+          'CircleCI'
+        elsif ENV['TRAVIS'] == 'true'
+          'Travis CI'
+        elsif ENV['GITLAB_CI'] == 'true'
+          'GitLab CI'
+        elsif ENV['DRONE'] == 'true'
+          'Harness'
+        else
+          'CI'
+        end
+      end
+
+      def ci?
+        ENV['CI'] == 'true'
       end
 
       def toolbelt?
