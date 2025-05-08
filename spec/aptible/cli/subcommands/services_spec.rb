@@ -87,6 +87,25 @@ describe Aptible::CLI::Agent do
 
       subject.send('services:settings', 'foo')
     end
+
+    it 'allows setting stop timeout' do
+      stub_options(stop_timeout: 30)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!).with(stop_timeout: 30)
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'allows setting stop timeout with other options' do
+      stub_options(stop_timeout: 30, force_zero_downtime: true)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!)
+        .with(stop_timeout: 30, force_zero_downtime: true)
+
+      subject.send('services:settings', 'foo')
+    end
   end
 
   describe '#services:sizing_policy' do
