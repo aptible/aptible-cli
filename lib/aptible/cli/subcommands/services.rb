@@ -27,8 +27,9 @@ module Aptible
 
             desc 'services:settings SERVICE'\
                    ' [--force-zero-downtime|--no-force-zero-downtime]'\
-                   ' [--simple-health-check|--no-simple-health-check]',
-                 'Modifies the zero-downtime deploy setting for a service'
+                   ' [--simple-health-check|--no-simple-health-check]'\
+                   ' [--stop-timeout SECONDS]',
+                 'Modifies the deployment settings for a service'
             app_options
             option :force_zero_downtime,
                    type: :boolean, default: false,
@@ -37,6 +38,10 @@ module Aptible
             option :simple_health_check,
                    type: :boolean, default: false,
                    desc: 'Use a simple uptime healthcheck during deployments'
+            option :stop_timeout,
+                   type: :numeric,
+                   desc: 'The number of seconds to wait for the service '\
+                   'containers to stop gracefully on release before killing it.'
             define_method 'services:settings' do |service|
               telemetry(__method__, options.merge(service: service))
 
@@ -46,6 +51,8 @@ module Aptible
                 options[:force_zero_downtime] if options[:force_zero_downtime]
               updates[:naive_health_check] =
                 options[:simple_health_check] if options[:simple_health_check]
+              updates[:stop_timeout] =
+                options[:stop_timeout] if options[:stop_timeout]
 
               service.update!(**updates) if updates.any?
             end
