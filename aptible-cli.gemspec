@@ -32,6 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cbor'
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
   spec.add_dependency 'concurrent-ruby', '< 1.1.10'
+  spec.add_dependency 'connection_pool', '< 2.2.4'
   spec.add_dependency 'faraday', '~> 0.17.6'
   spec.add_dependency 'git', '~> 1.7.0'
   spec.add_dependency 'httpclient', '~> 2.8.0'
