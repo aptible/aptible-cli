@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', '>= 4.0', '< 6.0'
-  spec.add_dependency 'aptible-api', '~> 1.8'
+  spec.add_dependency 'aptible-api', '~> 1.8.0'
   spec.add_dependency 'aptible-auth', '~> 1.2.5'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'aptible-resource', '~> 1.1'
@@ -30,6 +30,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cbor'
   spec.add_dependency 'chronic_duration', '~> 0.10.6'
   spec.add_dependency 'concurrent-ruby', '< 1.1.10'
+  spec.add_dependency 'httpclient', '~> 2.8.0'
+  spec.add_dependency 'json', '~> 2.5.0'
   spec.add_dependency 'jwt', '~> 2.3.0'
   spec.add_dependency 'git', '< 1.10'
   spec.add_dependency 'rack', '~> 1.0'
