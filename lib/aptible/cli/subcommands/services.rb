@@ -105,7 +105,8 @@ module Aptible
                    '[--min-containers CONTAINERS] '\
                    '[--max-containers CONTAINERS] '\
                    '[--scale-up-step STEPS] '\
-                   '[--scale-down-step STEPS] ',
+                   '[--scale-down-step STEPS] '\
+                   '[--restart-free-scale|--no-restart-free-scale]',
                  'Sets the sizing (autoscaling) policy for a service.'\
                    ' This is not incremental, all arguments must be sent'\
                    ' at once or they will be set to defaults.'
@@ -200,6 +201,10 @@ module Aptible
                    'the amount of containers to remove when autoscaling (ex:'\
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
+            option :restart_free_scale,
+                   type: :boolean,
+                   desc: 'Horizontal autoscaling only - Sets the '\
+                   'autoscaling to use a restart-free scale.'
             define_method 'services:autoscaling_policy:set' do |service|
               telemetry(__method__, options.merge(service: service))
 
@@ -207,6 +212,7 @@ module Aptible
               ignored_attrs = %i(autoscaling_type app environment remote)
               args = options.except(*ignored_attrs)
               args[:autoscaling] = options[:autoscaling_type]
+              args[:use_horizontal_scale] = options[:restart_free_scale]
 
               sizing_policy = service.service_sizing_policy
               if sizing_policy
