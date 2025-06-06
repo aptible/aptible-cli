@@ -317,6 +317,7 @@ module Aptible
           node.value('max_containers', policy.max_containers)
           node.value('scale_up_step', policy.scale_up_step)
           node.value('scale_down_step', policy.scale_down_step)
+          node.value('restart_free_scale', policy.use_horizontal_scale)
 
           attach_service(node, service)
         end

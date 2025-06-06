@@ -105,7 +105,8 @@ module Aptible
                    '[--min-containers CONTAINERS] '\
                    '[--max-containers CONTAINERS] '\
                    '[--scale-up-step STEPS] '\
-                   '[--scale-down-step STEPS] ',
+                   '[--scale-down-step STEPS] '\
+                   '[--restart-free-scale|--no-restart-free-scale]',
                  'Sets the sizing (autoscaling) policy for a service.'\
                    ' This is not incremental, all arguments must be sent'\
                    ' at once or they will be set to defaults.'
@@ -200,17 +201,45 @@ module Aptible
                    'the amount of containers to remove when autoscaling (ex:'\
                    ' a value of 2 will go from 4->2->1). Container count '\
                    'will never exceed the configured minimum.'
+            option :restart_free_scale,
+                   type: :boolean,
+                   default: false,
+                   desc: 'Horizontal autoscaling only - Sets the '\
+                   'autoscaling to use a restart-free scale.'
             define_method 'services:autoscaling_policy:set' do |service|
               telemetry(__method__, options.merge(service: service))
 
               service = ensure_service(options, service)
-              ignored_attrs = %i(autoscaling_type app environment remote)
+              ignored_attrs = %i(
+                autoscaling_type app environment remote restart_free_scale
+              )
               args = options.except(*ignored_attrs)
               args[:autoscaling] = options[:autoscaling_type]
 
+              # Some options are conditionally required based on the autoscaling
+              # type. These probably should be separate commands namespaces by
+              # type to avoid validating by hand here.
+              if options[:autoscaling_type] == 'horizontal'
+                if options[:min_containers].nil? ||
+                   options[:max_containers].nil?
+                  raise Thor::Error, 'min_containers and max_containers are ' \
+                    'required for horizontal autoscaling'
+                end
+                if options[:min_cpu_threshold].nil? ||
+                   options[:max_cpu_threshold].nil?
+                  raise Thor::Error, 'min_cpu_threshold and ' \
+                    'max_cpu_threshold are required for horizontal autoscaling'
+                end
+
+                args[:use_horizontal_scale] = options[:restart_free_scale]
+              elsif options[:autoscaling_type] != 'vertical'
+                raise Thor::Error, 'Invalid autoscaling type: ' \
+                  "#{options[:autoscaling_type]}"
+              end
+
               sizing_policy = service.service_sizing_policy
               if sizing_policy
-                sizing_policy.update!(**args)
+                sizing_policy.update!(args.merge(service_id: service.id))
               else
                 service.create_service_sizing_policy!(**args)
               end
