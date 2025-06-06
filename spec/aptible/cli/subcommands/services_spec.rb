@@ -175,6 +175,23 @@ describe Aptible::CLI::Agent do
       }
     end
 
+    it 'raises an error if the autoscaling type is invalid' do
+      stub_options(autoscaling_type: 'invalid')
+      Fabricate(:service, app: app, process_type: 'foo')
+      expect { subject.send('services:sizing_policy:set', 'foo') }
+        .to raise_error(/Invalid autoscaling type: invalid/)
+    end
+
+    it 'raises an error if the autoscaling type is horizontal '\
+       'and min_containers is not set' do
+      stub_options(autoscaling_type: 'horizontal', min_containers: nil)
+      Fabricate(:service, app: app, process_type: 'foo')
+      expect { subject.send('services:sizing_policy:set', 'foo') }
+        .to raise_error(
+          /min_containers and max_containers are required for horizontal autos/
+        )
+    end
+
     it 'updates existing sizing policy' do
       stub_options(**args)
       service = Fabricate(:service, app: app, process_type: 'foo')
@@ -186,7 +203,7 @@ describe Aptible::CLI::Agent do
       api_args[:autoscaling] = args[:autoscaling_type]
 
       expect(sizing_policy).to receive(:update!)
-        .with(**api_args)
+        .with(**api_args.update(service_id: service.id))
 
       subject.send('services:sizing_policy:set', 'foo')
     end
