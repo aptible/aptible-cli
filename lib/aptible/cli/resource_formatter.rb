@@ -202,6 +202,7 @@ module Aptible
             port = vhost.container_port ? vhost.container_port : 'default'
             node.value('type', 'https')
             node.value('port', port)
+            node.value('load_balancing_algorithm_type', vhost.load_balancing_algorithm_type)
           end
 
           node.value('internal', vhost.internal)

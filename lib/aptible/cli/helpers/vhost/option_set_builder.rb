@@ -62,6 +62,7 @@ module Aptible
                           'least_outstanding_requests, and ' \
                           'weighted_random'
                   )
+                end
               end
 
               if builder.create?
@@ -178,6 +179,20 @@ module Aptible
             end
 
             process_tls(account, options, params) if tls?
+
+            if alb?
+              lba_type = options.delete(:load_balancing_algorithm_type)
+              if lba_type
+                valid_types = %w(round_robin least_outstanding_requests
+                                 weighted_random)
+                unless valid_types.include?(lba_type)
+                  e = "Invalid load balancing algorithm type: #{lba_type}. " \
+                      "Valid options are: #{valid_types.join(', ')}"
+                  raise Thor::Error, e
+                end
+                params[:load_balancing_algorithm_type] = lba_type
+              end
+            end
 
             options.delete(:environment)
 
