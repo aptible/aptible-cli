@@ -181,7 +181,9 @@ module Aptible
             process_tls(account, options, params) if tls?
 
             if alb?
-              lba_type = options.delete(:load_balancing_algorithm_type)
+              lba_type = options.delete(:load_balancing_algorithm_type) do
+                create? ? 'round_robin' : nil
+              end
               if lba_type
                 valid_types = %w(round_robin least_outstanding_requests
                                  weighted_random)
