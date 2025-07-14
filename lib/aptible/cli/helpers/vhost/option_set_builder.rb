@@ -11,6 +11,7 @@ module Aptible
             tls
             ports
             port
+            alb
           ).freeze
 
           def initialize(&block)
@@ -51,6 +52,16 @@ module Aptible
                     desc: 'A port to expose on this Endpoint'
                   )
                 end
+
+                if builder.alb?
+                  option(
+                    :load_balancing_algorithm_type,
+                    type: :string,
+                    desc: 'The load balancing algorithm for this Endpoint.' \
+                          'valid options are round_robin, ' \
+                          'least_outstanding_requests, and ' \
+                          'weighted_random'
+                  )
               end
 
               if builder.create?
