@@ -486,6 +486,14 @@ describe Aptible::CLI::Agent do
         stub_options(port: 10)
         subject.send(m, 'web')
       end
+      it 'creates an Endpoint with a load balancing algorithm' do
+        expect_create_vhost(service,
+                            load_balancing_algorithm_type:
+                            'least_outstanding_requests')
+        stub_options(load_balancing_algorithm_type:
+                    'least_outstanding_requests')
+        subject.send(m, 'web')
+      end
     end
 
     describe 'endpoints:grpc:create' do
@@ -635,6 +643,14 @@ describe Aptible::CLI::Agent do
         expect_modify_vhost(v, container_port: 10)
 
         stub_options(port: 10)
+        subject.send(m, v.external_host)
+      end
+      it 'allows updating the load balancing algorithm' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, load_balancing_algorithm_type:
+                              'least_outstanding_requests')
+        stub_options(load_balancing_algorithm_type:
+                     'least_outstanding_requests')
         subject.send(m, v.external_host)
       end
     end

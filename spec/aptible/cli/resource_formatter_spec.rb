@@ -20,7 +20,8 @@ describe Aptible::CLI::ResourceFormatter do
         internal: false,
         ip_whitelist: [],
         default: false,
-        acme: false
+        acme: false,
+        load_balancing_algorithm_type: 'least_outstanding_requests'
       )
 
       expected = [
@@ -30,6 +31,7 @@ describe Aptible::CLI::ResourceFormatter do
         "Created At: #{fmt_time(service.created_at)}",
         'Type: https',
         'Port: default',
+        'Load Balancing Algorithm Type: least_outstanding_requests',
         'Internal: false',
         'IP Whitelist: all traffic',
         'Default Domain Enabled: false',
