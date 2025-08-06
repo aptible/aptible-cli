@@ -6,17 +6,20 @@ module Aptible
           thor.class_eval do
             include Helpers::Environment
             include Helpers::Token
+            include Helpers::Telemetry
 
             desc 'environment:list', 'List all environments'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'environment:list' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.keyed_list(
                   'handle'
                 ) do |node|
                   scoped_environments(options).each do |account|
                     node.object do |n|
-                      ResourceFormatter.inject_account(n, account)
+                      ResourceFormatter.inject_account(n, account, true)
                     end
                   end
                 end
@@ -25,8 +28,10 @@ module Aptible
 
             desc 'environment:ca_cert',
                  'Retrieve the CA certificate associated with the environment'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'environment:ca_cert' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   'handle',
@@ -48,6 +53,12 @@ module Aptible
                  ' destinations, you must restart the apps/databases in'\
                  ' this environment.'
             define_method 'environment:rename' do |old_handle, new_handle|
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
+
               env = ensure_environment(options.merge(environment: old_handle))
               env.update!(handle: new_handle)
               m1 = "In order for the new environment handle (#{new_handle})"\

@@ -23,7 +23,7 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all).and_return([account])
     end
     before do
-      subject.stub(:validate_image_type) { true }
+      allow(subject).to receive(:validate_image_type).and_return(true)
     end
 
     def expect_provision_database(create_opts, provision_opts = {})
@@ -269,6 +269,7 @@ describe Aptible::CLI::Agent do
       staging = Fabricate(:account, handle: 'staging')
       prod = Fabricate(:account, handle: 'production')
 
+      dbs = []
       [
         [staging, 'staging-redis-db'],
         [staging, 'staging-postgres-db'],
@@ -276,12 +277,17 @@ describe Aptible::CLI::Agent do
         [prod, 'prod-postgres-db']
       ].each do |a, h|
         d = Fabricate(:database, account: a, handle: h)
+        dbs << d
         Fabricate(:database_credential, database: d)
       end
 
       token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
-      allow(Aptible::Api::Account).to receive(:all).with(token: token)
+      allow(Aptible::Api::Database).to receive(:all)
+        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+        .and_return(dbs)
+      allow(Aptible::Api::Account).to receive(:all)
+        .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
     end
 

@@ -31,12 +31,27 @@ module Aptible
           end
         end
 
-        def databases_from_handle(handle, environment)
-          if environment
-            databases = environment.databases
-          else
-            databases = Aptible::Api::Database.all(token: fetch_token)
+        def databases_href
+          href = '/databases'
+          if Renderer.format != 'json'
+            href = '/databases?per_page=5000&no_embed=true'
           end
+          href
+        end
+
+        def databases_all
+          Aptible::Api::Database.all(
+            token: fetch_token,
+            href: databases_href
+          )
+        end
+
+        def databases_from_handle(handle, environment)
+          databases = if environment
+                        environment.databases
+                      else
+                        databases_all
+                      end
           databases.select { |a| a.handle == handle }
         end
 

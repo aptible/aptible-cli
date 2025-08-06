@@ -9,9 +9,11 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(Aptible::Api::App).to receive(:all)
-      .with(token: token).and_return([app])
+      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
+      .and_return([app])
     allow(Aptible::Api::Account).to receive(:all)
-      .with(token: token).and_return([account])
+      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
+      .and_return([account])
   end
 
   before { allow(subject).to receive(:options) { { app: app.handle } } }
@@ -107,6 +109,17 @@ describe Aptible::CLI::Agent do
         .with(operation)
 
       subject.send('config:unset', 'FOO')
+    end
+
+    it 'unsets environment variables even if the user passes a value' do
+      expect(app).to receive(:create_operation!)
+        .with(type: 'configure', env: { 'FOO' => '' })
+        .and_return(operation)
+
+      expect(subject).to receive(:attach_to_operation_logs)
+        .with(operation)
+
+      subject.send('config:unset', 'FOO=whoops')
     end
 
     it 'rejects environment variables that start with -' do

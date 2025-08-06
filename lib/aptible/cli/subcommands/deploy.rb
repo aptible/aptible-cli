@@ -18,6 +18,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Telemetry
 
             desc 'deploy [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]',
                  'Deploy an app'
@@ -46,6 +47,8 @@ module Aptible
             end
             app_options
             def deploy(*args)
+              telemetry(__method__, options)
+
               app = ensure_app(options)
 
               git_ref = options[:git_commitish]

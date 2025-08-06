@@ -1,0 +1,65 @@
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: [2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler: 1.17.3
+          bundler-cache: true
+
+      - name: Test
+        run: bundle exec rake
+
+      - name: Sync README
+        run: |
+          bundle exec script/sync-readme-usage
+          git diff --exit-code
+
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: Final Results
+    needs: [test]
+    steps:
+      - run: exit 1
+        # see https://stackoverflow.com/a/67532120/4907315
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+          }}
+
+  report-version:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Report version
+        run: |
+          curl -sS -X POST -u "$ENFORCER_USERNAME:$ENFORCER_PASSWORD" \
+           -H "Content-Type: application/json" \
+           -d '{"name":"aptible-cli", "type":"client", "version": "${{ github.sha }}"}' \
+          "$ENFORCER_API/repo_version"
+        env:
+          ENFORCER_API: https://app-83237.aptible-test-leeroy.com
+          ENFORCER_USERNAME: aptible
+          ENFORCER_PASSWORD: ${{ secrets.ENFORCER_PASSWORD }}

@@ -12,11 +12,14 @@ module Aptible
             include Helpers::AppOrDatabase
             include Helpers::S3LogHelpers
             include Helpers::DateHelpers
+            include Helpers::Telemetry
 
             desc 'logs [--app APP | --database DATABASE]',
                  'Follows logs from a running app or database'
             app_or_database_options
             def logs
+              telemetry(__method__, options)
+
               resource = ensure_app_or_database(options)
 
               unless resource.status == 'provisioned'
@@ -89,6 +92,8 @@ module Aptible
                    type: :string
 
             def logs_from_archive
+              telemetry(__method__, options)
+
               ensure_aws_creds
               validate_log_search_options(options)
 

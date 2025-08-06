@@ -8,6 +8,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Telemetry
 
             desc 'ssh [COMMAND]', 'Run a command against an app'
             long_desc <<-LONGDESC
@@ -18,6 +19,8 @@ module Aptible
             app_options
             option :force_tty, type: :boolean
             def ssh(*args)
+              telemetry(__method__, options)
+
               app = ensure_app(options)
 
               # SSH's default behavior is as follows:

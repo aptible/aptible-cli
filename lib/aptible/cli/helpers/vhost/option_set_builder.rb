@@ -11,6 +11,7 @@ module Aptible
             tls
             ports
             port
+            alb
             shared
           ).freeze
 
@@ -21,7 +22,7 @@ module Aptible
 
           def declare_options(thor)
             thor.instance_exec(self) do |builder|
-              option :environment
+              option :environment, aliases: '--env'
 
               if builder.database?
                 option :database
@@ -50,6 +51,17 @@ module Aptible
                     :port,
                     type: :numeric,
                     desc: 'A port to expose on this Endpoint'
+                  )
+                end
+
+                if builder.alb?
+                  option(
+                    :load_balancing_algorithm_type,
+                    type: :string,
+                    desc: 'The load balancing algorithm for this Endpoint.' \
+                          'valid options are round_robin, ' \
+                          'least_outstanding_requests, and ' \
+                          'weighted_random'
                   )
                 end
               end
@@ -178,9 +190,23 @@ module Aptible
 
             process_tls(account, options, params) if tls?
 
-            if shared?
-              params[:shared] = options.delete(:shared) do
-                create? ? false : nil
+            if alb?
+              lba_type = options.delete(:load_balancing_algorithm_type)
+              if lba_type
+                valid_types = %w(round_robin least_outstanding_requests
+                                 weighted_random)
+                unless valid_types.include?(lba_type)
+                  e = "Invalid load balancing algorithm type: #{lba_type}. " \
+                      "Valid options are: #{valid_types.join(', ')}"
+                  raise Thor::Error, e
+                end
+                params[:load_balancing_algorithm_type] = lba_type
+              end
+
+              if shared?
+                params[:shared] = options.delete(:shared) do
+                  create? ? false : nil
+                end
               end
             end
 

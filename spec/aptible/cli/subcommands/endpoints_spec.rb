@@ -8,7 +8,9 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token) { token }
-    allow(Aptible::Api::Account).to receive(:all).with(token: token)
+    allow(Aptible::Api::Account)
+      .to receive(:all)
+      .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
   end
 
@@ -58,11 +60,19 @@ describe Aptible::CLI::Agent do
     end
 
     let!(:db) { Fabricate(:database, handle: 'mydb', account: a1) }
+    let!(:incomplete) do
+      Fabricate(:database, handle: 'incomplete',
+                           status: 'provisioning',
+                           account: a1)
+    end
 
     before do
-      allow(Aptible::Api::Database).to receive(:all).with(token: token)
-        .and_return([db])
+      allow(Aptible::Api::Database)
+        .to receive(:all)
+        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+        .and_return([db, incomplete])
       allow(db).to receive(:class).and_return(Aptible::Api::Database)
+      allow(incomplete).to receive(:class).and_return(Aptible::Api::Database)
       stub_options
     end
 
@@ -70,6 +80,12 @@ describe Aptible::CLI::Agent do
       it 'fails if the DB does not exist' do
         expect { subject.send('endpoints:database:create', 'some') }
           .to raise_error(/could not find database some/im)
+      end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:database:create', 'incomplete') }
+          .to raise_error(/database is not provisioned/im)
       end
 
       it 'fails if the DB is not in the account' do
@@ -133,6 +149,12 @@ describe Aptible::CLI::Agent do
         expect { subject.send('endpoints:database:modify', v.external_host) }
           .to raise_error(/conflicting.*no-ip-whitelist.*ip-whitelist/im)
       end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:database:modify', 'something') }
+          .to raise_error(/database is not provisioned/im)
+      end
     end
 
     describe 'endpoints:list' do
@@ -151,6 +173,12 @@ describe Aptible::CLI::Agent do
 
         expect(lines[0]).not_to eq("\n")
         expect(lines[-1]).not_to eq("\n")
+      end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:list') }
+          .to raise_error(/database is not provisioned/im)
       end
     end
 
@@ -172,6 +200,12 @@ describe Aptible::CLI::Agent do
         expect { subject.send('endpoints:deprovision', 'foo.io') }
           .to raise_error(/endpoint.*foo\.io.*does not exist/im)
       end
+
+      it 'returns an error if the database is not fully provisioned' do
+        stub_options(database: incomplete.handle)
+        expect { subject.send('endpoints:deprovision', 'foo') }
+          .to raise_error(/database is not provisioned/im)
+      end
     end
   end
 
@@ -185,7 +219,9 @@ describe Aptible::CLI::Agent do
     let!(:service) { Fabricate(:service, app: app, process_type: 'web') }
 
     before do
-      allow(Aptible::Api::App).to receive(:all).with(token: token)
+      allow(Aptible::Api::App)
+        .to receive(:all)
+        .with(token: token, href: '/apps?per_page=5000&no_embed=true')
         .and_return([app])
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options
@@ -450,6 +486,38 @@ describe Aptible::CLI::Agent do
         stub_options(port: 10)
         subject.send(m, 'web')
       end
+      it 'creates an Endpoint with a load balancing algorithm' do
+        expect_create_vhost(service,
+                            load_balancing_algorithm_type:
+                            'least_outstanding_requests')
+        stub_options(load_balancing_algorithm_type:
+                    'least_outstanding_requests')
+        subject.send(m, 'web')
+      end
+    end
+
+    describe 'endpoints:grpc:create' do
+      m = 'endpoints:grpc:create'
+      include_examples 'shared create app vhost examples', m
+      include_examples 'shared create tls vhost examples', m
+
+      it 'creates a gRPC Endpoint' do
+        expect_create_vhost(
+          service,
+          type: 'grpc',
+          platform: 'elb',
+          internal: false,
+          default: false,
+          ip_whitelist: []
+        )
+        subject.send(m, 'web')
+      end
+
+      it 'creates an Endpoint with a container Port' do
+        expect_create_vhost(service, container_port: 10)
+        stub_options(port: 10)
+        subject.send(m, 'web')
+      end
     end
 
     shared_examples 'shared modify app vhost examples' do |m|
@@ -567,6 +635,28 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:https:modify' do
       m = 'endpoints:https:modify'
+      include_examples 'shared modify app vhost examples', m
+      include_examples 'shared modify tls vhost examples', m
+
+      it 'allows updating the Container Port' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, container_port: 10)
+
+        stub_options(port: 10)
+        subject.send(m, v.external_host)
+      end
+      it 'allows updating the load balancing algorithm' do
+        v = Fabricate(:vhost, service: service)
+        expect_modify_vhost(v, load_balancing_algorithm_type:
+                              'least_outstanding_requests')
+        stub_options(load_balancing_algorithm_type:
+                     'least_outstanding_requests')
+        subject.send(m, v.external_host)
+      end
+    end
+
+    describe 'endpoints:grpc:modify' do
+      m = 'endpoints:grpc:modify'
       include_examples 'shared modify app vhost examples', m
       include_examples 'shared modify tls vhost examples', m
 

@@ -67,10 +67,22 @@ module Aptible
           attach_account(node, account)
         end
 
-        def inject_account(node, account)
+        def inject_account(node, account, include_stack = false)
           node.value('id', account.id)
           node.value('handle', account.handle)
           node.value('created_at', account.created_at)
+
+          if include_stack && account.stack
+            node.keyed_object('stack', 'name') do |n|
+              n.value('name', account.stack.name)
+              n.value('id', account.stack.id)
+              n.value('region', account.stack.region)
+              n.value(
+                'outbound_ip_addresses',
+                account.stack.outbound_ip_addresses
+              )
+            end
+          end
         end
 
         def inject_operation(node, operation)
@@ -108,6 +120,13 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_database_minimal(node, database, account)
+          node.value('id', database.id)
+          node.value('handle', database.handle)
+          node.value('created_at', database.created_at)
+          attach_account(node, account)
+        end
+
         def inject_database(node, database, account)
           node.value('id', database.id)
           node.value('handle', database.handle)
@@ -138,6 +157,8 @@ module Aptible
           if database.service
             node.value('container_size', \
                        database.service.container_memory_limit_mb)
+            node.value('container_profile', \
+                       database.service.instance_class.to_s[/[a-z]/])
           end
         end
 
@@ -157,6 +178,7 @@ module Aptible
           node.value('command', service.command || 'CMD')
           node.value('container_count', service.container_count)
           node.value('container_size', service.container_memory_limit_mb)
+          node.value('container_profile', service.instance_class.to_s[/[a-z]/])
 
           attach_app(node, app)
         end
@@ -180,6 +202,8 @@ module Aptible
             port = vhost.container_port ? vhost.container_port : 'default'
             node.value('type', 'https')
             node.value('port', port)
+            node.value('load_balancing_algorithm_type', vhost
+                        .load_balancing_algorithm_type)
             node.value('shared', vhost.shared)
           end
 
@@ -271,12 +295,42 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_service_sizing_policy(node, policy, service)
+          node.value('autoscaling_type', policy.autoscaling)
+          node.value('metric_lookback_seconds', policy.metric_lookback_seconds)
+          node.value('percentile', policy.percentile)
+          node.value('post_scale_up_cooldown_seconds',
+                     policy.post_scale_up_cooldown_seconds)
+          node.value('post_scale_down_cooldown_seconds',
+                     policy.post_scale_down_cooldown_seconds)
+          node.value('post_release_cooldown_seconds',
+                     policy.post_release_cooldown_seconds)
+          node.value('mem_cpu_ratio_r_threshold',
+                     policy.mem_cpu_ratio_r_threshold)
+          node.value('mem_cpu_ratio_c_threshold',
+                     policy.mem_cpu_ratio_c_threshold)
+          node.value('mem_scale_up_threshold', policy.mem_scale_up_threshold)
+          node.value('mem_scale_down_threshold',
+                     policy.mem_scale_down_threshold)
+          node.value('minimum_memory', policy.minimum_memory)
+          node.value('maximum_memory', policy.maximum_memory)
+          node.value('min_cpu_threshold', policy.min_cpu_threshold)
+          node.value('max_cpu_threshold', policy.max_cpu_threshold)
+          node.value('min_containers', policy.min_containers)
+          node.value('max_containers', policy.max_containers)
+          node.value('scale_up_step', policy.scale_up_step)
+          node.value('scale_down_step', policy.scale_down_step)
+          node.value('restart_free_scale', policy.use_horizontal_scale)
+
+          attach_service(node, service)
+        end
+
         private
 
-        def attach_account(node, account)
+        def attach_account(node, account, include_stack = false)
           return if NO_NESTING.eql?(account)
           node.keyed_object('environment', 'handle') do |n|
-            inject_account(n, account)
+            inject_account(n, account, include_stack)
           end
         end
 

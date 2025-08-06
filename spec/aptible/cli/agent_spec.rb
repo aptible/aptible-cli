@@ -8,12 +8,21 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#version' do
+    before do
+      # Reset CI-related environment variables before each test
+      ENV['APTIBLE_TOOLBELT'] = nil
+      ENV['CI'] = nil
+      ENV['GITHUB_ACTIONS'] = nil
+      ENV['CIRCLECI'] = nil
+      ENV['TRAVIS'] = nil
+      ENV['GITLAB_CI'] = nil
+      ENV['DRONE'] = nil
+    end
+
     it 'should print the version' do
-      ClimateControl.modify(APTIBLE_TOOLBELT: nil) do
-        version = Aptible::CLI::VERSION
-        subject.version
-        expect(captured_output_text).to eq("aptible-cli v#{version}\n")
-      end
+      version = Aptible::CLI::VERSION
+      subject.version
+      expect(captured_output_text).to eq("aptible-cli v#{version}\n")
     end
 
     it 'should print the version (with toolbelt)' do
@@ -21,6 +30,144 @@ describe Aptible::CLI::Agent do
         version = Aptible::CLI::VERSION
         subject.version
         expect(captured_output_text).to eq("aptible-cli v#{version} toolbelt\n")
+      end
+    end
+
+    it 'should print the version with CI suffix' do
+      ClimateControl.modify(CI: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq("aptible-cli v#{version} (CI)\n")
+      end
+    end
+
+    it 'should print the version (with toolbelt and CI)' do
+      ClimateControl.modify(APTIBLE_TOOLBELT: '1', CI: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (CI)\n"
+        )
+      end
+    end
+
+    it 'should print the version with GHA suffix' do
+      ClimateControl.modify(CI: 'true', GITHUB_ACTIONS: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} (GitHub Actions)\n"
+        )
+      end
+    end
+
+    it 'should print the version (with toolbelt and GHA)' do
+      ClimateControl.modify(
+        APTIBLE_TOOLBELT: '1',
+        CI: 'true',
+        GITHUB_ACTIONS: 'true'
+      ) do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (GitHub Actions)\n"
+        )
+      end
+    end
+
+    it 'should print the version with Circle suffix' do
+      ClimateControl.modify(CI: 'true', CIRCLECI: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} (CircleCI)\n"
+        )
+      end
+    end
+
+    it 'should print the version (with toolbelt and Circle)' do
+      ClimateControl.modify(
+        APTIBLE_TOOLBELT: '1',
+        CI: 'true',
+        CIRCLECI: 'true'
+      ) do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (CircleCI)\n"
+        )
+      end
+    end
+
+    it 'should print the version with Travis suffix' do
+      ClimateControl.modify(CI: 'true', TRAVIS: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} (Travis CI)\n"
+        )
+      end
+    end
+
+    it 'should print the version (with toolbelt and Travis)' do
+      ClimateControl.modify(
+        APTIBLE_TOOLBELT: '1',
+        CI: 'true',
+        TRAVIS: 'true'
+      ) do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (Travis CI)\n"
+        )
+      end
+    end
+
+    it 'should print the version with GitLab suffix' do
+      ClimateControl.modify(CI: 'true', GITLAB_CI: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} (GitLab CI)\n"
+        )
+      end
+    end
+
+    it 'should print the version (with toolbelt and GitLab)' do
+      ClimateControl.modify(
+        APTIBLE_TOOLBELT: '1',
+        CI: 'true',
+        GITLAB_CI: 'true'
+      ) do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (GitLab CI)\n"
+        )
+      end
+    end
+
+    it 'should print the version with Harness suffix' do
+      ClimateControl.modify(CI: 'true', DRONE: 'true') do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} (Harness)\n"
+        )
+      end
+    end
+
+    it 'should print the version (with toolbelt and Harness)' do
+      ClimateControl.modify(
+        APTIBLE_TOOLBELT: '1',
+        CI: 'true',
+        DRONE: 'true'
+      ) do
+        version = Aptible::CLI::VERSION
+        subject.version
+        expect(captured_output_text).to eq(
+          "aptible-cli v#{version} toolbelt (Harness)\n"
+        )
       end
     end
   end

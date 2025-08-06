@@ -12,19 +12,40 @@ module Aptible
             include Helpers::Database
             include Helpers::Token
             include Term::ANSIColor
+            include Helpers::Telemetry
 
             desc 'db:list', 'List all databases'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:list' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_database do |db|
+                  accounts = scoped_environments(options)
+                  acc_map = environment_map(accounts)
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_database do |db|
+                        node.object do |n|
+                          ResourceFormatter.inject_database(n, db, account)
+                        end
+                      end
+                    end
+                  else
+                    databases_all.each do |db|
+                      account = acc_map[db.links.account.href]
+                      next if account.nil?
+
                       node.object do |n|
-                        ResourceFormatter.inject_database(n, db, account)
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          account
+                        )
                       end
                     end
                   end
@@ -34,6 +55,8 @@ module Aptible
 
             desc 'db:versions', 'List available database versions'
             define_method 'db:versions' do
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list('type', 'version') do |node|
                   Aptible::Api::DatabaseImage.all(
@@ -63,11 +86,13 @@ module Aptible
             option :disk_size, default: 10, type: :numeric
             option :size, type: :numeric
             option :key_arn, type: :string
-            option :environment
+            option :environment, aliases: '--env'
             option :container_profile, type: :string,
                                        desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'db:create' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               account = ensure_environment(options)
 
               db_opts = {
@@ -126,8 +151,14 @@ module Aptible
             end
 
             desc 'db:clone SOURCE DEST', 'Clone a database to create a new one'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:clone' do |source_handle, dest_handle|
+              opts = options.merge(
+                source_handle: source_handle,
+                dest_handle: dest_handle
+              )
+              telemetry(__method__, opts)
+
               # TODO: Deprecate + recommend backup
               source = ensure_database(options.merge(db: source_handle))
               database = clone_database(source, dest_handle)
@@ -139,7 +170,7 @@ module Aptible
                  '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--logical --version VERSION] [--key-arn KEY_ARN]',
                  'Create a replica/follower of a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, type: :numeric
@@ -150,6 +181,12 @@ module Aptible
                                        desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'db:replicate' do |source_handle, dest_handle|
+              opts = options.merge(
+                source_handle: source_handle,
+                dest_handle: dest_handle
+              )
+              telemetry(__method__, opts)
+
               source = ensure_database(options.merge(db: source_handle))
 
               if options[:logical]
@@ -191,8 +228,10 @@ module Aptible
 
             desc 'db:dump HANDLE [pg_dump options]',
                  'Dump a remote database to file'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:dump' do |handle, *dump_options|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 filename = "#{handle}.dump"
@@ -204,9 +243,15 @@ module Aptible
 
             desc 'db:execute HANDLE SQL_FILE [--on-error-stop]',
                  'Executes sql against a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :on_error_stop, type: :boolean
             define_method 'db:execute' do |handle, sql_path|
+              opts = options.merge(
+                handle: handle,
+                sql_path: sql_path
+              )
+              telemetry(__method__, opts)
+
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
                 CLI.logger.info "Executing #{sql_path} against #{handle}"
@@ -217,10 +262,12 @@ module Aptible
             end
 
             desc 'db:tunnel HANDLE', 'Create a local tunnel to a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :port, type: :numeric
             option :type, type: :string
             define_method 'db:tunnel' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               desired_port = Integer(options[:port] || 0)
               database = ensure_database(options.merge(db: handle))
 
@@ -262,8 +309,10 @@ module Aptible
             end
 
             desc 'db:deprovision HANDLE', 'Deprovision a database'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:deprovision' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
               CLI.logger.info "Deprovisioning #{database.handle}..."
               op = database.create_operation!(type: 'deprovision')
@@ -278,8 +327,10 @@ module Aptible
             end
 
             desc 'db:backup HANDLE', 'Backup a database'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:backup' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
               CLI.logger.info "Backing up #{database.handle}..."
               op = database.create_operation!(type: 'backup')
@@ -287,8 +338,10 @@ module Aptible
             end
 
             desc 'db:reload HANDLE', 'Reload a database'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:reload' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
               CLI.logger.info "Reloading #{database.handle}..."
               op = database.create_operation!(type: 'reload')
@@ -300,7 +353,7 @@ module Aptible
                  '[--container-profile PROFILE] [--iops IOPS] ' \
                  '[--volume-type [gp2, gp3]]',
                  'Restart a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :container_size, type: :numeric
             option :container_profile, type: :string,
                                        desc: 'Examples: m c r'
@@ -309,6 +362,8 @@ module Aptible
             option :iops, type: :numeric
             option :volume_type
             define_method 'db:restart' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
 
               opts = {
@@ -335,10 +390,12 @@ module Aptible
             desc 'db:modify HANDLE ' \
                  '[--iops IOPS] [--volume-type [gp2, gp3]]',
                  'Modify a database disk'
-            option :environment
+            option :environment, aliases: '--env'
             option :iops, type: :numeric
             option :volume_type
             define_method 'db:modify' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
 
               opts = {
@@ -354,9 +411,11 @@ module Aptible
             end
 
             desc 'db:url HANDLE', 'Display a database URL'
-            option :environment
+            option :environment, aliases: '--env'
             option :type, type: :string
             define_method 'db:url' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               database = ensure_database(options.merge(db: handle))
               credential = find_credential(database, options[:type])
 
@@ -371,8 +430,14 @@ module Aptible
                  ' ENVIRONMENT_HANDLE]', 'Rename a database handle. In order'\
                  ' for the new database handle to appear in log drain and'\
                  ' metric drain destinations, you must reload the database.'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'db:rename' do |old_handle, new_handle|
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
+
               env = ensure_environment(options)
               db = ensure_database(options.merge(db: old_handle))
               db.update!(handle: new_handle)

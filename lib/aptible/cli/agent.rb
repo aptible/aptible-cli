@@ -1,5 +1,6 @@
 require 'base64'
 require 'uri'
+require 'logger'
 
 require 'aptible/auth'
 require 'thor'
@@ -8,6 +9,7 @@ require 'chronic_duration'
 
 require_relative 'helpers/ssh'
 require_relative 'helpers/token'
+require_relative 'helpers/telemetry'
 require_relative 'helpers/operation'
 require_relative 'helpers/environment'
 require_relative 'helpers/app'
@@ -80,7 +82,13 @@ module Aptible
 
       def initialize(*)
         nag_toolbelt unless toolbelt?
-        Aptible::Resource.configure { |conf| conf.user_agent = version_string }
+        Aptible::Resource.configure do |conf|
+          conf.user_agent = version_string
+          level = Logger::WARN
+          debug_level = ENV['APTIBLE_DEBUG']
+          level = debug_level if debug_level
+          conf.logger.tap { |l| l.level = level }
+        end
         warn_sso_enforcement
         super
       end
@@ -341,7 +349,28 @@ module Aptible
           "v#{Aptible::CLI::VERSION}"
         ]
         bits << 'toolbelt' if toolbelt?
+        bits << "(#{ci_string})" if ci?
         bits.join ' '
+      end
+
+      def ci_string
+        if ENV['GITHUB_ACTIONS'] == 'true'
+          'GitHub Actions'
+        elsif ENV['CIRCLECI'] == 'true'
+          'CircleCI'
+        elsif ENV['TRAVIS'] == 'true'
+          'Travis CI'
+        elsif ENV['GITLAB_CI'] == 'true'
+          'GitLab CI'
+        elsif ENV['DRONE'] == 'true'
+          'Harness'
+        else
+          'CI'
+        end
+      end
+
+      def ci?
+        ENV['CI'] == 'true'
       end
 
       def toolbelt?

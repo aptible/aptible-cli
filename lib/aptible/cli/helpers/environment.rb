@@ -6,6 +6,14 @@ module Aptible
       module Environment
         include Helpers::Token
 
+        def environment_href
+          href = '/accounts'
+          if Renderer.format != 'json'
+            href = '/accounts?per_page=5000&no_embed=true'
+          end
+          href
+        end
+
         def scoped_environments(options)
           if options[:environment]
             if (environment = environment_from_handle(options[:environment]))
@@ -14,7 +22,11 @@ module Aptible
               raise Thor::Error, 'Specified account does not exist'
             end
           else
-            Aptible::Api::Account.all(token: fetch_token)
+            href = environment_href
+            Aptible::Api::Account.all(
+              token: fetch_token,
+              href: href
+            )
           end
         end
 
@@ -30,18 +42,37 @@ module Aptible
 
         def environment_from_handle(handle)
           return nil unless handle
-          Aptible::Api::Account.all(token: fetch_token).find do |a|
+          href = environment_href
+          Aptible::Api::Account.all(token: fetch_token, href: href).find do |a|
             a.handle == handle
           end
         end
 
-        def ensure_default_environment
-          environments = Aptible::Api::Account.all(token: fetch_token)
-          return environments.first if environments.count == 1
+        def environment_map(accounts)
+          acc_map = {}
+          accounts.each do |account|
+            acc_map[account.links.self.href] = account
+          end
+          acc_map
+        end
 
-          raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
-            Multiple environments available, please specify with --environment
-          ERR
+        def ensure_default_environment
+          href = environment_href
+          environments = Aptible::Api::Account.all(
+            token: fetch_token,
+            href: href
+          )
+          case environments.count
+          when 0
+            e = 'No environments. Go to https://app.aptible.com/ to proceed'
+            raise Thor::Error, e
+          when 1
+            return environments.first
+          else
+            raise Thor::Error, <<-ERR.gsub(/\s+/, ' ').strip
+              Multiple environments available, please specify with --environment or --env
+            ERR
+          end
         end
       end
     end

@@ -10,8 +10,13 @@ describe Aptible::CLI::Agent do
   before { allow(subject).to receive(:fetch_token).and_return(token) }
 
   before do
+    allow(Aptible::Api::MetricDrain).to receive(:all)
+      .with(token: token, href: '/metric_drains?per_page=5000')
+      .and_return([metric_drain])
+
     allow(Aptible::Api::Account).to receive(:all)
-      .with(token: token).and_return([account])
+      .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
+      .and_return([account])
   end
 
   describe '#metric_drain:list' do
@@ -25,8 +30,16 @@ describe Aptible::CLI::Agent do
 
     it 'lists metric drains across multiple accounts' do
       other_account = Fabricate(:account)
-      Fabricate(:metric_drain, handle: 'test2', account: other_account)
+      other_drain = Fabricate(
+        :metric_drain,
+        handle: 'test2',
+        account: other_account
+      )
       accounts = [account, other_account]
+
+      allow(Aptible::Api::MetricDrain).to receive(:all)
+        .with(token: token, href: '/metric_drains?per_page=5000')
+        .and_return([metric_drain, other_drain])
       allow(Aptible::Api::Account).to receive(:all).and_return(accounts)
 
       subject.send('metric_drain:list')

@@ -73,8 +73,9 @@ describe Aptible::CLI::Agent do
           string_matches: 'foo',
           download_location: './'
         }
-        subject.stub(:info_from_path) { { shasum: 'foo' } }
-        subject.stub(:encryption_key) { subject.options[:decryption_keys] }
+        allow(subject).to receive(:info_from_path).and_return(shasum: 'foo')
+        allow(subject).to receive(:encryption_key)
+          .and_return(subject.options[:decryption_keys])
       end
 
       it 'download all files' do
@@ -116,8 +117,9 @@ describe Aptible::CLI::Agent do
           app_id: 123,
           download_location: './'
         }
-        subject.stub(:info_from_path) { { shasum: 'foo' } }
-        subject.stub(:encryption_key) { subject.options[:decryption_keys] }
+        allow(subject).to receive(:info_from_path).and_return(shasum: 'foo')
+        allow(subject).to receive(:encryption_key)
+          .and_return(subject.options[:decryption_keys])
       end
 
       it 'download all files' do
@@ -161,8 +163,9 @@ describe Aptible::CLI::Agent do
             '9080b96447f98b31ef9831d5fd98b09e3c5c545269734e2e825644571152457c',
           download_location: './'
         }
-        subject.stub(:info_from_path) { { shasum: 'foo' } }
-        subject.stub(:encryption_key) { subject.options[:decryption_keys] }
+        allow(subject).to receive(:info_from_path).and_return(shasum: 'foo')
+        allow(subject).to receive(:encryption_key)
+          .and_return(subject.options[:decryption_keys])
       end
 
       it 'download all files' do

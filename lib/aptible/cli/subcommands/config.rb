@@ -1,5 +1,4 @@
 require 'shellwords'
-
 module Aptible
   module CLI
     module Subcommands
@@ -8,10 +7,13 @@ module Aptible
           thor.class_eval do
             include Helpers::Operation
             include Helpers::App
+            include Helpers::Telemetry
 
             desc 'config', "Print an app's current configuration"
             app_options
             def config
+              telemetry(__method__, options)
+
               app = ensure_app(options)
               config = app.current_configuration
               env = config ? config.env : {}
@@ -33,6 +35,8 @@ module Aptible
                  "Print a specific key within an app's current configuration"
             app_options
             define_method 'config:get' do |*args|
+              telemetry(__method__, options)
+
               app = ensure_app(options)
               config = app.current_configuration
               env = config ? config.env : {}
@@ -50,6 +54,8 @@ module Aptible
                  'Add an ENV variable to an app'
             app_options
             define_method 'config:add' do |*args|
+              telemetry(__method__, options)
+
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
               env = extract_env(args)
@@ -62,6 +68,7 @@ module Aptible
                  'Add an ENV variable to an app'
             app_options
             define_method 'config:set' do |*args|
+              telemetry(__method__, options)
               send('config:add', *args)
             end
 
@@ -69,9 +76,12 @@ module Aptible
                  'Remove an ENV variable from an app'
             app_options
             define_method 'config:rm' do |*args|
+              telemetry(__method__, options)
+
               # FIXME: define_method - ?! Seriously, WTF Thor.
               app = ensure_app(options)
               env = Hash[args.map do |arg|
+                arg = arg.split('=')[0]
                 validate_env_key!(arg)
                 [arg, '']
               end]
@@ -84,6 +94,7 @@ module Aptible
                  'Remove an ENV variable from an app'
             app_options
             define_method 'config:unset' do |*args|
+              telemetry(__method__, options)
               send('config:rm', *args)
             end
           end

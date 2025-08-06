@@ -7,17 +7,34 @@ module Aptible
             include Helpers::App
             include Helpers::Environment
             include Helpers::Token
+            include Helpers::Telemetry
 
             desc 'apps', 'List all applications'
-            option :environment
+            option :environment, aliases: '--env'
             def apps
+              telemetry(__method__, options)
+
               Formatter.render(Renderer.current) do |root|
                 root.grouped_keyed_list(
                   { 'environment' => 'handle' },
                   'handle'
                 ) do |node|
-                  scoped_environments(options).each do |account|
-                    account.each_app do |app|
+                  accounts = scoped_environments(options)
+                  acc_map = environment_map(accounts)
+
+                  if Renderer.format == 'json'
+                    accounts.each do |account|
+                      account.each_app do |app|
+                        node.object do |n|
+                          ResourceFormatter.inject_app(n, app, account)
+                        end
+                      end
+                    end
+                  else
+                    apps_all.each do |app|
+                      account = acc_map[app.links.account.href]
+                      next if account.nil?
+
                       node.object do |n|
                         ResourceFormatter.inject_app(n, app, account)
                       end
@@ -28,8 +45,10 @@ module Aptible
             end
 
             desc 'apps:create HANDLE', 'Create a new application'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'apps:create' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               environment = ensure_environment(options)
               app = environment.create_app(handle: handle)
 
@@ -56,6 +75,8 @@ module Aptible
             option :container_profile, type: :string,
                                        desc: 'Examples: m c r'
             define_method 'apps:scale' do |type|
+              telemetry(__method__, options.merge(type: type))
+
               service = ensure_service(options, type)
 
               container_count = options[:container_count]
@@ -69,9 +90,11 @@ module Aptible
                 raise Thor::Error, m
               end
 
-              if container_count.nil? && container_size.nil?
-                raise Thor::Error,
-                      'Provide at least --container-count or --container-size'
+              if container_count.nil? && container_size.nil? &&
+                 container_profile.nil?
+                m = 'Provide at least --container-count, --container-size, ' \
+                    'or --container-profile'
+                raise Thor::Error, m
               end
 
               # We don't validate any parameters here: API will do that for us.
@@ -87,6 +110,8 @@ module Aptible
             desc 'apps:deprovision', 'Deprovision an app'
             app_options
             define_method 'apps:deprovision' do
+              telemetry(__method__, options)
+
               app = ensure_app(options)
               CLI.logger.info "Deprovisioning #{app.handle}..."
               op = app.create_operation!(type: 'deprovision')
@@ -104,8 +129,14 @@ module Aptible
                  ' ENVIRONMENT_HANDLE]', 'Rename an app handle. In order'\
                  ' for the new app handle to appear in log drain and metric'\
                  ' drain destinations, you must restart the app.'
-            option :environment
+            option :environment, aliases: '--env'
             define_method 'apps:rename' do |old_handle, new_handle|
+              opts = options.merge(
+                old_handle: old_handle,
+                new_handle: new_handle
+              )
+              telemetry(__method__, opts)
+
               env = ensure_environment(options)
               app = ensure_app(options.merge(app: old_handle))
               app.update!(handle: new_handle)

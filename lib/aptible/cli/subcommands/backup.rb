@@ -6,6 +6,7 @@ module Aptible
           thor.class_eval do
             include Helpers::Token
             include Helpers::Database
+            include Helpers::Telemetry
 
             desc 'backup:restore BACKUP_ID ' \
                  '[--environment ENVIRONMENT_HANDLE] [--handle HANDLE] ' \
@@ -14,7 +15,8 @@ module Aptible
                  '[--key-arn KEY_ARN]',
                  'Restore a backup'
             option :handle, desc: 'a name to use for the new database'
-            option :environment, desc: 'a different environment to restore to'
+            option :environment, aliases: '--env',
+                                 desc: 'a different environment to restore to'
             option :container_size, type: :numeric
             option :size, type: :numeric
             option :disk_size, type: :numeric
@@ -23,6 +25,8 @@ module Aptible
                                        desc: 'Examples: m c r'
             option :iops, type: :numeric
             define_method 'backup:restore' do |backup_id|
+              telemetry(__method__, options.merge(backup_id: backup_id))
+
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
 
@@ -68,11 +72,13 @@ module Aptible
             end
 
             desc 'backup:list DB_HANDLE', 'List backups for a database'
-            option :environment
+            option :environment, aliases: '--env'
             option :max_age,
-                   default: '1mo',
+                   default: '99y',
                    desc: 'Limit backups returned (example usage: 1w, 1y, etc.)'
             define_method 'backup:list' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
               age = ChronicDuration.parse(options[:max_age])
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
@@ -95,11 +101,13 @@ module Aptible
 
             desc 'backup:orphaned', 'List backups associated with ' \
                                     'deprovisioned databases'
-            option :environment
-            option :max_age, default: '1y',
+            option :environment, aliases: '--env'
+            option :max_age, default: '99y',
                              desc: 'Limit backups returned '\
                                    '(example usage: 1w, 1y, etc.)'
             define_method 'backup:orphaned' do
+              telemetry(__method__, options)
+
               age = ChronicDuration.parse(options[:max_age])
               raise Thor::Error, "Invalid age: #{options[:max_age]}" if age.nil?
               min_created_at = Time.now - age
@@ -125,6 +133,8 @@ module Aptible
             desc 'backup:purge BACKUP_ID',
                  'Permanently delete a backup and any copies of it'
             define_method 'backup:purge' do |backup_id|
+              telemetry(__method__, options.merge(backup_id: backup_id))
+
               backup = Aptible::Api::Backup.find(backup_id, token: fetch_token)
               raise Thor::Error, "Backup ##{backup_id} not found" if backup.nil?
 

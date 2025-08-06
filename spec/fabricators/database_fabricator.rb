@@ -19,6 +19,14 @@ Fabricator(:database, from: :stub_database) do
   database_image
   disk { Fabricate(:database_disk) }
   service { nil }
+  links do |attrs|
+    hash = {
+      account: OpenStruct.new(
+        href: "/accounts/#{attrs[:account].id}"
+      )
+    }
+    OpenStruct.new(hash)
+  end
 
   backups { [] }
   database_credentials { [] }
@@ -26,8 +34,10 @@ Fabricator(:database, from: :stub_database) do
 
   after_create do |database, transients|
     database.account.databases << database
-    database.service = transients[:service] || Fabricate(
-      :service, app: nil, database: database
-    )
+    unless status == 'provisioning'
+      database.service = transients[:service] || Fabricate(
+        :service, app: nil, database: database
+      )
+    end
   end
 end
