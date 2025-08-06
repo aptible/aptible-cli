@@ -180,6 +180,7 @@ module Aptible
             port = vhost.container_port ? vhost.container_port : 'default'
             node.value('type', 'https')
             node.value('port', port)
+            node.value('shared', vhost.shared)
           end
 
           node.value('internal', vhost.internal)

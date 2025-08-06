@@ -11,6 +11,7 @@ module Aptible
             tls
             ports
             port
+            shared
           ).freeze
 
           def initialize(&block)
@@ -110,6 +111,15 @@ module Aptible
                         'on this Endpoint'
                 )
               end
+
+              if builder.shared?
+                option(
+                  :shared,
+                  type: :boolean,
+                  desc: "Share this Endpoint's load balancer with other " \
+                        'Endpoints'
+                )
+              end
             end
           end
 
@@ -167,6 +177,12 @@ module Aptible
             end
 
             process_tls(account, options, params) if tls?
+
+            if shared?
+              params[:shared] = options.delete(:shared) do
+                create? ? false : nil
+              end
+            end
 
             options.delete(:environment)
 
