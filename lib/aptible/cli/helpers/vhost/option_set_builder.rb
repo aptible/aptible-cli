@@ -12,6 +12,7 @@ module Aptible
             ports
             port
             alb
+            shared
           ).freeze
 
           def initialize(&block)
@@ -122,6 +123,15 @@ module Aptible
                         'on this Endpoint'
                 )
               end
+
+              if builder.shared?
+                option(
+                  :shared,
+                  type: :boolean,
+                  desc: "Share this Endpoint's load balancer with other " \
+                        'Endpoints'
+                )
+              end
             end
           end
 
@@ -191,6 +201,12 @@ module Aptible
                   raise Thor::Error, e
                 end
                 params[:load_balancing_algorithm_type] = lba_type
+              end
+
+              if shared?
+                params[:shared] = options.delete(:shared) do
+                  create? ? false : nil
+                end
               end
             end
 

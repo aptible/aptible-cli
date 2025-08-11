@@ -204,6 +204,7 @@ module Aptible
             node.value('port', port)
             node.value('load_balancing_algorithm_type', vhost
                         .load_balancing_algorithm_type)
+            node.value('shared', vhost.shared)
           end
 
           node.value('internal', vhost.internal)

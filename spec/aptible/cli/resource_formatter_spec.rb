@@ -21,7 +21,8 @@ describe Aptible::CLI::ResourceFormatter do
         ip_whitelist: [],
         default: false,
         acme: false,
-        load_balancing_algorithm_type: 'least_outstanding_requests'
+        load_balancing_algorithm_type: 'least_outstanding_requests',
+        shared: false
       )
 
       expected = [
@@ -32,6 +33,7 @@ describe Aptible::CLI::ResourceFormatter do
         'Type: https',
         'Port: default',
         'Load Balancing Algorithm Type: least_outstanding_requests',
+        'Shared: false',
         'Internal: false',
         'IP Whitelist: all traffic',
         'Default Domain Enabled: false',
