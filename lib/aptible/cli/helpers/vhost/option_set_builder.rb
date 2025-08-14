@@ -58,8 +58,8 @@ module Aptible
                   option(
                     :load_balancing_algorithm_type,
                     type: :string,
-                    desc: 'The load balancing algorithm for this Endpoint.' \
-                          'valid options are round_robin, ' \
+                    desc: 'The load balancing algorithm for this Endpoint. ' \
+                          'Valid options are round_robin, ' \
                           'least_outstanding_requests, and ' \
                           'weighted_random'
                   )
