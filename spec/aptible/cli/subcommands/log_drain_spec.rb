@@ -200,7 +200,7 @@ describe Aptible::CLI::Agent do
       it 'creates a new Solarwinds log drain' do
         opts = {
           handle: 'test-solarwinds',
-          dain_host: 'some-solarwinds.domain.com',
+          drain_host: 'some-solarwinds.domain.com',
           logging_token: 'test-token',
           drain_apps: nil,
           drain_databases: nil,
