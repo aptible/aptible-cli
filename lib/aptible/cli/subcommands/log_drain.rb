@@ -153,7 +153,7 @@ module Aptible
             end
 
             desc 'log_drain:create:solarwinds HANDLE ' \
-                 '--host SWO_HOSTNAME --token SWO_TOKEN' \
+                 '--host SWO_HOSTNAME --token SWO_TOKEN ' \
                  + drain_flags,
                  'Create a SolarWinds Log Drain.  By default, App, Database, ' \
                  + 'Ephemeral Session, and Proxy logs will be sent ' \
