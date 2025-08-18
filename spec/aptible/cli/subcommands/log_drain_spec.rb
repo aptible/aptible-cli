@@ -197,25 +197,27 @@ describe Aptible::CLI::Agent do
     end
 
     describe 'solarwinds' do
-      opts = {
-        handle: 'test-solarwinds',
-        dain_host: 'some-solarwinds.domain.com',
-        logging_token: 'test-token',
-        drain_apps: nil,
-        drain_databases: nil,
-        drain_ephemeral_sessions: nil,
-        drain_proxies: nil,
-        drain_type: :solarwinds
-      }
+      it 'creates a new Solarwinds log drain' do
+        opts = {
+          handle: 'test-solarwinds',
+          dain_host: 'some-solarwinds.domain.com',
+          logging_token: 'test-token',
+          drain_apps: nil,
+          drain_databases: nil,
+          drain_ephemeral_sessions: nil,
+          drain_proxies: nil,
+          drain_type: :solarwinds
+        }
 
-      expect_provision_log_drain(opts)
+        expect_provision_log_drain(opts)
 
-      subject.options = {
-        environment: account.handle,
-        host: 'some-solarwinds.domain.com',
-        token: 'test-token'
-      }
-      subject.send('log_drain:create:solarwinds', 'test-solarwinds')
+        subject.options = {
+          environment: account.handle,
+          host: 'some-solarwinds.domain.com',
+          token: 'test-token'
+        }
+        subject.send('log_drain:create:solarwinds', 'test-solarwinds')
+      end
     end
   end
 
