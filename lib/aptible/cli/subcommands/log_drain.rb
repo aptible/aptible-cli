@@ -152,6 +152,33 @@ module Aptible
               create_syslog_based_log_drain(handle, options)
             end
 
+            desc 'log_drain:create:solarwinds HANDLE ' \
+                 '--host SWO_HOSTNAME --token SWO_TOKEN ' \
+                 + drain_flags,
+                 'Create a SolarWinds Log Drain.  By default, App, Database, ' \
+                 + 'Ephemeral Session, and Proxy logs will be sent ' \
+                 + 'to your chosen destination.'
+            option :host, type: :string
+            option :token, type: :string
+            drain_options
+            define_method 'log_drain:create:solarwinds' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
+              account = ensure_environment(options)
+
+              opts = {
+                handle: handle,
+                drain_host: options[:host],
+                logging_token: options[:token],
+                drain_apps: options[:drain_apps],
+                drain_databases: options[:drain_databases],
+                drain_ephemeral_sessions: options[:drain_ephemeral_sessions],
+                drain_proxies: options[:drain_proxies],
+                drain_type: :solarwinds
+              }
+              create_log_drain(account, opts)
+            end
+
             desc 'log_drain:create:syslog HANDLE ' \
                  '--host SYSLOG_HOST --port SYSLOG_PORT ' \
                  '[--token TOKEN] ' \
