@@ -204,9 +204,7 @@ module Aptible
               end
 
               if shared?
-                params[:shared] = options.delete(:shared) do
-                  create? ? false : nil
-                end
+                params[:shared] = options.delete(:shared)
               end
             end
 
