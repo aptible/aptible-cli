@@ -12,7 +12,6 @@ module Aptible
             ports
             port
             alb
-            shared
           ).freeze
 
           def initialize(&block)
@@ -62,6 +61,13 @@ module Aptible
                           'Valid options are round_robin, ' \
                           'least_outstanding_requests, and ' \
                           'weighted_random'
+                  )
+
+                  option(
+                    :shared,
+                    type: :boolean,
+                    desc: "Share this Endpoint's load balancer with other " \
+                          'Endpoints'
                   )
                 end
               end
@@ -121,15 +127,6 @@ module Aptible
                   type: :string,
                   desc: 'The fingerprint of an existing Certificate to use ' \
                         'on this Endpoint'
-                )
-              end
-
-              if builder.shared?
-                option(
-                  :shared,
-                  type: :boolean,
-                  desc: "Share this Endpoint's load balancer with other " \
-                        'Endpoints'
                 )
               end
             end
@@ -203,11 +200,7 @@ module Aptible
                 params[:load_balancing_algorithm_type] = lba_type
               end
 
-              if shared?
-                params[:shared] = options.delete(:shared) do
-                  create? ? false : nil
-                end
-              end
+              params[:shared] = options.delete(:shared)
             end
 
             options.delete(:environment)

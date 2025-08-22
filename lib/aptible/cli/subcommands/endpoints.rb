@@ -160,7 +160,6 @@ module Aptible
               port!
               tls!
               alb!
-              shared!
             end
 
             desc 'endpoints:https:create [--app APP] SERVICE',
@@ -180,7 +179,6 @@ module Aptible
               port!
               tls!
               alb!
-              shared!
             end
 
             desc 'endpoints:https:modify [--app APP] ENDPOINT_HOSTNAME',
