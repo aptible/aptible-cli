@@ -262,6 +262,52 @@ module Aptible
           attach_account(node, account)
         end
 
+        def inject_ai_token(node, ai_token, account, include_display: false)
+          require 'base64'
+
+          node.value('id', ai_token.id)
+
+          # Decode the note from URL-safe base64 (encrypted at rest, decoded here for display)
+          encoded_note = ai_token.attributes['note'] rescue nil
+          note = if encoded_note
+                   begin
+                     Base64.urlsafe_decode64(encoded_note)
+                   rescue ArgumentError
+                     encoded_note # Fall back to raw value if decoding fails
+                   end
+                 end
+          node.value('note', note) if note
+
+          # Check blocked status (use attributes hash for HyperResource compatibility)
+          is_blocked = ai_token.attributes['blocked'] rescue false
+
+          # Display field is only used for list view (grouped_keyed_list)
+          if include_display
+            # Determine status: revoked if blocked, otherwise active
+            status = is_blocked ? 'REVOKED' : 'ACTIVE'
+
+            # Format: "ID ACTIVE  note" or "ID REVOKED note"
+            # Pad ACTIVE with 2 extra spaces to align with REVOKED (7 chars + 1 space = 8)
+            status_padded = status == 'ACTIVE' ? 'ACTIVE  ' : 'REVOKED '
+            display_note = note || ''
+            node.value('display', "#{ai_token.id} #{status_padded}#{display_note}")
+          end
+
+          node.value('created_at', ai_token.created_at)
+
+          # Optional fields - only include if present (use attributes hash for HyperResource compatibility)
+          updated_at = ai_token.attributes['updated_at'] rescue nil
+          node.value('updated_at', updated_at) if updated_at
+
+          last_used_at = ai_token.attributes['last_used_at'] rescue nil
+          node.value('last_used_at', last_used_at) if last_used_at
+
+          # Show status in detail view
+          node.value('status', is_blocked ? 'REVOKED' : 'ACTIVE')
+
+          attach_account(node, account) if account
+        end
+
         def inject_maintenance(
           node,
           command_prefix,
