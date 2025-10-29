@@ -45,6 +45,7 @@ require_relative 'subcommands/log_drain'
 require_relative 'subcommands/metric_drain'
 require_relative 'subcommands/maintenance'
 require_relative 'subcommands/backup_retention_policy'
+require_relative 'subcommands/ai_tokens'
 
 module Aptible
   module CLI
@@ -74,6 +75,7 @@ module Aptible
       include Subcommands::MetricDrain
       include Subcommands::Maintenance
       include Subcommands::BackupRetentionPolicy
+      include Subcommands::AiTokens
 
       # Forward return codes on failures.
       def self.exit_on_failure?
