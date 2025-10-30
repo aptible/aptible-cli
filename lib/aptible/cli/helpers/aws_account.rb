@@ -39,6 +39,7 @@ module Aptible
             role_arn: role_arn,
             account_name: options[:account_name] || options[:name],
             aws_account_id: options[:aws_account_id],
+            organization_id: options[:organization_id],
             aws_region_primary: options[:aws_region_primary],
             status: options[:status],
             discovery_enabled: options.key?(:discovery_enabled) ? options[:discovery_enabled] : nil,

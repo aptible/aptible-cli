@@ -50,6 +50,7 @@ module Aptible
                  '[--role-arn ROLE_ARN] [--arn ARN] ' \
                  '[--account-name ACCOUNT_NAME] [--name NAME] ' \
                  '[--aws-account-id AWS_ACCOUNT_ID] ' \
+                 '[--organization-id ORG_ID] ' \
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--status STATUS] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
@@ -60,6 +61,7 @@ module Aptible
             option :account_name, type: :string, desc: 'Display name'
             option :name, type: :string, desc: 'Deprecated alias for --account-name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
+            option :organization_id, type: :string, desc: 'Organization ID'
             option :aws_region_primary, type: :string, desc: 'Primary AWS region'
             option :status, type: :string, desc: 'Status (e.g., active)'
             option :discovery_enabled, type: :boolean, desc: 'Enable resource discovery'
@@ -111,6 +113,7 @@ module Aptible
             desc 'aws_accounts:update ID [--role-arn ROLE_ARN] [--arn ARN] ' \
                  '[--account-name ACCOUNT_NAME] [--name NAME] ' \
                  '[--aws-account-id AWS_ACCOUNT_ID] ' \
+                 '[--organization-id ORG_ID] ' \
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--status STATUS] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
@@ -121,6 +124,7 @@ module Aptible
             option :account_name, type: :string, desc: 'New display name'
             option :name, type: :string, desc: 'Deprecated alias for --account-name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
+            option :organization_id, type: :string, desc: 'Organization ID'
             option :aws_region_primary, type: :string, desc: 'Primary AWS region'
             option :status, type: :string, desc: 'Status (e.g., active)'
             option :discovery_enabled, type: :boolean, desc: 'Enable resource discovery'
