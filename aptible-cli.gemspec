@@ -22,9 +22,9 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activesupport', '>= 4.0', '< 6.0'
   spec.add_dependency 'aptible-api', '~> 1.10.0'
-  spec.add_dependency 'aptible-auth', '~> 1.2.7'
-  spec.add_dependency 'aptible-billing', '~> 1.0.1'
-  spec.add_dependency 'aptible-resource', '~> 1.1.3'
+  spec.add_dependency 'aptible-auth', '~> 1.2.5'
+  spec.add_dependency 'aptible-billing', '~> 1.0'
+  spec.add_dependency 'aptible-resource', '~> 1.1'
   spec.add_dependency 'aws-eventstream', '~> 1.1.1'
   spec.add_dependency 'aws-sdk', '~> 2.0'
   spec.add_dependency 'aws-sigv4', '~> 1.2.4'
