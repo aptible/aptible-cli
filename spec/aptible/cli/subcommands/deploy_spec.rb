@@ -45,7 +45,10 @@ describe Aptible::CLI::Agent do
         stub_options(docker_image: 'foobar')
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+          .with(
+            type: 'deploy',
+            settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' }
+          )
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
@@ -60,14 +63,13 @@ describe Aptible::CLI::Agent do
           private_registry_password: 'qux'
         )
 
-        env = {
-          'APTIBLE_PRIVATE_REGISTRY_EMAIL' => 'foo',
+        sensitive_settings = {
           'APTIBLE_PRIVATE_REGISTRY_USERNAME' => 'bar',
           'APTIBLE_PRIVATE_REGISTRY_PASSWORD' => 'qux'
         }
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: env)
+          .with(type: 'deploy', sensitive_settings: sensitive_settings)
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
@@ -136,20 +138,15 @@ describe Aptible::CLI::Agent do
       it 'allows redundant command line arguments' do
         stub_options(docker_image: 'foobar')
 
-        expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
-          .and_return(operation)
-        expect(subject).to receive(:attach_to_operation_logs)
-          .with(operation)
-
-        subject.deploy('APTIBLE_DOCKER_IMAGE=foobar')
+        expect { subject.deploy('APTIBLE_DOCKER_IMAGE=foobar') }
+          .to raise_error(/deprecated/im)
       end
 
       it 'reject contradictory command line argumnts' do
         stub_options(docker_image: 'foobar')
 
         expect { subject.deploy('APTIBLE_DOCKER_IMAGE=qux') }
-          .to raise_error(/different values/im)
+          .to raise_error(/deprecated/im)
       end
 
       it 'does not allow deploying nothing on an unprovisioned app' do
