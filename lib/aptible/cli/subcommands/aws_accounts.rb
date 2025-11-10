@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Aptible
   module CLI
     module Subcommands
@@ -18,12 +20,9 @@ module Aptible
                 root.list do |list|
                   accounts.each do |ext|
                     list.object do |node|
-                      # Always include id when available
                       node.value('id', ext.id) if ext.respond_to?(:id)
-
-                      # Include a few likely attributes if present
                       attrs = ext.respond_to?(:attributes) ? ext.attributes : {}
-                      %w[
+                      %w(
                         aws_account_id
                         account_name
                         aws_region_primary
@@ -34,7 +33,7 @@ module Aptible
                         account_id
                         created_at
                         updated_at
-                      ].each do |k|
+                      ).each do |k|
                         v = attrs[k]
                         node.value(k, v) unless v.nil?
                       end
@@ -57,9 +56,13 @@ module Aptible
             option :account_name, type: :string, desc: 'Display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
             option :organization_id, type: :string, desc: 'Organization ID'
-            option :aws_region_primary, type: :string, desc: 'Primary AWS region'
-            option :discovery_enabled, type: :boolean, desc: 'Enable resource discovery'
-            option :discovery_frequency, type: :string, desc: 'Discovery frequency (e.g., daily)'
+            option :aws_region_primary, type: :string,
+                                        desc: 'Primary AWS region'
+            option :discovery_enabled, type: :boolean,
+                                       desc: 'Enable resource discovery'
+            option :discovery_frequency,
+                   type: :string,
+                   desc: 'Discovery frequency (e.g., daily)'
             define_method 'aws_accounts:add' do
               telemetry(__method__, options)
 
@@ -68,8 +71,13 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.object do |node|
                   node.value('id', resource.id) if resource.respond_to?(:id)
-                  rattrs = resource.respond_to?(:attributes) ? resource.attributes : {}
-                  %w[
+                  rattrs =
+                    if resource.respond_to?(:attributes)
+                      resource.attributes
+                    else
+                      {}
+                    end
+                  %w(
                     aws_account_id
                     account_name
                     aws_region_primary
@@ -79,7 +87,7 @@ module Aptible
                     account_id
                     created_at
                     updated_at
-                  ].each do |k|
+                  ).each do |k|
                     v = rattrs[k]
                     node.value(k, v) unless v.nil?
                   end
@@ -113,9 +121,13 @@ module Aptible
             option :account_name, type: :string, desc: 'New display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
             option :organization_id, type: :string, desc: 'Organization ID'
-            option :aws_region_primary, type: :string, desc: 'Primary AWS region'
-            option :discovery_enabled, type: :boolean, desc: 'Enable resource discovery'
-            option :discovery_frequency, type: :string, desc: 'Discovery frequency (e.g., daily)'
+            option :aws_region_primary, type: :string,
+                                        desc: 'Primary AWS region'
+            option :discovery_enabled, type: :boolean,
+                                       desc: 'Enable resource discovery'
+            option :discovery_frequency,
+                   type: :string,
+                   desc: 'Discovery frequency (e.g., daily)'
             define_method 'aws_accounts:update' do |id|
               telemetry(__method__, options.merge(id: id))
 
@@ -124,8 +136,13 @@ module Aptible
               Formatter.render(Renderer.current) do |root|
                 root.object do |node|
                   node.value('id', ext.id)
-                  rattrs = ext.respond_to?(:attributes) ? ext.attributes : {}
-                  %w[
+                  rattrs =
+                    if ext.respond_to?(:attributes)
+                      ext.attributes
+                    else
+                      {}
+                    end
+                  %w(
                     aws_account_id
                     account_name
                     aws_region_primary
@@ -135,7 +152,7 @@ module Aptible
                     account_id
                     created_at
                     updated_at
-                  ].each do |k|
+                  ).each do |k|
                     v = rattrs[k]
                     node.value(k, v) unless v.nil?
                   end
@@ -148,6 +165,3 @@ module Aptible
     end
   end
 end
-
-
-

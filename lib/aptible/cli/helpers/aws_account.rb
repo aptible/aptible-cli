@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'aptible/api'
 
 module Aptible
@@ -7,11 +9,11 @@ module Aptible
         include Helpers::Token
 
         def aws_accounts_href
-          href = '/external_aws_accounts'
-          if Renderer.format != 'json'
-            href = '/external_aws_accounts?per_page=5000&no_embed=true'
+          if Renderer.format == 'json'
+            '/external_aws_accounts'
+          else
+            '/external_aws_accounts?per_page=5000&no_embed=true'
           end
-          href
         end
 
         def aws_accounts_all
@@ -29,12 +31,18 @@ module Aptible
 
         def ensure_external_aws_account(id)
           acct = aws_account_from_id(id)
-          raise Thor::Error, "External AWS account not found: #{id}" if acct.nil?
+          if acct.nil?
+            raise Thor::Error, "External AWS account not found: #{id}"
+          end
+
           acct
         end
 
         def build_external_aws_account_attrs(options)
           role_arn = options[:role_arn] || options[:arn]
+          discovery_enabled = if options.key?(:discovery_enabled)
+                                options[:discovery_enabled]
+                              end
           attrs = {
             role_arn: role_arn,
             account_name: options[:account_name] || options[:name],
@@ -42,7 +50,7 @@ module Aptible
             organization_id: options[:organization_id],
             aws_region_primary: options[:aws_region_primary],
             status: options[:status],
-            discovery_enabled: options.key?(:discovery_enabled) ? options[:discovery_enabled] : nil,
+            discovery_enabled: discovery_enabled,
             discovery_frequency: options[:discovery_frequency]
           }
           attrs.reject { |_, v| v.nil? }
@@ -82,5 +90,3 @@ module Aptible
     end
   end
 end
-
-
