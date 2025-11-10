@@ -10,7 +10,7 @@ module Aptible
             include Helpers::AwsAccount
             include Helpers::Telemetry
 
-            desc 'aws_accounts', 'List external AWS accounts'
+            desc 'aws_accounts', 'List external AWS accounts', hide: true
             def aws_accounts
               telemetry(__method__, options)
 
@@ -51,7 +51,7 @@ module Aptible
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
                  '[--discovery-frequency FREQ]', \
-                 'Add a new external AWS account'
+                 'Add a new external AWS account', hide: true
             option :role_arn, type: :string, desc: 'IAM Role ARN to assume'
             option :account_name, type: :string, desc: 'Display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
@@ -95,7 +95,7 @@ module Aptible
               end
             end
 
-            desc 'aws_accounts:delete ID', 'Delete an external AWS account'
+            desc 'aws_accounts:delete ID', 'Delete an external AWS account', hide: true
             define_method 'aws_accounts:delete' do |id|
               telemetry(__method__, options.merge(id: id))
 
@@ -116,7 +116,7 @@ module Aptible
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
                  '[--discovery-frequency FREQ]', \
-                 'Update an external AWS account'
+                 'Update an external AWS account', hide: true
             option :role_arn, type: :string, desc: 'New IAM Role ARN to assume'
             option :account_name, type: :string, desc: 'New display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
