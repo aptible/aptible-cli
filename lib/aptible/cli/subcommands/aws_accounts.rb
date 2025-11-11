@@ -47,7 +47,7 @@ module Aptible
                  '[--role-arn ROLE_ARN] ' \
                  '[--account-name ACCOUNT_NAME] ' \
                  '[--aws-account-id AWS_ACCOUNT_ID] ' \
-                 '[--organization-id ORG_ID] ' \
+                 '[--org-id ORGANIZATION_ID] '\
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
                  '[--discovery-frequency FREQ]', \
@@ -55,7 +55,10 @@ module Aptible
             option :role_arn, type: :string, desc: 'IAM Role ARN to assume'
             option :account_name, type: :string, desc: 'Display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
-            option :organization_id, type: :string, desc: 'Organization ID'
+            option :organization_id, aliases: '--org-id',
+                                     type: :string,
+                                     default: nil,
+                                     desc: 'Organization ID'
             option :aws_region_primary, type: :string,
                                         desc: 'Primary AWS region'
             option :discovery_enabled, type: :boolean,
@@ -95,7 +98,9 @@ module Aptible
               end
             end
 
-            desc 'aws_accounts:delete ID', 'Delete an external AWS account', hide: true
+            desc 'aws_accounts:delete ID',
+                 'Delete an external AWS account', \
+                 hide: true
             define_method 'aws_accounts:delete' do |id|
               telemetry(__method__, options.merge(id: id))
 
