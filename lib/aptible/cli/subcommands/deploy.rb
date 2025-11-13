@@ -109,7 +109,7 @@ module Aptible
 
               allow_it = [
                 opts[:git_ref],
-                opts[:env].try(:[], 'APTIBLE_DOCKER_IMAGE'),
+                opts[:settings].try(:[], 'APTIBLE_DOCKER_IMAGE'),
                 app.status == 'provisioned'
               ].any? { |x| x }
 
