@@ -24,9 +24,7 @@ module Aptible
         end
 
         def aws_account_from_id(id)
-          Aptible::Api::ExternalAwsAccount.all(token: fetch_token).find do |a|
-            a.id.to_s == id.to_s
-          end
+          Aptible::Api::ExternalAwsAccount.find(id.to_s, token: fetch_token)
         end
 
         def ensure_external_aws_account(id)
@@ -38,19 +36,36 @@ module Aptible
           acct
         end
 
+        def fetch_organization_id
+          orgs = Aptible::Auth::Organization.all(token: fetch_token)
+          raise Thor::Error, 'No organizations found, specify one with ' \
+                             '--organization-id=ORG_ID' if orgs.empty?
+          raise Thor::Error, 'Multiple organizations found, indicate which ' \
+                             'one to use with --organization-id=ORG_ID ' \
+                             "\n\tFound organization ids: #{orgs.join(', ')}" \
+                             if orgs.count > 1
+
+          orgs.first.id
+        end
+
+        def organization_id_from_opts_or_auth(options)
+          return options[:organization_id] if options.key? :organization_id
+
+          fetch_organization_id
+        end
+
         def build_external_aws_account_attrs(options)
-          role_arn = options[:role_arn] || options[:arn]
+          discovery_role_arn = options[:discovery_role_arn]
           discovery_enabled = if options.key?(:discovery_enabled)
                                 options[:discovery_enabled]
                               end
           attrs = {
-            role_arn: role_arn,
             account_name: options[:account_name] || options[:name],
             aws_account_id: options[:aws_account_id],
-            organization_id: options[:organization_id],
             aws_region_primary: options[:aws_region_primary],
             status: options[:status],
             discovery_enabled: discovery_enabled,
+            discovery_role_arn: discovery_role_arn,
             discovery_frequency: options[:discovery_frequency]
           }
           attrs.reject { |_, v| v.nil? }
@@ -58,6 +73,7 @@ module Aptible
 
         def create_external_aws_account!(options)
           attrs = build_external_aws_account_attrs(options)
+          attrs[:organization_id] = organization_id_from_opts_or_auth(options)
           Aptible::Api::ExternalAwsAccount.create(
             token: fetch_token,
             **attrs

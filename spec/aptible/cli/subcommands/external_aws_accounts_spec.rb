@@ -11,12 +11,12 @@ describe Aptible::CLI::Agent do
       a1 = Fabricate(:external_aws_account,
                      account_name: 'Dev',
                      aws_account_id: '111111111111',
-                     role_arn: 'arn:aws:iam::111111111111:role/' \
+                     discovery_role_arn: 'arn:aws:iam::111111111111:role/' \
                                'DevRole')
       a2 = Fabricate(:external_aws_account,
                      account_name: 'Prod',
                      aws_account_id: '222222222222',
-                     role_arn: 'arn:aws:iam::222222222222:role/' \
+                     discovery_role_arn: 'arn:aws:iam::222222222222:role/' \
                                'ProdRole')
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
@@ -31,14 +31,14 @@ describe Aptible::CLI::Agent do
       expect(captured_output_text).to include('Account Name: Dev')
       expect(captured_output_text).to include('Aws Account: 111111111111')
       expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::111111111111:role/DevRole')
+        include('Discovery Role Arn: arn:aws:iam::111111111111:role/DevRole')
       )
 
       expect(captured_output_text).to include("Id: #{a2.id}")
       expect(captured_output_text).to include('Account Name: Prod')
       expect(captured_output_text).to include('Aws Account: 222222222222')
       expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::222222222222:role/ProdRole')
+        include('Discovery Role Arn: arn:aws:iam::222222222222:role/ProdRole')
       )
     end
 
@@ -54,10 +54,12 @@ describe Aptible::CLI::Agent do
     end
 
     it 'renders JSON output and uses JSON href' do
-      a1 = Fabricate(:external_aws_account,
-                     account_name: 'Dev',
-                     aws_account_id: '111111111111',
-                     role_arn: 'arn:aws:iam::111111111111:role/DevRole')
+      a1 = Fabricate(
+        :external_aws_account,
+        account_name: 'Dev',
+        aws_account_id: '111111111111',
+        discovery_role_arn: 'arn:aws:iam::111111111111:role/DevRole'
+      )
 
       allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
 
@@ -72,7 +74,7 @@ describe Aptible::CLI::Agent do
       expect(json.first['id']).to eq(a1.id)
       expect(json.first['account_name']).to eq('Dev')
       expect(json.first['aws_account_id']).to eq('111111111111')
-      expect(json.first['role_arn']).to(
+      expect(json.first['discovery_role_arn']).to(
         eq('arn:aws:iam::111111111111:role/DevRole')
       )
     end
@@ -80,11 +82,15 @@ describe Aptible::CLI::Agent do
 
   describe '#aws_accounts:add' do
     it 'creates an external AWS account' do
+      org = double('org', id: 'org-123')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org])
+
       created = Fabricate(
         :external_aws_account,
         account_name: 'Staging',
         aws_account_id: '123456789012',
-        role_arn: 'arn:aws:iam::123456789012:role/' \
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/' \
                   'StagingRole',
         discovery_enabled: true,
         discovery_frequency: 'daily',
@@ -93,16 +99,17 @@ describe Aptible::CLI::Agent do
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/StagingRole',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/StagingRole',
         account_name: 'Staging',
         aws_account_id: '123456789012',
+        organization_id: 'org-123',
         aws_region_primary: 'us-east-1',
         discovery_enabled: true,
         discovery_frequency: 'daily'
       ).and_return(created)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::123456789012:role/StagingRole',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/StagingRole',
         account_name: 'Staging',
         aws_account_id: '123456789012',
         aws_region_primary: 'us-east-1',
@@ -114,67 +121,77 @@ describe Aptible::CLI::Agent do
       expect(captured_output_text).to include("Id: #{created.id}")
       expect(captured_output_text).to include('Account Name: Staging')
       expect(captured_output_text).to include('Aws Account: 123456789012')
-      expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::123456789012:role/StagingRole')
+      expect(captured_output_text).to include(
+        'Discovery Role Arn: arn:aws:iam::123456789012:role/StagingRole'
       )
     end
 
-    it 'creates with minimal options (role_arn only)' do
-      created = Fabricate(:external_aws_account,
-                          role_arn: 'arn:aws:iam::123456789012:role/' \
-                                    'MinRole')
+    it 'creates with minimal options (discovery_role_arn only)' do
+      org = double('org', id: 'org-123')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org])
+
+      created = Fabricate(
+        :external_aws_account,
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/MinRole'
+      )
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/MinRole'
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/MinRole',
+        organization_id: 'org-123'
       ).and_return(created)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::123456789012:role/MinRole'
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/MinRole'
       }
       subject.send('aws_accounts:add')
 
       expect(captured_output_text).to include("Id: #{created.id}")
-      expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::123456789012:role/MinRole')
+      expect(captured_output_text).to include(
+        'Discovery Role Arn: arn:aws:iam::123456789012:role/MinRole'
       )
     end
 
-    it 'supports --arn alias for --role-arn' do
-      created = Fabricate(:external_aws_account,
-                          role_arn: 'arn:aws:iam::123456789012:role/' \
-                                    'AliasRole')
+    it 'creates with organization_id provided' do
+      created = Fabricate(
+        :external_aws_account,
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/AliasRole'
+      )
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/AliasRole'
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/AliasRole',
+        organization_id: 'explicit-org-id'
       ).and_return(created)
 
       subject.options = {
-        arn: 'arn:aws:iam::123456789012:role/AliasRole'
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/AliasRole',
+        organization_id: 'explicit-org-id'
       }
       subject.send('aws_accounts:add')
 
-      expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::123456789012:role/AliasRole')
+      expect(captured_output_text).to include(
+        'Discovery Role Arn: arn:aws:iam::123456789012:role/AliasRole'
       )
     end
 
     it 'creates with all optional fields' do
-      created = Fabricate(:external_aws_account,
-                          account_name: 'Full',
-                          aws_account_id: '123456789012',
-                          role_arn: 'arn:aws:iam::123456789012:role/' \
-                                    'FullRole',
-                          organization_id: 'o-123',
-                          aws_region_primary: 'us-west-2',
-                          discovery_enabled: false,
-                          discovery_frequency: 'weekly',
-                          status: 'active')
+      created = Fabricate(
+        :external_aws_account,
+        account_name: 'Full',
+        aws_account_id: '123456789012',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/FullRole',
+        organization_id: 'o-123',
+        aws_region_primary: 'us-west-2',
+        discovery_enabled: false,
+        discovery_frequency: 'weekly',
+        status: 'active'
+      )
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/FullRole',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/FullRole',
         account_name: 'Full',
         aws_account_id: '123456789012',
         organization_id: 'o-123',
@@ -185,7 +202,7 @@ describe Aptible::CLI::Agent do
       ).and_return(created)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::123456789012:role/FullRole',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/FullRole',
         account_name: 'Full',
         aws_account_id: '123456789012',
         organization_id: 'o-123',
@@ -201,18 +218,25 @@ describe Aptible::CLI::Agent do
     end
 
     it 'honors --no-discovery-enabled (false case)' do
-      created = Fabricate(:external_aws_account,
-                          role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
-                          discovery_enabled: false)
+      org = double('org', id: 'org-123')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org])
+
+      created = Fabricate(
+        :external_aws_account,
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
+        discovery_enabled: false
+      )
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
+        organization_id: 'org-123',
         discovery_enabled: false
       ).and_return(created)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/NoDisc',
         discovery_enabled: false
       }
       subject.send('aws_accounts:add')
@@ -221,6 +245,10 @@ describe Aptible::CLI::Agent do
     end
 
     it 'bubbles API errors during create' do
+      org = double('org', id: 'org-123')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org])
+
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).and_raise(
         HyperResource::ClientError.new(
           'Boom',
@@ -228,28 +256,36 @@ describe Aptible::CLI::Agent do
         )
       )
 
-      subject.options = { role_arn: 'arn:aws:iam::123456789012:role/Error' }
+      subject.options = {
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/Error'
+      }
       expect { subject.send('aws_accounts:add') }.to(
         raise_error(HyperResource::ClientError)
       )
     end
 
     it 'renders JSON output for create' do
-      created = Fabricate(:external_aws_account,
-                          role_arn: 'arn:aws:iam::123456789012:role/' \
-                                    'JsonRole',
-                          account_name: 'JsonName')
+      org = double('org', id: 'org-123')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org])
+
+      created = Fabricate(
+        :external_aws_account,
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/JsonRole',
+        account_name: 'JsonName'
+      )
 
       allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
 
       expect(Aptible::Api::ExternalAwsAccount).to receive(:create).with(
         token: token,
-        role_arn: 'arn:aws:iam::123456789012:role/JsonRole',
-        account_name: 'JsonName'
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/JsonRole',
+        account_name: 'JsonName',
+        organization_id: 'org-123'
       ).and_return(created)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::123456789012:role/JsonRole',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/JsonRole',
         account_name: 'JsonName'
       }
       subject.send('aws_accounts:add')
@@ -257,32 +293,63 @@ describe Aptible::CLI::Agent do
       json = captured_output_json
       expect(json['id']).to eq(created.id)
       expect(json['account_name']).to eq('JsonName')
-      expect(json['role_arn']).to(
+      expect(json['discovery_role_arn']).to(
         eq('arn:aws:iam::123456789012:role/JsonRole')
+      )
+    end
+
+    it 'fails when no organizations found and no org_id provided' do
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([])
+
+      subject.options = {
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/TestRole'
+      }
+
+      expect { subject.send('aws_accounts:add') }.to(
+        raise_error(Thor::Error, /No organizations found/)
+      )
+    end
+
+    it 'fails when multiple organizations found and no org_id provided' do
+      org1 = double('org1', id: 'org-1')
+      org2 = double('org2', id: 'org-2')
+      allow(Aptible::Auth::Organization).to receive(:all)
+        .with(token: token).and_return([org1, org2])
+
+      subject.options = {
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/TestRole'
+      }
+
+      expect { subject.send('aws_accounts:add') }.to(
+        raise_error(Thor::Error, /Multiple organizations found/)
       )
     end
   end
 
   describe '#aws_accounts:update' do
     it 'updates an external AWS account' do
-      ext = double('ext',
-                   id: 42,
-                   attributes: {
-                     'account_name' => 'New Name',
-                     'aws_account_id' => '999999999999',
-                     'role_arn' => 'arn:aws:iam::999999999999:role/NewRole'
-                   })
+      ext = double(
+        'ext',
+        id: 42,
+        attributes: {
+          'account_name' => 'New Name',
+          'aws_account_id' => '999999999999',
+          'discovery_role_arn' =>
+            'arn:aws:iam::999999999999:role/NewRole'
+        }
+      )
 
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
       expect(ext).to receive(:update!).with(
-        role_arn: 'arn:aws:iam::999999999999:role/NewRole',
+        discovery_role_arn: 'arn:aws:iam::999999999999:role/NewRole',
         account_name: 'New Name',
         aws_account_id: '999999999999'
       ).and_return(true)
 
       subject.options = {
-        role_arn: 'arn:aws:iam::999999999999:role/NewRole',
+        discovery_role_arn: 'arn:aws:iam::999999999999:role/NewRole',
         account_name: 'New Name',
         aws_account_id: '999999999999'
       }
@@ -292,29 +359,31 @@ describe Aptible::CLI::Agent do
       expect(captured_output_text).to include('Account Name: New Name')
       expect(captured_output_text).to include('Aws Account: 999999999999')
       expect(captured_output_text).to(
-        include('Role Arn: arn:aws:iam::999999999999:role/NewRole')
+        include('Discovery Role Arn: arn:aws:iam::999999999999:role/NewRole')
       )
     end
 
     it 'fails when account not found' do
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('999', token: token).and_return(nil)
 
       expect { subject.send('aws_accounts:update', '999') }
         .to raise_error(Thor::Error, /External AWS account not found: 999/)
     end
 
     it 'updates only one field (account_name)' do
-      ext = double('ext',
-                   id: 42,
-                   attributes: {
-                     'account_name' => 'Updated Name',
-                     'aws_account_id' => '111111111111',
-                     'role_arn' => 'arn:aws:iam::111111111111:role/Role'
-                   })
+      ext = double(
+        'ext',
+        id: 42,
+        attributes: {
+          'account_name' => 'Updated Name',
+          'aws_account_id' => '111111111111',
+          'discovery_role_arn' => 'arn:aws:iam::111111111111:role/Role'
+        }
+      )
 
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
       expect(ext).to receive(:update!).with(
         account_name: 'Updated Name'
       ).and_return(true)
@@ -335,8 +404,8 @@ describe Aptible::CLI::Agent do
                      'discovery_frequency' => 'hourly'
                    })
 
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
       expect(ext).to receive(:update!).with(
         discovery_enabled: true,
         discovery_frequency: 'hourly'
@@ -360,8 +429,8 @@ describe Aptible::CLI::Agent do
                      'aws_account_id' => '111111111111'
                    })
 
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
       expect(ext).not_to receive(:update!)
 
       subject.options = {}
@@ -372,8 +441,8 @@ describe Aptible::CLI::Agent do
 
     it 'bubbles API errors during update' do
       ext = double('ext', id: 42)
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
 
       expect(ext).to receive(:update!).and_raise(
         HyperResource::ClientError.new(
@@ -397,8 +466,8 @@ describe Aptible::CLI::Agent do
                    })
 
       allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('7', token: token).and_return(ext)
       expect(ext).to(
         receive(:update!).with(account_name: 'JsonUpdated').and_return(true)
       )
@@ -412,11 +481,71 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#aws_accounts:show' do
+    it 'shows an external AWS account' do
+      ext = Fabricate(
+        :external_aws_account,
+        id: 42,
+        account_name: 'ShowTest',
+        aws_account_id: '123456789012',
+        discovery_role_arn: 'arn:aws:iam::123456789012:role/TestRole',
+        discovery_enabled: true,
+        discovery_frequency: 'daily'
+      )
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+
+      subject.send('aws_accounts:show', '42')
+
+      expect(captured_output_text).to include('Id: 42')
+      expect(captured_output_text).to include('Account Name: ShowTest')
+      expect(captured_output_text).to include('Aws Account: 123456789012')
+      expect(captured_output_text).to(
+        include('Discovery Role Arn: arn:aws:iam::123456789012:role/TestRole')
+      )
+      expect(captured_output_text).to include('Discovery Enabled: true')
+      expect(captured_output_text).to include('Discovery Frequency: daily')
+    end
+
+    it 'fails when account not found' do
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('999', token: token).and_return(nil)
+
+      expect { subject.send('aws_accounts:show', '999') }
+        .to raise_error(Thor::Error, /External AWS account not found: 999/)
+    end
+
+    it 'renders JSON output' do
+      ext = Fabricate(
+        :external_aws_account,
+        id: 7,
+        account_name: 'JsonShow',
+        aws_account_id: '987654321098',
+        discovery_role_arn: 'arn:aws:iam::987654321098:role/JsonRole'
+      )
+
+      allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('7', token: token).and_return(ext)
+
+      subject.send('aws_accounts:show', '7')
+
+      json = captured_output_json
+      expect(json['id']).to eq(7)
+      expect(json['account_name']).to eq('JsonShow')
+      expect(json['aws_account_id']).to eq('987654321098')
+      expect(json['discovery_role_arn']).to(
+        eq('arn:aws:iam::987654321098:role/JsonRole')
+      )
+    end
+  end
+
   describe '#aws_accounts:delete' do
     it 'deletes an external AWS account' do
       ext = double('ext', id: 24)
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('24', token: token).and_return(ext)
       expect(ext).to receive(:destroy!).and_return(true)
 
       subject.send('aws_accounts:delete', '24')
@@ -426,8 +555,8 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails when account not found' do
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('999', token: token).and_return(nil)
 
       expect { subject.send('aws_accounts:delete', '999') }
         .to raise_error(Thor::Error, /External AWS account not found: 999/)
@@ -435,8 +564,8 @@ describe Aptible::CLI::Agent do
 
     it 'supports alternative delete methods' do
       ext = double('ext', id: 24)
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('24', token: token).and_return(ext)
 
       expect(ext).to receive(:respond_to?).with(:destroy!).and_return(false)
       expect(ext).to receive(:respond_to?).with(:destroy).and_return(false)
@@ -451,8 +580,8 @@ describe Aptible::CLI::Agent do
 
     it 'raises when delete is not supported' do
       ext = double('ext', id: 24)
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('24', token: token).and_return(ext)
 
       expect(ext).to receive(:respond_to?).with(:destroy!).and_return(false)
       expect(ext).to receive(:respond_to?).with(:destroy).and_return(false)
@@ -466,8 +595,8 @@ describe Aptible::CLI::Agent do
     it 'renders JSON output for delete' do
       ext = double('ext', id: 33)
       allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
-      expect(Aptible::Api::ExternalAwsAccount).to receive(:all)
-        .with(token: token).and_return([ext])
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('33', token: token).and_return(ext)
       expect(ext).to receive(:destroy!).and_return(true)
 
       subject.send('aws_accounts:delete', '33')
@@ -475,6 +604,14 @@ describe Aptible::CLI::Agent do
       json = captured_output_json
       expect(json['id']).to eq('33')
       expect(json['deleted']).to eq(true)
+    end
+  end
+
+  describe '#aws_accounts:check' do
+    it 'raises not implemented error' do
+      expect { subject.send('aws_accounts:check', '42') }.to(
+        raise_error(Thor::Error, /not implemented yet/)
+      )
     end
   end
 end

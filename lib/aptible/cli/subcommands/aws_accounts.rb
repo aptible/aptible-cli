@@ -11,6 +11,10 @@ module Aptible
             include Helpers::Telemetry
 
             desc 'aws_accounts', 'List external AWS accounts', hide: true
+            option :organization_id, aliases: '--org-id',
+                                     type: :string,
+                                     default: nil,
+                                     desc: 'Organization ID'
             def aws_accounts
               telemetry(__method__, options)
 
@@ -28,8 +32,8 @@ module Aptible
                         aws_region_primary
                         status
                         discovery_enabled
+                        discovery_role_arn
                         discovery_frequency
-                        role_arn
                         account_id
                         created_at
                         updated_at
@@ -44,15 +48,14 @@ module Aptible
             end
 
             desc 'aws_accounts:add ' \
-                 '[--role-arn ROLE_ARN] ' \
                  '[--account-name ACCOUNT_NAME] ' \
                  '[--aws-account-id AWS_ACCOUNT_ID] ' \
                  '[--org-id ORGANIZATION_ID] '\
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
+                 '[--discovery-role-arn DISCOVERY_ROLE_ARN] ' \
                  '[--discovery-frequency FREQ]', \
                  'Add a new external AWS account', hide: true
-            option :role_arn, type: :string, desc: 'IAM Role ARN to assume'
             option :account_name, type: :string, desc: 'Display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
             option :organization_id, aliases: '--org-id',
@@ -63,6 +66,10 @@ module Aptible
                                         desc: 'Primary AWS region'
             option :discovery_enabled, type: :boolean,
                                        desc: 'Enable resource discovery'
+            option :discovery_role_arn, type: :string,
+                                        desc: 'IAM Role ARN that Aptible ' \
+                                              'will assume to discover ' \
+                                              'resources in your AWS account'
             option :discovery_frequency,
                    type: :string,
                    desc: 'Discovery frequency (e.g., daily)'
@@ -85,8 +92,41 @@ module Aptible
                     account_name
                     aws_region_primary
                     discovery_enabled
+                    discovery_role_arn
                     discovery_frequency
-                    role_arn
+                    account_id
+                    created_at
+                    updated_at
+                  ).each do |k|
+                    v = rattrs[k]
+                    node.value(k, v) unless v.nil?
+                  end
+                end
+              end
+            end
+
+            desc 'aws_accounts:show ID',
+                 'Show an external AWS account', \
+                 hide: true
+            define_method 'aws_accounts:show' do |id|
+              telemetry(__method__, options.merge(id: id))
+              ext = ensure_external_aws_account(id)
+              Formatter.render(Renderer.current) do |root|
+                root.object do |node|
+                  node.value('id', ext.id)
+                  rattrs =
+                    if ext.respond_to?(:attributes)
+                      ext.attributes
+                    else
+                      {}
+                    end
+                  %w(
+                    aws_account_id
+                    account_name
+                    aws_region_primary
+                    discovery_enabled
+                    discovery_role_arn
+                    discovery_frequency
                     account_id
                     created_at
                     updated_at
@@ -114,22 +154,25 @@ module Aptible
               end
             end
 
-            desc 'aws_accounts:update ID [--role-arn ROLE_ARN] ' \
+            desc 'aws_accounts:update ID ' \
                  '[--account-name ACCOUNT_NAME] ' \
                  '[--aws-account-id AWS_ACCOUNT_ID] ' \
-                 '[--organization-id ORG_ID] ' \
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
+                 '[--discovery-role-arn DISCOVERY_ROLE_ARN] ' \
                  '[--discovery-frequency FREQ]', \
                  'Update an external AWS account', hide: true
-            option :role_arn, type: :string, desc: 'New IAM Role ARN to assume'
             option :account_name, type: :string, desc: 'New display name'
             option :aws_account_id, type: :string, desc: 'AWS Account ID'
-            option :organization_id, type: :string, desc: 'Organization ID'
             option :aws_region_primary, type: :string,
                                         desc: 'Primary AWS region'
             option :discovery_enabled, type: :boolean,
                                        desc: 'Enable resource discovery'
+            option :discovery_role_arn, type: :string,
+                                        desc: 'IAM Role ARN that Aptible ' \
+                                              'will assume to discover ' \
+                                              'resources in your AWS account'
+
             option :discovery_frequency,
                    type: :string,
                    desc: 'Discovery frequency (e.g., daily)'
@@ -152,8 +195,8 @@ module Aptible
                     account_name
                     aws_region_primary
                     discovery_enabled
+                    discovery_role_arn
                     discovery_frequency
-                    role_arn
                     account_id
                     created_at
                     updated_at
@@ -163,6 +206,15 @@ module Aptible
                   end
                 end
               end
+            end
+
+            desc 'aws_accounts:check ID',
+                 'Check the connection for an external AWS account', \
+                 hide: true
+            define_method 'aws_accounts:check' do |id|
+              telemetry(__method__, options.merge(id: id))
+              # FIXME: implement it!
+              raise Thor::Error, 'not implemented yet :('
             end
           end
         end
