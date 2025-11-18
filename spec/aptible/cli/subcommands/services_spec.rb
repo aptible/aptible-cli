@@ -106,6 +106,83 @@ describe Aptible::CLI::Agent do
 
       subject.send('services:settings', 'foo')
     end
+
+    it 'allows enabling restart_free_scaling' do
+      stub_options(restart_free_scaling: true)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!).with(restart_free_scaling: true)
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'allows disabling restart_free_scaling' do
+      stub_options(restart_free_scaling: false)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!).with(restart_free_scaling: false)
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'allows setting restart_free_scaling with other options' do
+      stub_options(
+        restart_free_scaling: true,
+        force_zero_downtime: true,
+        stop_timeout: 45
+      )
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!)
+        .with(
+          restart_free_scaling: true,
+          force_zero_downtime: true,
+          stop_timeout: 45
+        )
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'does not include nil values in updates' do
+      stub_options(restart_free_scaling: nil, force_zero_downtime: true)
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!).with(force_zero_downtime: true)
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'does not call update! when no valid options are provided' do
+      stub_options(
+        restart_free_scaling: nil,
+        force_zero_downtime: nil,
+        simple_health_check: nil,
+        stop_timeout: nil
+      )
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).not_to receive(:update!)
+
+      subject.send('services:settings', 'foo')
+    end
+
+    it 'handles false values correctly (not treated as nil)' do
+      stub_options(
+        restart_free_scaling: false,
+        force_zero_downtime: false,
+        simple_health_check: false
+      )
+      service = Fabricate(:service, app: app, process_type: 'foo')
+
+      expect(service).to receive(:update!)
+        .with(
+          restart_free_scaling: false,
+          force_zero_downtime: false,
+          naive_health_check: false
+        )
+
+      subject.send('services:settings', 'foo')
+    end
   end
 
   describe '#services:sizing_policy' do
