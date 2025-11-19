@@ -51,7 +51,7 @@ module Aptible
                          'repository'
             option :private_registry_email,
                    type: :string,
-                   desc: 'This parameter is deprectated'
+                   desc: 'This parameter is deprecated'
 
             app_options
             def deploy(*args)
