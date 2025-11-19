@@ -142,7 +142,7 @@ describe Aptible::CLI::Agent do
           .to raise_error(/deprecated/im)
       end
 
-      it 'reject contradictory command line argumnts' do
+      it 'reject contradictory command line arguments' do
         stub_options(docker_image: 'foobar')
 
         expect { subject.deploy('APTIBLE_DOCKER_IMAGE=qux') }
