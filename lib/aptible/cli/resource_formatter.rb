@@ -305,6 +305,10 @@ module Aptible
           # Show status in detail view
           node.value('status', is_blocked ? 'REVOKED' : 'ACTIVE')
 
+          # Include gateway URL if present
+          gateway_url = ai_token.attributes['gateway_url'] rescue nil
+          node.value('gateway_url', gateway_url) if gateway_url
+
           attach_account(node, account) if account
         end
 

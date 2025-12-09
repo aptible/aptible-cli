@@ -42,10 +42,14 @@ module Aptible
             end
           end
 
-          # Warn about token value if present
+          # Warn about token value and gateway URL if present
           token_value = ai_token.attributes['token']
+          gateway_url = ai_token.attributes['gateway_url']
           if token_value
             CLI.logger.warn "\nSave the token value now - it will not be shown again!"
+            if gateway_url
+              CLI.logger.warn "Use this token to authenticate requests to: #{gateway_url}"
+            end
           end
 
           ai_token
