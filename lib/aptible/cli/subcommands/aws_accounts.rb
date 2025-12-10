@@ -213,8 +213,11 @@ module Aptible
                  hide: true
             define_method 'aws_accounts:check' do |id|
               telemetry(__method__, options.merge(id: id))
-              # FIXME: implement it!
-              raise Thor::Error, 'not implemented yet :('
+
+              response = check_external_aws_account!(id)
+              puts "FIXME: response=#{response}"
+
+              raise Thor::Error, 'not done yet :('
             end
           end
         end

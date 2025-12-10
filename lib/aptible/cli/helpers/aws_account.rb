@@ -102,6 +102,11 @@ module Aptible
           end
           true
         end
+
+        def check_external_aws_account!(id)
+          ext = ensure_external_aws_account(id)
+          ext.check!
+        end
       end
     end
   end
