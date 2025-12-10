@@ -107,6 +107,19 @@ module Aptible
           ext = ensure_external_aws_account(id)
           ext.check!
         end
+
+        def format_check_state(state)
+          case state
+          when 'success'
+            '✅ success'
+          when 'failed'
+            '❌ failed'
+          when 'not_run'
+            '⏭️  not_run'
+          else
+            state
+          end
+        end
       end
     end
   end
