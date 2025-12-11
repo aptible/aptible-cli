@@ -29,6 +29,18 @@ module Aptible
 
                   if Renderer.format == 'json'
                     accounts.each do |account|
+                      external_rds_databases_all.each do |db|
+                        account = derive_account_from_conns(db, account) 
+                        next unless account.present?
+
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            db,
+                            account
+                          )
+                        end
+                      end
                       account.each_database do |db|
                         node.object do |n|
                           ResourceFormatter.inject_database(n, db, account)
@@ -39,6 +51,19 @@ module Aptible
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
+
+                      external_rds_databases_all.each do |db|
+                        account = derive_account_from_conns(db, account) 
+                        next unless account.present?
+
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            db,
+                            account
+                          )
+                        end
+                      end
 
                       node.object do |n|
                         ResourceFormatter.inject_database_minimal(
@@ -269,27 +294,37 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               desired_port = Integer(options[:port] || 0)
-              database = ensure_database(options.merge(db: handle))
+              if handle.start_with? "aws:rds::"
+                external_rds = external_rds_database_from_handle(handle)
+                credential = external_rds.raw.external_aws_database_credentials.first
+                target_account = derive_account_from_conns(external_rds) 
+              else
+                database = ensure_database(options.merge(db: handle))
+                credential = find_credential(database, options[:type])
+                target_account = nil
 
-              credential = find_credential(database, options[:type])
+                m = "Creating #{credential.type} tunnel to #{database.handle}..."
+                CLI.logger.info m
 
-              m = "Creating #{credential.type} tunnel to #{database.handle}..."
-              CLI.logger.info m
-
-              if options[:type].nil?
-                types = database.database_credentials.map(&:type)
-                unless types.empty?
-                  valid = types.join(', ')
-                  CLI.logger.info 'Use --type TYPE to specify a tunnel type'
-                  CLI.logger.info "Valid types for #{database.handle}: #{valid}"
+                if options[:type].nil?
+                  types = database.database_credentials.map(&:type)
+                  unless types.empty?
+                    valid = types.join(', ')
+                    CLI.logger.info 'Use --type TYPE to specify a tunnel type'
+                    CLI.logger.info "Valid types for #{database.handle}: #{valid}"
+                  end
                 end
               end
 
-              with_local_tunnel(credential, desired_port) do |tunnel_helper|
+              with_local_tunnel(credential, desired_port, target_account) do |tunnel_helper|
                 port = tunnel_helper.port
-                CLI.logger.info "Connect at #{local_url(credential, port)}"
-
-                uri = URI(local_url(credential, port))
+                unless target_account.present?
+                  CLI.logger.info "Connect at #{local_url(credential, port)}"
+                  uri = URI(local_url(credential, port))
+                else
+                  CLI.logger.info "Connect at #{local_url(credential, port, target_account)}"
+                  uri = URI(local_url(credential, port, target_account))
+                end
                 db = uri.path.gsub(%r{^/}, '')
                 CLI.logger.info 'Or, use the following arguments:'
                 CLI.logger.info "* Host: #{uri.host}"

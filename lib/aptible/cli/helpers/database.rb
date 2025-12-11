@@ -46,6 +46,41 @@ module Aptible
           )
         end
 
+        RdsDatabase = Struct.new(:handle, :created_at, :id, :raw)
+
+        def external_rds_databases_all
+          # HACK: 
+          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
+          # to put around a rescue
+          Aptible::Api::ExternalAwsResource.all(
+              token: fetch_token
+          )
+            .select { |db| db.resource_type == "aws_rds_db_instance" }
+            .map { |db| RdsDatabase.new(
+              "aws:rds::#{db.resource_name}",
+              db.id,
+              db.created_at,
+              db
+            ) }
+        end
+
+        def derive_account_from_conns(db, preferred_acct = nil)
+          # HACK: 
+          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
+          # to put around a rescue
+          conns = db.raw.app_external_aws_rds_connections
+          return conns.find { |conn| conn.app.account.id == preferred_acct.id }.app.account if preferred_acct.present?
+
+          conns.first.app.account
+        end
+
+        def external_rds_database_from_handle(handle)
+          # HACK: 
+          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
+          # to put around a rescue
+          external_rds_databases_all.find { |a| a.handle == handle }
+        end
+
         def databases_from_handle(handle, environment)
           databases = if environment
                         environment.databases
@@ -90,8 +125,12 @@ module Aptible
 
         # Creates a local tunnel and yields the helper
 
-        def with_local_tunnel(credential, port = 0)
-          op = credential.create_operation!(type: 'tunnel', status: 'succeeded')
+        def with_local_tunnel(credential, port = 0, target_account = nil)
+          op = if target_account.nil? 
+            credential.create_operation!(type: 'tunnel', status: 'succeeded')
+          else
+            credential.create_operation!(type: 'tunnel', status: 'succeeded', destination_account: target_account.id)
+          end
 
           with_ssh_cmd(op) do |base_ssh_cmd, ssh_credential|
             ssh_cmd = base_ssh_cmd + ['-o', 'SendEnv=ACCESS_TOKEN']
@@ -120,11 +159,15 @@ module Aptible
           end
         end
 
-        def local_url(credential, local_port)
+        def local_url(credential, local_port, forced_account = nil)
           remote_url = credential.connection_url
 
           uri = URI.parse(remote_url)
-          domain = credential.database.account.stack.internal_domain
+          domain = if forced_account.nil? 
+            credential.database.account.stack.internal_domain
+          else
+            forced_account.stack.internal_domain
+          end
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end
