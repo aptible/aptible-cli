@@ -260,7 +260,7 @@ describe Aptible::CLI::Agent do
         discovery_role_arn: 'arn:aws:iam::123456789012:role/Error'
       }
       expect { subject.send('aws_accounts:add') }.to(
-        raise_error(HyperResource::ClientError)
+        raise_error(Thor::Error, /Boom/)
       )
     end
 
@@ -329,9 +329,11 @@ describe Aptible::CLI::Agent do
 
   describe '#aws_accounts:update' do
     it 'updates an external AWS account' do
+      errors = Aptible::Resource::Errors.new
       ext = double(
         'ext',
         id: 42,
+        errors: errors,
         attributes: {
           'account_name' => 'New Name',
           'aws_account_id' => '999999999999',
@@ -372,9 +374,11 @@ describe Aptible::CLI::Agent do
     end
 
     it 'updates only one field (account_name)' do
+      errors = Aptible::Resource::Errors.new
       ext = double(
         'ext',
         id: 42,
+        errors: errors,
         attributes: {
           'account_name' => 'Updated Name',
           'aws_account_id' => '111111111111',
@@ -397,8 +401,10 @@ describe Aptible::CLI::Agent do
     end
 
     it 'updates discovery settings separately' do
+      errors = Aptible::Resource::Errors.new
       ext = double('ext',
                    id: 42,
+                   errors: errors,
                    attributes: {
                      'discovery_enabled' => true,
                      'discovery_frequency' => 'hourly'
@@ -453,13 +459,15 @@ describe Aptible::CLI::Agent do
 
       subject.options = { account_name: 'X' }
       expect { subject.send('aws_accounts:update', '42') }.to(
-        raise_error(HyperResource::ClientError)
+        raise_error(Thor::Error, /Boom/)
       )
     end
 
     it 'renders JSON output for update' do
+      errors = Aptible::Resource::Errors.new
       ext = double('ext',
                    id: 7,
+                   errors: errors,
                    attributes: {
                      'account_name' => 'JsonUpdated',
                      'aws_account_id' => '123'
@@ -608,9 +616,70 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#aws_accounts:check' do
-    it 'raises not implemented error' do
+    it 'raises error when account not found' do
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(nil)
+
       expect { subject.send('aws_accounts:check', '42') }.to(
-        raise_error(Thor::Error, /not implemented yet/)
+        raise_error(Thor::Error, /External AWS account not found: 42/)
+      )
+    end
+
+    it 'checks an external AWS account successfully' do
+      ext = double('ext', id: 42)
+      check_result = double(
+        'check_result',
+        state: 'success',
+        checks: [
+          double('check', check_name: 'role_access', state: 'success',
+                          details: nil)
+        ]
+      )
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+      expect(ext).to receive(:check!).and_return(check_result)
+
+      # check command uses puts directly (not Formatter) for non-JSON output
+      expect { subject.send('aws_accounts:check', '42') }.to output(
+        /State:.*success/m
+      ).to_stdout
+    end
+
+    it 'raises error on check failure' do
+      ext = double('ext', id: 42)
+      check_result = double(
+        'check_result',
+        state: 'failed',
+        checks: [
+          double('check', check_name: 'role_access', state: 'failed',
+                          details: 'Access denied')
+        ]
+      )
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+      expect(ext).to receive(:check!).and_return(check_result)
+
+      expect { subject.send('aws_accounts:check', '42') }.to(
+        raise_error(Thor::Error, /AWS account check failed/)
+      )
+    end
+
+    it 'handles API errors during check' do
+      ext = double('ext', id: 42)
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+      expect(ext).to receive(:check!).and_raise(
+        HyperResource::ClientError.new(
+          'Check failed',
+          response: Faraday::Response.new(status: 500)
+        )
+      )
+
+      expect { subject.send('aws_accounts:check', '42') }.to(
+        raise_error(Thor::Error, /Check failed/)
       )
     end
   end

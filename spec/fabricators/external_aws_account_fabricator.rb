@@ -18,6 +18,7 @@ end
 Fabricator(:external_aws_account, from: :stub_external_aws_account) do
   id { Fabricate.sequence(:external_aws_account_id) { |i| i } }
   account
+  errors { Aptible::Resource::Errors.new }
 
   account_name { |attrs| "External AWS Account #{attrs[:id]}" }
   aws_account_id do

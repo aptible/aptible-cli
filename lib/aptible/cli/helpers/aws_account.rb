@@ -74,38 +74,63 @@ module Aptible
         def create_external_aws_account!(options)
           attrs = build_external_aws_account_attrs(options)
           attrs[:organization_id] = organization_id_from_opts_or_auth(options)
-          Aptible::Api::ExternalAwsAccount.create(
-            token: fetch_token,
-            **attrs
-          )
+          begin
+            resource = Aptible::Api::ExternalAwsAccount.create(
+              token: fetch_token,
+              **attrs
+            )
+            if resource.errors.any?
+              raise Thor::Error, resource.errors.full_messages.first
+            end
+            resource
+          rescue HyperResource::ClientError => e
+            raise Thor::Error, e.message
+          end
         end
 
         def update_external_aws_account!(id, options)
           ext = ensure_external_aws_account(id)
           attrs = build_external_aws_account_attrs(options)
-          ext.update!(**attrs) unless attrs.empty?
-          ext
+          begin
+            unless attrs.empty?
+              ext.update!(**attrs)
+              if ext.errors.any?
+                raise Thor::Error, ext.errors.full_messages.first
+              end
+            end
+            ext
+          rescue HyperResource::ClientError => e
+            raise Thor::Error, e.message
+          end
         end
 
         def delete_external_aws_account!(id)
           ext = ensure_external_aws_account(id)
-          if ext.respond_to?(:destroy!)
-            ext.destroy!
-          elsif ext.respond_to?(:destroy)
-            ext.destroy
-          elsif ext.respond_to?(:delete!)
-            ext.delete!
-          elsif ext.respond_to?(:delete)
-            ext.delete
-          else
-            raise Thor::Error, 'Delete is not supported for this resource'
+          begin
+            if ext.respond_to?(:destroy!)
+              ext.destroy!
+            elsif ext.respond_to?(:destroy)
+              ext.destroy
+            elsif ext.respond_to?(:delete!)
+              ext.delete!
+            elsif ext.respond_to?(:delete)
+              ext.delete
+            else
+              raise Thor::Error, 'Delete is not supported for this resource'
+            end
+          rescue HyperResource::ClientError => e
+            raise Thor::Error, e.message
           end
           true
         end
 
         def check_external_aws_account!(id)
           ext = ensure_external_aws_account(id)
-          ext.check!
+          begin
+            ext.check!
+          rescue HyperResource::ClientError => e
+            raise Thor::Error, e.message
+          end
         end
 
         def format_check_state(state)
