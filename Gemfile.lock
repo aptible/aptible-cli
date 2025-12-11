@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/aptible/aptible-api-ruby
+  revision: a60c7e3ecaec043e9c1f4904cf1f14051909352d
+  branch: ext-aws-check
+  specs:
+    aptible-api (1.10.0)
+      aptible-auth
+      aptible-resource
+      gem_config
+      multipart-post (< 2.2.0)
+
 PATH
   remote: .
   specs:
@@ -35,11 +46,6 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
-    aptible-api (1.10.0)
-      aptible-auth
-      aptible-resource
-      gem_config
-      multipart-post (< 2.2.0)
     aptible-auth (1.2.5)
       aptible-resource (~> 1.0)
       gem_config
@@ -174,6 +180,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport (~> 4.0)
+  aptible-api!
   aptible-cli!
   aptible-tasks (~> 0.5.8)
   bundler (~> 1.3)
