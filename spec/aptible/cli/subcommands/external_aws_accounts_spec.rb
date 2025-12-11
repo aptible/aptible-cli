@@ -487,6 +487,58 @@ describe Aptible::CLI::Agent do
       expect(json['id']).to eq(7)
       expect(json['account_name']).to eq('JsonUpdated')
     end
+
+    it 'removes discovery_role_arn with --remove-discovery-role-arn' do
+      errors = Aptible::Resource::Errors.new
+      ext = double(
+        'ext',
+        id: 42,
+        errors: errors,
+        attributes: {
+          'account_name' => 'Test',
+          'aws_account_id' => '111111111111'
+        }
+      )
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+      expect(ext).to receive(:update!).with(
+        discovery_role_arn: ''
+      ).and_return(true)
+
+      subject.options = { remove_discovery_role_arn: true }
+      subject.send('aws_accounts:update', '42')
+
+      expect(captured_output_text).to include('Id: 42')
+    end
+
+    it 'ignores --discovery-role-arn when --remove-discovery-role-arn is set' do
+      errors = Aptible::Resource::Errors.new
+      ext = double(
+        'ext',
+        id: 42,
+        errors: errors,
+        attributes: {
+          'account_name' => 'Test',
+          'aws_account_id' => '111111111111'
+        }
+      )
+
+      expect(Aptible::Api::ExternalAwsAccount).to receive(:find)
+        .with('42', token: token).and_return(ext)
+      # Should send empty string, not the provided ARN
+      expect(ext).to receive(:update!).with(
+        discovery_role_arn: ''
+      ).and_return(true)
+
+      subject.options = {
+        remove_discovery_role_arn: true,
+        discovery_role_arn: 'arn:aws:iam::111111111111:role/ShouldBeIgnored'
+      }
+      subject.send('aws_accounts:update', '42')
+
+      expect(captured_output_text).to include('Id: 42')
+    end
   end
 
   describe '#aws_accounts:show' do

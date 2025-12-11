@@ -160,6 +160,7 @@ module Aptible
                  '[--aws-region-primary AWS_REGION] ' \
                  '[--discovery-enabled|--no-discovery-enabled] ' \
                  '[--discovery-role-arn DISCOVERY_ROLE_ARN] ' \
+                 '[--remove-discovery-role-arn] ' \
                  '[--discovery-frequency FREQ]', \
                  'Update an external AWS account', hide: true
             option :account_name, type: :string, desc: 'New display name'
@@ -172,7 +173,9 @@ module Aptible
                                         desc: 'IAM Role ARN that Aptible ' \
                                               'will assume to discover ' \
                                               'resources in your AWS account'
-
+            option :remove_discovery_role_arn, type: :boolean,
+                                               desc: 'Remove the discovery ' \
+                                                     'role ARN from this account'
             option :discovery_frequency,
                    type: :string,
                    desc: 'Discovery frequency (e.g., daily)'

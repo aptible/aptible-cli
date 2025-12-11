@@ -55,7 +55,11 @@ module Aptible
         end
 
         def build_external_aws_account_attrs(options)
-          discovery_role_arn = options[:discovery_role_arn]
+          discovery_role_arn = if options[:remove_discovery_role_arn]
+                                 ''
+                               else
+                                 options[:discovery_role_arn]
+                               end
           discovery_enabled = if options.key?(:discovery_enabled)
                                 options[:discovery_enabled]
                               end
