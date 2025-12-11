@@ -257,12 +257,23 @@ module Aptible
             define_method 'db:dump' do |handle, *dump_options|
               telemetry(__method__, options.merge(handle: handle))
 
-              database = ensure_database(options.merge(db: handle))
-              with_postgres_tunnel(database) do |url|
-                filename = "#{handle}.dump"
-                CLI.logger.info "Dumping to #{filename}"
-                `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
-                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+              filename = "#{handle}.dump"
+              if handle.start_with? "aws:rds::"
+                external_rds = external_rds_database_from_handle(handle)
+                credential = external_rds.raw.external_aws_database_credentials.first
+                target_account = derive_account_from_conns(external_rds) 
+                with_rds_postgres_tunnel(credential, target_account) do |url|
+                  CLI.logger.info "Dumping to #{filename}"
+                  `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+                end
+              else
+                database = ensure_database(options.merge(db: handle))
+                with_postgres_tunnel(database) do |url|
+                  CLI.logger.info "Dumping to #{filename}"
+                  `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+                end
               end
             end
 
@@ -277,12 +288,24 @@ module Aptible
               )
               telemetry(__method__, opts)
 
-              database = ensure_database(options.merge(db: handle))
-              with_postgres_tunnel(database) do |url|
-                CLI.logger.info "Executing #{sql_path} against #{handle}"
-                args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
-                `psql #{args}#{url} < #{sql_path}`
-                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+              if handle.start_with? "aws:rds::"
+                external_rds = external_rds_database_from_handle(handle)
+                credential = external_rds.raw.external_aws_database_credentials.first
+                target_account = derive_account_from_conns(external_rds) 
+                with_rds_postgres_tunnel(credential, target_account) do |url|
+                  CLI.logger.info "Executing #{sql_path} against #{handle}"
+                  args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+                  `psql #{args}#{url} < #{sql_path}`
+                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+                end
+              else
+                database = ensure_database(options.merge(db: handle))
+                with_postgres_tunnel(database) do |url|
+                  CLI.logger.info "Executing #{sql_path} against #{handle}"
+                  args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+                  `psql #{args}#{url} < #{sql_path}`
+                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+                end
               end
             end
 

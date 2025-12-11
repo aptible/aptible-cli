@@ -145,6 +145,13 @@ module Aptible
           end
         end
 
+        def with_rds_postgres_tunnel(credential, target_account)
+          with_local_tunnel(credential, 0, target_account) do |tunnel_helper|
+            yield local_url(credential, tunnel_helper.port, target_account)
+          end
+        end
+
+
         # Creates a local PG tunnel and yields the url to it
 
         def with_postgres_tunnel(database)
