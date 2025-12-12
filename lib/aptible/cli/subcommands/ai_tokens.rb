@@ -63,38 +63,30 @@ module Aptible
                         end
                       end
                     rescue HyperResource::ClientError => e
+                      error_message = extract_api_error(e)
+
                       # Log response body in debug mode
                       if ENV['APTIBLE_DEBUG'] == 'DEBUG' && e.response
-                        begin
-                          body = e.response.body
-                          parsed_body = body.is_a?(String) ? JSON.parse(body) : body
-                          CLI.logger.warn "GET list error response (#{e.response.status}): #{JSON.pretty_generate(parsed_body)}"
-                        rescue StandardError
-                          CLI.logger.warn "GET list error response (#{e.response.status}): #{e.response.body.inspect}"
-                        end
+                        CLI.logger.warn "GET list error response (#{e.response.status}): #{error_message}"
                       end
 
                       # Skip if endpoint not available for this account
                       if e.response&.status == 404
                         next
                       elsif e.response&.status == 401 || e.response&.status == 403
-                        raise Thor::Error, "Unauthorized to list AI tokens for environment #{account.handle}"
+                        raise Thor::Error, error_message
                       else
-                        raise Thor::Error, "Failed to list tokens: #{e.message}"
+                        raise Thor::Error, "Failed to list tokens: #{error_message}"
                       end
                     rescue HyperResource::ResponseError => e
+                      error_message = extract_api_error(e)
+
                       # Log response body in debug mode
                       if ENV['APTIBLE_DEBUG'] == 'DEBUG' && e.response
-                        begin
-                          body = e.response.body
-                          parsed_body = body.is_a?(String) ? JSON.parse(body) : body
-                          CLI.logger.warn "GET list response error (#{e.response.status}): #{JSON.pretty_generate(parsed_body)}"
-                        rescue StandardError
-                          CLI.logger.warn "GET list response error (#{e.response.status}): #{e.response.body.inspect}"
-                        end
+                        CLI.logger.warn "GET list response error (#{e.response.status}): #{error_message}"
                       end
 
-                      raise Thor::Error, "Failed to list tokens: HTTP #{e.response&.status || 'unknown error'}"
+                      raise Thor::Error, "Failed to list tokens: #{error_message}"
                     end
                   end
                 end
@@ -145,37 +137,29 @@ module Aptible
                   end
                 end
               rescue HyperResource::ClientError => e
+                error_message = extract_api_error(e)
+
                 # Log response body in debug mode
                 if ENV['APTIBLE_DEBUG'] == 'DEBUG' && e.response
-                  begin
-                    body = e.response.body
-                    parsed_body = body.is_a?(String) ? JSON.parse(body) : body
-                    CLI.logger.warn "GET show error response (#{e.response.status}): #{JSON.pretty_generate(parsed_body)}"
-                  rescue StandardError
-                    CLI.logger.warn "GET show error response (#{e.response.status}): #{e.response.body.inspect}"
-                  end
+                  CLI.logger.warn "GET show error response (#{e.response.status}): #{error_message}"
                 end
 
                 if e.response&.status == 404
                   raise Thor::Error, "AI token #{id} not found or access denied"
                 elsif e.response&.status == 401 || e.response&.status == 403
-                  raise Thor::Error, "Unauthorized to view AI token #{id}"
+                  raise Thor::Error, error_message
                 else
-                  raise Thor::Error, "Failed to retrieve token: #{e.message}"
+                  raise Thor::Error, "Failed to retrieve token: #{error_message}"
                 end
               rescue HyperResource::ResponseError => e
+                error_message = extract_api_error(e)
+
                 # Log response body in debug mode
                 if ENV['APTIBLE_DEBUG'] == 'DEBUG' && e.response
-                  begin
-                    body = e.response.body
-                    parsed_body = body.is_a?(String) ? JSON.parse(body) : body
-                    CLI.logger.warn "GET show response error (#{e.response.status}): #{JSON.pretty_generate(parsed_body)}"
-                  rescue StandardError
-                    CLI.logger.warn "GET show response error (#{e.response.status}): #{e.response.body.inspect}"
-                  end
+                  CLI.logger.warn "GET show response error (#{e.response.status}): #{error_message}"
                 end
 
-                raise Thor::Error, "Failed to retrieve token: HTTP #{e.response&.status || 'unknown error'}"
+                raise Thor::Error, "Failed to retrieve token: #{error_message}"
               end
             end
 
@@ -226,27 +210,36 @@ module Aptible
 
                 CLI.logger.info 'AI token revoked successfully'
               rescue HyperResource::ClientError => e
+                error_message = extract_api_error(e)
+
                 # Log response body in debug mode
                 if ENV['APTIBLE_DEBUG'] == 'DEBUG' && e.response
-                  begin
-                    body = e.response.body
-                    parsed_body = body.is_a?(String) ? JSON.parse(body) : body
-                    CLI.logger.warn "DELETE error response (#{e.response.status}): #{JSON.pretty_generate(parsed_body)}"
-                  rescue StandardError
-                    CLI.logger.warn "DELETE error response (#{e.response.status}): #{e.response.body.inspect}"
-                  end
+                  CLI.logger.warn "DELETE error response (#{e.response.status}): #{error_message}"
                 end
 
                 if e.response&.status == 404
                   raise Thor::Error, "AI token #{id} not found or access denied"
                 elsif e.response&.status == 401 || e.response&.status == 403
-                  raise Thor::Error, "Unauthorized to revoke AI token #{id}"
+                  raise Thor::Error, error_message
                 else
-                  raise Thor::Error, "Failed to revoke token: #{e.message}"
+                  raise Thor::Error, "Failed to revoke token: #{error_message}"
                 end
               end
               # Note: HyperResource::ResponseError from empty 204 body is caught by
               # Aptible::Resource::Base#delete (returns nil), so delete succeeds silently
+            end
+
+            private
+
+            # Extract error message from HyperResource error response
+            def extract_api_error(error)
+              return error.message unless error.response
+
+              body = error.response.body
+              parsed = body.is_a?(String) ? JSON.parse(body) : body
+              parsed['error'] || parsed.to_s
+            rescue StandardError
+              error.message
             end
           end
         end
