@@ -46,6 +46,10 @@ module Aptible
           )
         end
 
+        def is_aws_rds_db?(handle)
+          handle.start_with? "aws:rds::"
+        end
+
         RdsDatabase = Struct.new(:handle, :created_at, :id, :raw)
 
         def external_rds_databases_all
@@ -145,12 +149,54 @@ module Aptible
           end
         end
 
-        def with_rds_postgres_tunnel(credential, target_account)
-          with_local_tunnel(credential, 0, target_account) do |tunnel_helper|
-            yield local_url(credential, tunnel_helper.port, target_account)
+        def with_rds_tunnel(handle, port = 0)
+          external_rds = external_rds_database_from_handle(handle)
+          credential = external_rds.raw.external_aws_database_credentials.first
+          target_account = derive_account_from_conns(external_rds) 
+          with_local_tunnel(credential, port, target_account) do |tunnel_helper|
+            yield local_rds_url(credential, tunnel_helper.port, target_account), tunnel_helper
           end
         end
 
+        def use_rds_tunnel(handle, port)
+          with_rds_tunnel(handle, port) do |url, tunnel_helper|
+            CLI.logger.info "Connect at #{url}"
+
+            uri = URI(url)
+            db = uri.path.gsub(%r{^/}, '')
+            CLI.logger.info 'Or, use the following arguments:'
+            CLI.logger.info "* Host: #{uri.host}"
+            CLI.logger.info "* Port: #{uri.port}"
+            CLI.logger.info "* Username: #{uri.user}" unless uri.user.empty?
+            CLI.logger.info "* Password: #{uri.password}"
+            CLI.logger.info "* Database: #{db}" unless db.empty?
+
+            CLI.logger.info 'Connected. Ctrl-C to close connection.'
+
+            begin
+              tunnel_helper.wait
+            rescue Interrupt
+              CLI.logger.warn 'Closing tunnel'
+            end
+          end
+        end
+
+        def use_rds_dump(handle, filename, dump_options)
+          with_rds_tunnel(handle) do |url|
+            CLI.logger.info "Dumping to #{filename}"
+            `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+            exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+          end
+        end
+
+        def use_rds_execute(handle, sql_path, options)
+          with_rds_tunnel(handle) do |url|
+            CLI.logger.info "Executing #{sql_path} against #{handle}"
+            args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+            `psql #{args}#{url} < #{sql_path}`
+            exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
+          end
+        end
 
         # Creates a local PG tunnel and yields the url to it
 
@@ -165,16 +211,23 @@ module Aptible
             yield local_url(credential, tunnel_helper.port)
           end
         end
-
-        def local_url(credential, local_port, forced_account = nil)
+        
+        def local_rds_url(credential, local_port, forced_account)
           remote_url = credential.connection_url
 
           uri = URI.parse(remote_url)
-          domain = if forced_account.nil? 
-            credential.database.account.stack.internal_domain
-          else
-            forced_account.stack.internal_domain
-          end
+          domain = forced_account.stack.internal_domain
+          "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
+          "localhost.#{domain}:#{local_port}#{uri.path}"
+        end
+
+
+        def local_url(credential, local_port)
+          remote_url = credential.connection_url
+
+          uri = URI.parse(remote_url)
+          account = Aptible::Api::Account.all(token: fetch_token).first
+          domain = account.stack.internal_domain
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end

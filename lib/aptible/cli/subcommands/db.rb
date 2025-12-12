@@ -46,21 +46,25 @@ module Aptible
                           ResourceFormatter.inject_database(n, db, account)
                         end
                       end
+
+                      # TODO - render external_rds_databases that do not share environments
+                      # with aptible-managed dbs
                     end
                   else
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
 
+                      # move this to outer loop and do a map check
                       external_rds_databases_all.each do |db|
-                        account = derive_account_from_conns(db, account) 
-                        next unless account.present?
+                        rds_account = derive_account_from_conns(db, account) 
+                        next unless rds_account.present?
 
                         node.object do |n|
                           ResourceFormatter.inject_database_minimal(
                             n,
                             db,
-                            account
+                            rds_account
                           )
                         end
                       end
@@ -72,6 +76,9 @@ module Aptible
                           account
                         )
                       end
+
+                      # TODO - render external_rds_databases that do not share environments
+                      # with aptible-managed dbs
                     end
                   end
                 end
@@ -258,22 +265,13 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               filename = "#{handle}.dump"
-              if handle.start_with? "aws:rds::"
-                external_rds = external_rds_database_from_handle(handle)
-                credential = external_rds.raw.external_aws_database_credentials.first
-                target_account = derive_account_from_conns(external_rds) 
-                with_rds_postgres_tunnel(credential, target_account) do |url|
-                  CLI.logger.info "Dumping to #{filename}"
-                  `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
-                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
-                end
-              else
-                database = ensure_database(options.merge(db: handle))
-                with_postgres_tunnel(database) do |url|
-                  CLI.logger.info "Dumping to #{filename}"
-                  `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
-                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
-                end
+              return use_rds_dump(handle, filename, dump_options) if is_aws_rds_db?(handle)
+
+              database = ensure_database(options.merge(db: handle))
+              with_postgres_tunnel(database) do |url|
+                CLI.logger.info "Dumping to #{filename}"
+                `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
@@ -288,24 +286,14 @@ module Aptible
               )
               telemetry(__method__, opts)
 
-              if handle.start_with? "aws:rds::"
-                external_rds = external_rds_database_from_handle(handle)
-                credential = external_rds.raw.external_aws_database_credentials.first
-                target_account = derive_account_from_conns(external_rds) 
-                with_rds_postgres_tunnel(credential, target_account) do |url|
-                  CLI.logger.info "Executing #{sql_path} against #{handle}"
-                  args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
-                  `psql #{args}#{url} < #{sql_path}`
-                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
-                end
-              else
-                database = ensure_database(options.merge(db: handle))
-                with_postgres_tunnel(database) do |url|
-                  CLI.logger.info "Executing #{sql_path} against #{handle}"
-                  args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
-                  `psql #{args}#{url} < #{sql_path}`
-                  exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
-                end
+              return use_rds_execute(handle, sql_path, options) if is_aws_rds_db?(handle)
+
+              database = ensure_database(options.merge(db: handle))
+              with_postgres_tunnel(database) do |url|
+                CLI.logger.info "Executing #{sql_path} against #{handle}"
+                args = options[:on_error_stop] ? '-v ON_ERROR_STOP=true ' : ''
+                `psql #{args}#{url} < #{sql_path}`
+                exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
               end
             end
 
@@ -317,37 +305,29 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               desired_port = Integer(options[:port] || 0)
-              if handle.start_with? "aws:rds::"
-                external_rds = external_rds_database_from_handle(handle)
-                credential = external_rds.raw.external_aws_database_credentials.first
-                target_account = derive_account_from_conns(external_rds) 
-              else
-                database = ensure_database(options.merge(db: handle))
-                credential = find_credential(database, options[:type])
-                target_account = nil
 
-                m = "Creating #{credential.type} tunnel to #{database.handle}..."
-                CLI.logger.info m
+              return use_rds_tunnel(handle, desired_port) if is_aws_rds_db?(handle)
 
-                if options[:type].nil?
-                  types = database.database_credentials.map(&:type)
-                  unless types.empty?
-                    valid = types.join(', ')
-                    CLI.logger.info 'Use --type TYPE to specify a tunnel type'
-                    CLI.logger.info "Valid types for #{database.handle}: #{valid}"
-                  end
+              database = ensure_database(options.merge(db: handle))
+              credential = find_credential(database, options[:type])
+
+              m = "Creating #{credential.type} tunnel to #{database.handle}..."
+              CLI.logger.info m
+
+              if options[:type].nil?
+                types = database.database_credentials.map(&:type)
+                unless types.empty?
+                  valid = types.join(', ')
+                  CLI.logger.info 'Use --type TYPE to specify a tunnel type'
+                  CLI.logger.info "Valid types for #{database.handle}: #{valid}"
                 end
               end
 
-              with_local_tunnel(credential, desired_port, target_account) do |tunnel_helper|
+              with_local_tunnel(credential, desired_port) do |tunnel_helper|
                 port = tunnel_helper.port
-                unless target_account.present?
-                  CLI.logger.info "Connect at #{local_url(credential, port)}"
-                  uri = URI(local_url(credential, port))
-                else
-                  CLI.logger.info "Connect at #{local_url(credential, port, target_account)}"
-                  uri = URI(local_url(credential, port, target_account))
-                end
+                CLI.logger.info "Connect at #{local_url(credential, port)}"
+
+                uri = URI(local_url(credential, port))
                 db = uri.path.gsub(%r{^/}, '')
                 CLI.logger.info 'Or, use the following arguments:'
                 CLI.logger.info "* Host: #{uri.host}"
