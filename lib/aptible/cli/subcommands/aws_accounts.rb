@@ -175,7 +175,8 @@ module Aptible
                                               'resources in your AWS account'
             option :remove_discovery_role_arn, type: :boolean,
                                                desc: 'Remove the discovery ' \
-                                                     'role ARN from this account'
+                                                     'role ARN from this ' \
+                                                     'account'
             option :discovery_frequency,
                    type: :string,
                    desc: 'Discovery frequency (e.g., daily)'
