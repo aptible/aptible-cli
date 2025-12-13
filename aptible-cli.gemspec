@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'activesupport', '>= 4.0', '< 6.0'
   spec.add_dependency 'aptible-api', '~> 1.10.0'
-  spec.add_dependency 'aptible-auth', '~> 1.2.5'
+  spec.add_dependency 'aptible-auth', '~> 1.3'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'aptible-resource', '~> 1.1'
   spec.add_dependency 'aws-sdk-s3', '~> 1.0'
@@ -52,4 +52,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'climate_control', '= 0.0.3'
   spec.add_development_dependency 'fabrication', '~> 2.15.2'
+  spec.add_development_dependency 'httplog', '< 1.6'
 end
