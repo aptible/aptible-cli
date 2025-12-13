@@ -1,15 +1,36 @@
+GIT
+  remote: https://github.com/aptible/aptible-api-ruby
+  revision: 8fe6db7b81c5d6fcbb5b332b58befee1886c2029
+  branch: ext-aws-check
+  specs:
+    aptible-api (1.10.0)
+      aptible-auth
+      aptible-resource
+      gem_config
+      multipart-post (< 2.2.0)
+
+GIT
+  remote: https://github.com/aptible/aptible-auth-ruby
+  revision: e4d569863a6533507ffe7544f3961b8d89f6a520
+  branch: concur-ruby-version-fix
+  specs:
+    aptible-auth (1.3.0)
+      aptible-resource (~> 1.0)
+      concurrent-ruby (~> 1.1.9)
+      gem_config
+      multipart-post (= 2.1.1)
+      oauth2 (= 2.0.9)
+
 PATH
   remote: .
   specs:
     aptible-cli (0.25.1)
       activesupport (>= 4.0, < 6.0)
       aptible-api (~> 1.10.0)
-      aptible-auth (~> 1.2.5)
+      aptible-auth (~> 1.3)
       aptible-billing (~> 1.0)
       aptible-resource (~> 1.1)
-      aws-eventstream (~> 1.1.1)
-      aws-sdk (~> 2.0)
-      aws-sigv4 (~> 1.2.4)
+      aws-sdk-s3 (~> 1.0)
       bigdecimal (~> 1.3.5)
       cbor
       chronic_duration (~> 0.10.6)
@@ -35,16 +56,6 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
-    aptible-api (1.10.0)
-      aptible-auth
-      aptible-resource
-      gem_config
-      multipart-post (< 2.2.0)
-    aptible-auth (1.2.5)
-      aptible-resource (~> 1.0)
-      gem_config
-      multipart-post (= 2.1.1)
-      oauth2 (= 1.4.7)
     aptible-billing (1.0.1)
       activesupport (>= 4.0, < 6.0)
       aptible-resource (~> 1.0)
@@ -60,16 +71,26 @@ GEM
       rake (>= 10, < 13.0)
       rubocop (= 0.42.0)
     ast (2.4.2)
-    aws-eventstream (1.1.1)
-    aws-sdk (2.11.632)
-      aws-sdk-resources (= 2.11.632)
-    aws-sdk-core (2.11.632)
-      aws-sigv4 (~> 1.0)
-      jmespath (~> 1.0)
-    aws-sdk-resources (2.11.632)
-      aws-sdk-core (= 2.11.632)
-    aws-sigv4 (1.2.4)
+    aws-eventstream (1.4.0)
+    aws-partitions (1.1182.0)
+    aws-sdk-core (3.237.0)
+      aws-eventstream (~> 1, >= 1.3.0)
+      aws-partitions (~> 1, >= 1.992.0)
+      aws-sigv4 (~> 1.9)
+      base64
+      bigdecimal
+      jmespath (~> 1, >= 1.6.1)
+      logger
+    aws-sdk-kms (1.117.0)
+      aws-sdk-core (~> 3, >= 3.234.0)
+      aws-sigv4 (~> 1.5)
+    aws-sdk-s3 (1.203.1)
+      aws-sdk-core (~> 3, >= 3.234.0)
+      aws-sdk-kms (~> 1)
+      aws-sigv4 (~> 1.5)
+    aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
+    base64 (0.3.0)
     bigdecimal (1.3.5)
     cbor (0.5.10.1)
     chronic_duration (0.10.6)
@@ -93,26 +114,31 @@ GEM
     git (1.7.0)
       rchardet (~> 1.8)
     hashdiff (1.1.1)
+    hashie (5.0.0)
     httpclient (2.8.3)
+    httplog (1.5.0)
+      rack (>= 1.0)
+      rainbow (>= 2.0.0)
     i18n (0.9.5)
       concurrent-ruby (~> 1.0)
     jmespath (1.6.2)
     json (2.5.1)
     jwt (2.3.0)
+    logger (1.7.0)
     method_source (1.1.0)
     minitest (5.12.0)
-    multi_json (1.15.0)
     multi_xml (0.6.0)
     multipart-post (2.1.1)
     net-http-persistent (3.1.0)
       connection_pool (~> 2.2)
     numerizer (0.1.1)
-    oauth2 (1.4.7)
-      faraday (>= 0.8, < 2.0)
+    oauth2 (2.0.9)
+      faraday (>= 0.17.3, < 3.0)
       jwt (>= 1.0, < 3.0)
-      multi_json (~> 1.3)
       multi_xml (~> 0.5)
-      rack (>= 1.2, < 3)
+      rack (>= 1.2, < 4)
+      snaky_hash (~> 2.0)
+      version_gem (~> 1.1)
     parser (2.7.2.0)
       ast (~> 2.4.1)
     powerpack (0.1.3)
@@ -146,6 +172,9 @@ GEM
       ruby-progressbar (~> 1.7)
       unicode-display_width (~> 1.0, >= 1.0.1)
     ruby-progressbar (1.13.0)
+    snaky_hash (2.0.3)
+      hashie (>= 0.1.0, < 6)
+      version_gem (>= 1.1.8, < 3)
     stripe (4.24.0)
       faraday (~> 0.13)
       net-http-persistent (~> 3.0)
@@ -161,6 +190,7 @@ GEM
       thread_safe (~> 0.1)
     unicode-display_width (1.8.0)
     uri_template (0.7.0)
+    version_gem (1.1.9)
     webmock (3.16.2)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
@@ -171,11 +201,14 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport (~> 4.0)
+  aptible-api!
+  aptible-auth!
   aptible-cli!
   aptible-tasks (~> 0.5.8)
   bundler (~> 1.3)
   climate_control (= 0.0.3)
   fabrication (~> 2.15.2)
+  httplog (< 1.6)
   pry
   rack (~> 1.0)
   rake

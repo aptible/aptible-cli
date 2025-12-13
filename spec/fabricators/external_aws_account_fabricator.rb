@@ -7,7 +7,7 @@ class StubExternalAwsAccount < OpenStruct
       'status' => status,
       'discovery_enabled' => discovery_enabled,
       'discovery_frequency' => discovery_frequency,
-      'role_arn' => role_arn,
+      'discovery_role_arn' => discovery_role_arn,
       'account_id' => account_id,
       'created_at' => created_at,
       'updated_at' => updated_at
@@ -18,6 +18,7 @@ end
 Fabricator(:external_aws_account, from: :stub_external_aws_account) do
   id { Fabricate.sequence(:external_aws_account_id) { |i| i } }
   account
+  errors { Aptible::Resource::Errors.new }
 
   account_name { |attrs| "External AWS Account #{attrs[:id]}" }
   aws_account_id do
@@ -25,7 +26,9 @@ Fabricator(:external_aws_account, from: :stub_external_aws_account) do
       format('%012d', 10_000_000_000 + i)
     end
   end
-  role_arn { |attrs| "arn:aws:iam::#{attrs[:aws_account_id]}:role/ExampleRole" }
+  discovery_role_arn do |attrs|
+    "arn:aws:iam::#{attrs[:aws_account_id]}:role/ExampleRole"
+  end
   aws_region_primary 'us-east-1'
   status 'active'
   discovery_enabled false

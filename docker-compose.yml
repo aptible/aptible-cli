@@ -1,6 +1,10 @@
 services:
   cli:
-    build: .
+    build:
+      context: .
+      args:
+        RUBY_VERSION: ${RUBY_VERSION:-2.3.1}
+        BUNDLER_VERSION: ${BUNDLER_VERSION:-}
     volumes:
       - type: bind
         source: .
