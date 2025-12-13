@@ -28,16 +28,22 @@ module Aptible
             desc 'services:settings SERVICE'\
                    ' [--force-zero-downtime|--no-force-zero-downtime]'\
                    ' [--simple-health-check|--no-simple-health-check]'\
+                   ' [--restart-free-scaling|--no-restart-free-scaling]'\
                    ' [--stop-timeout SECONDS]',
                  'Modifies the deployment settings for a service'
             app_options
             option :force_zero_downtime,
-                   type: :boolean, default: false,
+                   type: :boolean,
                    desc: 'Force zero downtime deployments.'\
                    ' Has no effect if service has an associated Endpoint'
             option :simple_health_check,
-                   type: :boolean, default: false,
+                   type: :boolean,
                    desc: 'Use a simple uptime healthcheck during deployments'
+            option :restart_free_scaling,
+                   type: :boolean,
+                   desc: 'When enabled, scaling operations that only change '\
+                         'the number of containers will not restart existing '\
+                         'containers'
             option :stop_timeout,
                    type: :numeric,
                    desc: 'The number of seconds to wait for the service '\
@@ -46,13 +52,19 @@ module Aptible
               telemetry(__method__, options.merge(service: service))
 
               service = ensure_service(options, service)
+
               updates = {}
-              updates[:force_zero_downtime] =
-                options[:force_zero_downtime] if options[:force_zero_downtime]
-              updates[:naive_health_check] =
-                options[:simple_health_check] if options[:simple_health_check]
-              updates[:stop_timeout] =
-                options[:stop_timeout] if options[:stop_timeout]
+              vars = [
+                :force_zero_downtime, :simple_health_check,
+                :restart_free_scaling, :stop_timeout
+              ]
+              vars.each { |v| updates[v] = options[v] unless options[v].nil? }
+              # The var we use with users is different than what the API
+              # expects, so we have to map it.
+              unless updates[:simple_health_check].nil?
+                updates[:naive_health_check] = \
+                  updates.delete(:simple_health_check)
+              end
 
               service.update!(**updates) if updates.any?
             end
