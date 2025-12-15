@@ -3,6 +3,21 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 Bundler.require :development
 
+require 'simplecov'
+require 'simplecov_json_formatter'
+
+# Configure SimpleCov for both HTML and JSON output
+SimpleCov.start do
+  add_filter '/spec/'
+  add_filter '/vendor/'
+
+  # Generate both HTML (for human viewing) and JSON (for CI/tooling)
+  formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                       SimpleCov::Formatter::HTMLFormatter,
+                                                       SimpleCov::Formatter::JSONFormatter
+                                                     ])
+end
+
 # Load shared spec files
 Dir["#{File.dirname(__FILE__)}/shared/**/*.rb"].each do |file|
   require file
