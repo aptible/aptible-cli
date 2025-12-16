@@ -46,7 +46,8 @@ module Aptible
                     begin
                       # Fetch tokens collection
                       tokens = account.ai_tokens
-                      
+                      next unless tokens # Skip if no tokens available
+
                       # Log full HAL response in debug mode (single API call returns all tokens)
                       if ENV['APTIBLE_DEBUG'] == 'DEBUG'
                         begin
@@ -190,7 +191,7 @@ module Aptible
                   raise Thor::Error, 'Token has already been revoked'
                 end
 
-                ai_token.delete
+                revoked_token = ai_token.delete
 
                 # Log DELETE response in debug mode
                 if ENV['APTIBLE_DEBUG'] == 'DEBUG'
@@ -208,7 +209,27 @@ module Aptible
                   end
                 end
 
-                CLI.logger.info 'AI token revoked successfully'
+                # Render the revoked token (supports JSON output format)
+                Formatter.render(Renderer.current) do |root|
+                  root.object do |node|
+                    # Get account from token's link if available
+                    account = nil
+                    if revoked_token&.links && revoked_token.links.account
+                      begin
+                        account = Aptible::Api::Account.new(
+                          token: fetch_token
+                        ).find_by_url(revoked_token.links.account.href)
+                      rescue StandardError
+                        # If we can't fetch the account, continue without it
+                        account = nil
+                      end
+                    end
+
+                    ResourceFormatter.inject_ai_token(node, revoked_token || ai_token, account)
+                  end
+                end
+
+                CLI.logger.info "\nAI token revoked successfully"
               rescue HyperResource::ClientError => e
                 error_message = extract_api_error(e)
 

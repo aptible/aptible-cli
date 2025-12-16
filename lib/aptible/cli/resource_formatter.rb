@@ -309,6 +309,58 @@ module Aptible
           gateway_url = ai_token.attributes['gateway_url'] rescue nil
           node.value('gateway_url', gateway_url) if gateway_url
 
+          # Include actor tracking info if present (encrypted at rest in LiteLLM, decrypted by deploy-api)
+          # Show user (on whose behalf) details
+          created_by_user_id = ai_token.attributes['created_by_user_id'] rescue nil
+          created_by_actor_id = ai_token.attributes['created_by_actor_id'] rescue nil
+          
+          node.value('created_by_user_id', created_by_user_id) if created_by_user_id
+
+          created_by_user_name = ai_token.attributes['created_by_user_name'] rescue nil
+          node.value('created_by_user_name', created_by_user_name) if created_by_user_name
+
+          created_by_user_email = ai_token.attributes['created_by_user_email'] rescue nil
+          node.value('created_by_user_email', created_by_user_email) if created_by_user_email
+
+          # Only show actor (who performed) details if different from user (impersonation case)
+          if created_by_actor_id && created_by_actor_id != created_by_user_id
+            node.value('created_by_actor_id', created_by_actor_id)
+
+            created_by_actor_name = ai_token.attributes['created_by_actor_name'] rescue nil
+            node.value('created_by_actor_name', created_by_actor_name) if created_by_actor_name
+
+            created_by_actor_email = ai_token.attributes['created_by_actor_email'] rescue nil
+            node.value('created_by_actor_email', created_by_actor_email) if created_by_actor_email
+          end
+
+          # Show revoked_by user details
+          revoked_by_user_id = ai_token.attributes['revoked_by_user_id'] rescue nil
+          revoked_by_actor_id = ai_token.attributes['revoked_by_actor_id'] rescue nil
+
+          if revoked_by_user_id
+            node.value('revoked_by_user_id', revoked_by_user_id)
+
+            revoked_by_user_name = ai_token.attributes['revoked_by_user_name'] rescue nil
+            node.value('revoked_by_user_name', revoked_by_user_name) if revoked_by_user_name
+
+            revoked_by_user_email = ai_token.attributes['revoked_by_user_email'] rescue nil
+            node.value('revoked_by_user_email', revoked_by_user_email) if revoked_by_user_email
+          end
+
+          # Only show revoked_by actor details if different from user (impersonation case)
+          if revoked_by_actor_id && revoked_by_actor_id != revoked_by_user_id
+            node.value('revoked_by_actor_id', revoked_by_actor_id)
+
+            revoked_by_actor_name = ai_token.attributes['revoked_by_actor_name'] rescue nil
+            node.value('revoked_by_actor_name', revoked_by_actor_name) if revoked_by_actor_name
+
+            revoked_by_actor_email = ai_token.attributes['revoked_by_actor_email'] rescue nil
+            node.value('revoked_by_actor_email', revoked_by_actor_email) if revoked_by_actor_email
+          end
+
+          revoked_at = ai_token.attributes['revoked_at'] rescue nil
+          node.value('revoked_at', revoked_at) if revoked_at
+
           attach_account(node, account) if account
         end
 

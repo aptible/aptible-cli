@@ -48,17 +48,18 @@ describe Aptible::CLI::Agent do
       allow(subject).to receive(:ensure_environment).and_return(account)
     end
 
-    it 'creates an AI token with a name' do
+    it 'creates an AI token with a note' do
+      encoded_note = Base64.urlsafe_encode64('new-token', padding: true)
       expect(account).to receive(:create_ai_token!)
-        .with(name: 'new-token').and_return(created_token)
+        .with(note: encoded_note).and_return(created_token)
 
-      subject.options = { name: 'new-token' }
+      subject.options = { note: 'new-token' }
       expect { subject.send('ai:tokens:create') }.not_to raise_error
 
       expect(captured_logs).to include('Save the token value now')
     end
 
-    it 'creates an AI token without a name' do
+    it 'creates an AI token without a note' do
       expect(account).to receive(:create_ai_token!)
         .with({}).and_return(created_token)
 
@@ -71,15 +72,17 @@ describe Aptible::CLI::Agent do
     it 'warns user to save token value if present' do
       token_with_value = Fabricate(:ai_token, name: 'new-token', account: account)
       allow(token_with_value).to receive(:attributes)
-        .and_return({ 'token' => 'sk-secret-value' })
+        .and_return({ 'token' => 'sk-secret-value', 'gateway_url' => 'https://gateway.example.com' })
 
+      encoded_note = Base64.urlsafe_encode64('new-token', padding: true)
       expect(account).to receive(:create_ai_token!)
-        .with(name: 'new-token').and_return(token_with_value)
+        .with(note: encoded_note).and_return(token_with_value)
 
-      subject.options = { name: 'new-token' }
+      subject.options = { note: 'new-token' }
       subject.send('ai:tokens:create')
 
       expect(captured_logs).to include('Save the token value now - it will not be shown again!')
+      expect(captured_logs).to include('Use this token to authenticate requests to: https://gateway.example.com')
     end
   end
 
@@ -91,8 +94,8 @@ describe Aptible::CLI::Agent do
     end
 
     before do
-      allow(Aptible::Api::Resource).to receive(:new)
-        .with(token: token)
+      allow(Aptible::Api::AiToken).to receive(:new)
+        .with(root: 'https://app-98582.aptible-test-leeroy.com', token: token)
         .and_return(ai_token_resource)
       allow(ai_token_resource).to receive(:href=)
     end
@@ -102,7 +105,7 @@ describe Aptible::CLI::Agent do
 
       expect { subject.send('ai:tokens:show', token_id) }.not_to raise_error
 
-      expect(ai_token_resource).to have_received(:href=).with("/ai_tokens/#{token_id}")
+      expect(ai_token_resource).to have_received(:href=).with("https://app-98582.aptible-test-leeroy.com/ai_tokens/#{token_id}")
       expect(ai_token_resource).to have_received(:get)
     end
 
@@ -128,37 +131,42 @@ describe Aptible::CLI::Agent do
   describe '#ai:tokens:revoke' do
     let(:ai_token_resource) { double('ai_token_resource') }
     let(:token_id) { 'sk-test-token-12345' }
+    let(:token_obj) { double('ai_token', blocked: false, delete: nil) }
 
     before do
-      allow(Aptible::Api::Resource).to receive(:new)
+      allow(Aptible::Api::AiToken).to receive(:new)
         .with(token: token)
         .and_return(ai_token_resource)
-      allow(ai_token_resource).to receive(:href=)
     end
 
     it 'revokes an AI token successfully' do
-      allow(ai_token_resource).to receive(:delete)
+      url = "https://app-98582.aptible-test-leeroy.com/ai_tokens/#{token_id}"
+      allow(ai_token_resource).to receive(:find_by_url).with(url).and_return(token_obj)
+      allow(token_obj).to receive(:delete)
 
       subject.send('ai:tokens:revoke', token_id)
 
-      expect(ai_token_resource).to have_received(:href=).with("/ai_tokens/#{token_id}")
-      expect(ai_token_resource).to have_received(:delete)
+      expect(ai_token_resource).to have_received(:find_by_url).with(url)
+      expect(token_obj).to have_received(:delete)
       expect(captured_logs).to include('AI token revoked successfully')
     end
 
     it 'raises an error if the token is not found (404)' do
+      url = "https://app-98582.aptible-test-leeroy.com/ai_tokens/nonexistent"
       error_response = double('error_response', status: 404, body: 'Not Found')
       error = HyperResource::ClientError.new('Not Found', response: error_response)
-      allow(ai_token_resource).to receive(:delete).and_raise(error)
+      allow(ai_token_resource).to receive(:find_by_url).with(url).and_raise(error)
 
       expect { subject.send('ai:tokens:revoke', 'nonexistent') }
         .to raise_error(Thor::Error, /AI token nonexistent not found or access denied/)
     end
 
     it 'raises an error on other client errors' do
+      url = "https://app-98582.aptible-test-leeroy.com/ai_tokens/#{token_id}"
+      allow(ai_token_resource).to receive(:find_by_url).with(url).and_return(token_obj)
       error_response = double('error_response', status: 500, body: 'Internal Server Error')
       error = HyperResource::ClientError.new('Internal Server Error', response: error_response)
-      allow(ai_token_resource).to receive(:delete).and_raise(error)
+      allow(token_obj).to receive(:delete).and_raise(error)
 
       expect { subject.send('ai:tokens:revoke', token_id) }
         .to raise_error(Thor::Error, /Failed to revoke token/)

@@ -7,9 +7,7 @@ module Aptible
         def ensure_ai_token(account, id)
           ai_tokens = account.ai_tokens.select { |t| t.id.to_s == id.to_s }
 
-          if ai_tokens.empty?
-            raise Thor::Error, "AI token #{id} not found or access denied"
-          end
+          raise Thor::Error, "AI token #{id} not found or access denied" if ai_tokens.empty?
 
           ai_tokens.first
         rescue HyperResource::ClientError => e
@@ -22,7 +20,7 @@ module Aptible
 
         def create_ai_token(account, opts)
           ai_token = account.create_ai_token!(opts)
-          
+
           # Log full HAL response in debug mode
           if ENV['APTIBLE_DEBUG'] == 'DEBUG'
             begin
@@ -31,11 +29,11 @@ module Aptible
               CLI.logger.warn "POST create response: #{ai_token.body.inspect}"
             end
           end
-          
+
           Formatter.render(Renderer.current) do |root|
             root.object do |node|
               ResourceFormatter.inject_ai_token(node, ai_token, account)
-              
+
               # Include the token value on creation if present
               token_value = ai_token.attributes['token']
               node.value('token', token_value) if token_value
@@ -47,9 +45,7 @@ module Aptible
           gateway_url = ai_token.attributes['gateway_url']
           if token_value
             CLI.logger.warn "\nSave the token value now - it will not be shown again!"
-            if gateway_url
-              CLI.logger.warn "Use this token to authenticate requests to: #{gateway_url}"
-            end
+            CLI.logger.warn "Use this token to authenticate requests to: #{gateway_url}" if gateway_url
           end
 
           ai_token
