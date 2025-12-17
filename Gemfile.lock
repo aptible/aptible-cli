@@ -11,8 +11,8 @@ GIT
 
 GIT
   remote: https://github.com/aptible/aptible-auth-ruby
-  revision: e162c02ecf84d1105cd2624ca72e34e7c7e728c0
-  branch: concur-ruby-version-fix
+  revision: 1019bc39ede317ac5265ccb00e6499141e342f7c
+  branch: master
   specs:
     aptible-auth (1.4.0)
       aptible-resource (~> 1.0)

@@ -8,7 +8,7 @@ group :test do
 end
 
 gem 'aptible-api', git: 'https://github.com/aptible/aptible-api-ruby', branch: 'ext-aws-check'
-gem 'aptible-auth', git: 'https://github.com/aptible/aptible-auth-ruby', branch: 'concur-ruby-version-fix'
+gem 'aptible-auth', git: 'https://github.com/aptible/aptible-auth-ruby', branch: 'master'
 
 # Specify your gem's dependencies in aptible-cli.gemspec
 gemspec
