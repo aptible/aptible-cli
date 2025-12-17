@@ -309,7 +309,7 @@ module Aptible
           gateway_url = ai_token.attributes['gateway_url'] rescue nil
           node.value('gateway_url', gateway_url) if gateway_url
 
-          # Include actor tracking info if present (encrypted at rest in LiteLLM, decrypted by deploy-api)
+          # Include actor tracking info if present (encrypted at rest in LLM Gateway, decrypted by deploy-api)
           # Show user (on whose behalf) details
           created_by_user_id = ai_token.attributes['created_by_user_id'] rescue nil
           created_by_actor_id = ai_token.attributes['created_by_actor_id'] rescue nil

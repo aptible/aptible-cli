@@ -10,7 +10,7 @@ require 'json'
 #   1. Running deploy-api at DEPLOY_API_URL (e.g., http://localhost:3000)
 #   2. Valid Aptible API token in DEPLOY_API_TOKEN
 #   3. Target environment handle in TEST_ENVIRONMENT (e.g., "test-env")
-#   4. LiteLLM configured in deploy-api (or mocked)
+#   4. LLM Gateway configured in deploy-api (or mocked)
 #
 # Run with:
 #   DEPLOY_API_URL=http://localhost:3000 \

@@ -21,7 +21,7 @@ module Aptible
               opts = {}
               if options[:note]
                 # URL-safe base64 encode the note for safe transport to deploy-api
-                # deploy-api will validate and encrypt it before storing in LiteLLM
+                # deploy-api will validate and encrypt it before storing in LLM Gateway
                 require 'base64'
                 opts[:note] = Base64.urlsafe_encode64(options[:note], padding: true)
               end
