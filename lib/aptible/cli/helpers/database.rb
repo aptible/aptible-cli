@@ -202,17 +202,19 @@ module Aptible
 
         def with_rds_tunnel(handle, port = 0)
           external_rds = external_rds_database_from_handle(handle)
-          if external_rds.empty?
+          if external_rds.nil?
             raise Thor::Error, "No rds db found with handle #{handle}"
           end
 
           credential = external_rds.raw.external_aws_database_credentials.first
-          if credential.empty?
-            raise Thor::Error, "No rds credential found with handle #{handle}"
+          if credential.nil?
+            raise Thor::Error, 'No rds credential found with handle ' \
+                               "#{handle}. Check to see if you have run " \
+                               'db:attach or a scan has properly completed.'
           end
 
           target_account = derive_account_from_conns(external_rds)
-          if credential.empty?
+          if target_account.nil?
             raise Thor::Error,
                   "No env for rds found with handle #{handle}. Check to see " \
                   'if you have run db:attach or a scan has properly completed.'
