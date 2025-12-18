@@ -17,6 +17,14 @@ class StubExternalAwsResource < OpenStruct
       'updated_at' => updated_at
     }
   end
+
+  def app_external_aws_rds_connections
+    @app_external_aws_rds_connections ||= []
+  end
+
+  def external_aws_database_credentials
+    @external_aws_database_credentials ||= []
+  end
 end
 
 Fabricator(:external_aws_resource, from: :stub_external_aws_resource) do

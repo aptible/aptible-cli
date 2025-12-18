@@ -92,8 +92,8 @@ module Aptible
 
         def rds_shell_account
           MockRdsDatabaseAccountShell.new(
-            UNATTACHED_RDS_ACCOUNT_ID,
-            'unattached rds databases'
+            'unattached rds databases',
+            UNATTACHED_RDS_ACCOUNT_ID
           )
         end
 

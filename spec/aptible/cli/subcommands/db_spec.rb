@@ -332,6 +332,206 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#db:list (rds databases)' do
+    let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+    let(:staging) { Fabricate(:account, handle: 'staging', stack: stack) }
+    let(:prod) { Fabricate(:account, handle: 'production', stack: stack) }
+    let(:token) { 'the-token' }
+
+    # Create apps for each account
+    let(:staging_app) do
+      Fabricate(:app, handle: 'staging-app', account: staging)
+    end
+    let(:prod_app) { Fabricate(:app, handle: 'prod-app', account: prod) }
+
+    # Create RDS resources
+    let(:staging_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'staging-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    let(:prod_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'prod-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    let(:unattached_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'unattached-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    # Create credentials
+    let(:staging_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: staging_rds
+      )
+    end
+
+    let(:prod_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: prod_rds
+      )
+    end
+
+    let(:unattached_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: unattached_rds
+      )
+    end
+
+    # Create connection doubles
+    let(:staging_conn) do
+      double('staging_conn', present?: true, app: staging_app)
+    end
+
+    let(:prod_conn) do
+      double('prod_conn', present?: true, app: prod_app)
+    end
+
+    before do
+      # Force lazy evaluation of all let blocks in the correct order
+      staging_app
+      prod_app
+      staging_conn
+      prod_conn
+
+      # Create stub regular databases to establish account sections
+      # (RDS databases piggyback on regular database account sections)
+      staging_regular_db = Fabricate(:database,
+                                      account: staging,
+                                      handle: 'staging-regular-db')
+      prod_regular_db = Fabricate(:database,
+                                   account: prod,
+                                   handle: 'prod-regular-db')
+      Fabricate(:database_credential, database: staging_regular_db)
+      Fabricate(:database_credential, database: prod_regular_db)
+
+      # Ensure apps properly return their accounts
+      allow(staging_app).to receive(:account).and_return(staging)
+      allow(prod_app).to receive(:account).and_return(prod)
+
+      # Set the connections directly on the RDS resources
+      staging_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        [staging_conn]
+      )
+      prod_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        [prod_conn]
+      )
+      unattached_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        []
+      )
+
+      # Set the credentials directly on the RDS resources
+      staging_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [staging_cred]
+      )
+      prod_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [prod_cred]
+      )
+      unattached_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [unattached_cred]
+      )
+
+      # Setup API mocks
+      allow(subject).to receive(:fetch_token).and_return(token)
+      allow(Aptible::Api::Database).to receive(:all)
+        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+        .and_return([staging_regular_db, prod_regular_db])
+      allow(Aptible::Api::Account).to receive(:all)
+        .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
+        .and_return([staging, prod])
+      allow(Aptible::Api::ExternalAwsResource).to receive(:all)
+        .with(token: token)
+        .and_return([staging_rds, prod_rds, unattached_rds])
+    end
+
+    context 'when no account is specified' do
+      it 'prints out RDS databases grouped by account' do
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+
+        expect(captured_output_text).to include('=== production')
+        expect(captured_output_text).to include('aws:rds::prod-rds-db')
+      end
+
+      it 'prints out unattached RDS databases' do
+        subject.send('db:list')
+
+        expect(captured_output_text)
+          .to include('=== unattached rds databases')
+        expect(captured_output_text).to include('aws:rds::unattached-rds-db')
+      end
+    end
+
+    context 'when a valid account is specified' do
+      it 'prints out RDS databases for that account' do
+        subject.options = { environment: 'staging' }
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+        expect(captured_output_text).to include('staging-regular-db')
+
+        expect(captured_output_text).not_to include('=== production')
+      end
+
+      it 'shows RDS databases from other accounts as unattached' do
+        subject.options = { environment: 'staging' }
+        subject.send('db:list')
+
+        # RDS databases attached to other (filtered out) accounts
+        # appear in the unattached section
+        expect(captured_output_text)
+          .to include('=== unattached rds databases')
+        expect(captured_output_text).to include('aws:rds::prod-rds-db')
+        expect(captured_output_text).to include('aws:rds::unattached-rds-db')
+      end
+    end
+
+    context 'with both regular databases and RDS databases' do
+      before do
+        staging_db = Fabricate(
+          :database,
+          handle: 'staging-postgres-db',
+          account: staging
+        )
+        Fabricate(:database_credential, database: staging_db)
+
+        allow(Aptible::Api::Database).to receive(:all)
+          .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+          .and_return([staging_db])
+      end
+
+      it 'prints both regular and RDS databases' do
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('staging-postgres-db')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+      end
+    end
+  end
+
   describe '#db:backup' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
     before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
