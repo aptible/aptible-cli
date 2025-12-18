@@ -173,6 +173,7 @@ DEPENDENCIES
   activesupport (~> 4.0)
   aptible-cli!
   aptible-tasks (~> 0.5.8)
+  bundler (~> 1.3)
   climate_control (= 0.0.3)
   fabrication (~> 2.15.2)
   pry
@@ -182,4 +183,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   2.1.4
+   1.17.3

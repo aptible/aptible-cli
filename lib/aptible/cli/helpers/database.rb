@@ -17,7 +17,8 @@ module Aptible
         # struct to stub out those that are not found to be attached to
         # any apps.
         MockRdsDatabaseAccountShell = Struct.new(
-          :handle, :id, :created_at, keyword_init: true
+          :handle, :id, :created_at,
+          keyword_init: true
         )
         # using an ID that cannot be hit for visual segregation of
         # unattached databases
