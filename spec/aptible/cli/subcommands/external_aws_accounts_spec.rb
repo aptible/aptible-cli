@@ -312,8 +312,8 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails when multiple organizations found and no org_id provided' do
-      org1 = double('org1', id: 'org-1')
-      org2 = double('org2', id: 'org-2')
+      org1 = double('org1', id: 'org-1', name: 'org one')
+      org2 = double('org2', id: 'org-2', name: 'org two')
       allow(Aptible::Auth::Organization).to receive(:all)
         .with(token: token).and_return([org1, org2])
 
