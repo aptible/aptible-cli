@@ -124,7 +124,10 @@ module Aptible
             return nil if valid_conns.nil?
             return valid_conns.app.account
           end
-          conns.first.app.account
+
+          first_present_conn = conns.find(&:present?)
+          return nil if first_present_conn.nil?
+          first_present_conn.app.account
         end
 
         def external_rds_database_from_handle(handle)
