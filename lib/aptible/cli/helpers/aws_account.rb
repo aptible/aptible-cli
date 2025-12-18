@@ -42,7 +42,8 @@ module Aptible
                              '--organization-id=ORG_ID' if orgs.empty?
           raise Thor::Error, 'Multiple organizations found, indicate which ' \
                              'one to use with --organization-id=ORG_ID ' \
-                             "\n\tFound organization ids: #{orgs.join(', ')}" \
+                             "\n\tFound organization ids:" \
+                             "\n\t\t#{orgs.map { |o| "#{o.id} (#{o.name})" }.join("\n\t\t")}" \
                              if orgs.count > 1
 
           orgs.first.id
