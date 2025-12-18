@@ -43,7 +43,9 @@ module Aptible
           raise Thor::Error, 'Multiple organizations found, indicate which ' \
                              'one to use with --organization-id=ORG_ID ' \
                              "\n\tFound organization ids:" \
-                             "\n\t\t#{orgs.map { |o| "#{o.id} (#{o.name})" }.join("\n\t\t")}" \
+                             "\n\t\t#{orgs.map do |o|
+                               "#{o.id} (#{o.name})"
+                             end.join("\n\t\t")}" \
                              if orgs.count > 1
 
           orgs.first.id
