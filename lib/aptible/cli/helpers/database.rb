@@ -17,8 +17,9 @@ module Aptible
         # struct to stub out those that are not found to be attached to
         # any apps.
         MockRdsDatabaseAccountShell = Struct.new(
-          :handle, :id, :created_at,
-          keyword_init: true
+          :handle,
+          :id,
+          :created_at
         )
         # using an ID that cannot be hit for visual segregation of
         # unattached databases
@@ -91,8 +92,8 @@ module Aptible
 
         def rds_shell_account
           MockRdsDatabaseAccountShell.new(
-            id: UNATTACHED_RDS_ACCOUNT_ID,
-            handle: 'unattached rds databases'
+            UNATTACHED_RDS_ACCOUNT_ID,
+            'unattached rds databases'
           )
         end
 
