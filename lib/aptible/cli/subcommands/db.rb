@@ -27,6 +27,12 @@ module Aptible
                   accounts = scoped_environments(options)
                   acc_map = environment_map(accounts)
 
+                  # the below is done because an rds resource can belong to
+                  # multiple accounts or none. we go through and iterate
+                  # through all external_aws_resources and print them based
+                  # on connections. To avoid repeated API calls, we keep
+                  # them in these maps and only fetch relations when
+                  # necessary.
                   rds_map = {}
                   accts_rds_map = {}
                   begin
@@ -43,26 +49,17 @@ module Aptible
                           ResourceFormatter.inject_database(n, db, account)
                         end
                       end
-                      if accts_rds_map.key? account.id
-                        accts_rds_map[account.id].each do |rds_db|
-                          rds_map.delete(rds_db.id)
-                          node.object do |n|
-                            ResourceFormatter.inject_database_minimal(
-                              n,
-                              rds_db,
-                              account
-                            )
-                          end
+                      next unless accts_rds_map.key? account.id
+
+                      accts_rds_map[account.id].each do |rds_db|
+                        rds_map.delete(rds_db.id)
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            rds_db,
+                            account
+                          )
                         end
-                      end
-                    end
-                    rds_map.each_value do |db|
-                      node.object do |n|
-                        ResourceFormatter.inject_database_minimal(
-                          n,
-                          db,
-                          rds_shell_account
-                        )
                       end
                     end
                   else
@@ -91,14 +88,15 @@ module Aptible
                         end
                       end
                     end
-                    rds_map.each_value do |db|
-                      node.object do |n|
-                        ResourceFormatter.inject_database_minimal(
-                          n,
-                          db,
-                          rds_shell_account
-                        )
-                      end
+                  end
+
+                  rds_map.each_value do |db|
+                    node.object do |n|
+                      ResourceFormatter.inject_database_minimal(
+                        n,
+                        db,
+                        rds_shell_account
+                      )
                     end
                   end
                 end
