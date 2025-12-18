@@ -2,11 +2,14 @@ module Aptible
   module CLI
     module Subcommands
       module Deploy
-        DEPRECATED_ENV = %w(
+        DEPRECATED_ENV = Hash[%w(
           APTIBLE_DOCKER_IMAGE
           APTIBLE_PRIVATE_REGISTRY_USERNAME
           APTIBLE_PRIVATE_REGISTRY_PASSWORD
-        ).freeze
+        ).map do |var|
+          opt = var.gsub(/^APTIBLE_/, '').downcase.to_sym
+          [opt, var]
+        end]
 
         NULL_SHA1 = '0000000000000000000000000000000000000000'.freeze
 
@@ -70,14 +73,20 @@ module Aptible
 
               env = extract_env(args)
 
-              if (DEPRECATED_ENV & env.keys).any?
-                option_names = DEPRECATED_ENV.map do |var|
-                  var.gsub('APTIBLE_', '--').to_s.downcase.tr('_', '-')
-                end.join(', ')
-                m = 'ERROR: The environment variables ' \
-                    "#{DEPRECATED_ENV.join(', ')} are deprecated. " \
-                    "Use the options #{option_names}, instead"
-                raise Thor::Error, m
+              DEPRECATED_ENV.each_pair do |opt, var|
+                val = options[opt]
+                dasherized = "--#{opt.to_s.tr('_', '-')}"
+                if env[var]
+                  m = "WARNING: The environment variable #{var} " \
+                      'will be deprecated. Use the option ' \
+                      "#{dasherized}, instead."
+                  CLI.logger.warn m
+                end
+                next unless val
+                if env[var] && env[var] != val
+                  raise Thor::Error, "The options #{dasherized} and #{var} " \
+                                     'cannot be set to different values'
+                end
               end
 
               settings = {}

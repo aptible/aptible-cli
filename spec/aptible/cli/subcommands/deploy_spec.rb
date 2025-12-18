@@ -138,15 +138,22 @@ describe Aptible::CLI::Agent do
       it 'allows redundant command line arguments' do
         stub_options(docker_image: 'foobar')
 
-        expect { subject.deploy('APTIBLE_DOCKER_IMAGE=foobar') }
-          .to raise_error(/deprecated/im)
+        expect(app).to receive(:create_operation!)
+          .with(type: 'deploy',
+                env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' },
+                settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+          .and_return(operation)
+        expect(subject).to receive(:attach_to_operation_logs)
+          .with(operation)
+
+        subject.deploy('APTIBLE_DOCKER_IMAGE=foobar')
       end
 
-      it 'reject contradictory command line arguments' do
+      it 'reject contradictory command line argumnts' do
         stub_options(docker_image: 'foobar')
 
         expect { subject.deploy('APTIBLE_DOCKER_IMAGE=qux') }
-          .to raise_error(/deprecated/im)
+          .to raise_error(/different values/im)
       end
 
       it 'does not allow deploying nothing on an unprovisioned app' do
