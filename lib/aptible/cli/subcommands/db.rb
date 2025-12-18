@@ -38,6 +38,11 @@ module Aptible
 
                   if Renderer.format == 'json'
                     accounts.each do |account|
+                      account.each_database do |db|
+                        node.object do |n|
+                          ResourceFormatter.inject_database(n, db, account)
+                        end
+                      end
                       external_rds_databases_all.each do |db|
                         account = derive_account_from_conns(db, account)
                         next unless account.present?
@@ -48,11 +53,6 @@ module Aptible
                             db,
                             account
                           )
-                        end
-                      end
-                      account.each_database do |db|
-                        node.object do |n|
-                          ResourceFormatter.inject_database(n, db, account)
                         end
                       end
                       rds_map.each_value do |db|
@@ -69,26 +69,26 @@ module Aptible
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
-
-                      if accts_rds_map.key? account.id
-                        accts_rds_map[account.id].each do |rds_db|
-                          rds_map.delete(rds_db.id)
-                          node.object do |n|
-                            ResourceFormatter.inject_database_minimal(
-                              n,
-                              rds_db,
-                              account
-                            )
-                          end
-                        end
-                      end
-
                       node.object do |n|
                         ResourceFormatter.inject_database_minimal(
                           n,
                           db,
                           account
                         )
+                      end
+                    end
+                    accounts.each do |account|
+                      next unless accts_rds_map.key? account.id
+
+                      accts_rds_map[account.id].each do |rds_db|
+                        rds_map.delete(rds_db.id)
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            rds_db,
+                            account
+                          )
+                        end
                       end
                     end
                     rds_map.each_value do |db|
