@@ -27,8 +27,14 @@ module Aptible
                   accounts = scoped_environments(options)
                   acc_map = environment_map(accounts)
 
-                  rds_map = external_rds_databases_map
-                  accts_rds_map = accounts_external_rds_databases_map(rds_map)
+                  rds_map = {}
+                  accts_rds_map = {}
+                  begin
+                    rds_map, accts_rds_map = fetch_rds_databases_with_accounts
+                  rescue StandardError => e
+                    CLI.logger.warn 'Unable to fetch RDS databases:' \
+                                    "#{e.message}"
+                  end
 
                   if Renderer.format == 'json'
                     accounts.each do |account|

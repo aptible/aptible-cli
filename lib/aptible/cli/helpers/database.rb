@@ -71,6 +71,12 @@ module Aptible
           external_rds_databases_all.map { |rds| [rds[:id], rds] }.to_h
         end
 
+        def fetch_rds_databases_with_accounts
+          rds_map = external_rds_databases_map
+          accts_rds_map = accounts_external_rds_databases_map(rds_map)
+          [rds_map, accts_rds_map]
+        end
+
         def accounts_external_rds_databases_map(rds_map)
           return {} if rds_map.empty?
 
