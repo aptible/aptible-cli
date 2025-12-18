@@ -8,14 +8,19 @@ module Aptible
         include Helpers::Environment
         include Helpers::Ssh
 
-        # RdsDatabase is a translation struct so the same renderer can be used for
-        # external_aws_resource as those for databases
+        # RdsDatabase is a translation struct so the same renderer can be
+        # used for external_aws_resource as those for databases
         RdsDatabase = Struct.new(:handle, :id, :created_at, :raw)
-        # MockRdsDatabaseAccountShell - there is no direct 1:1 mapping between accounts
-        # and external_aws_resources. Since this is coerced via app_external_aws_rds_connections,
-        # we use this struct to stub out those that are not found to be attached to any apps.
-        MockRdsDatabaseAccountShell = Struct.new(:handle, :id, :created_at, keyword_init: true)
-        # using an ID that cannot be hit for visual segregation of unattached databases
+        # MockRdsDatabaseAccountShell - there is no direct 1:1 mapping
+        # between accounts and external_aws_resources. Since this is
+        # coerced via app_external_aws_rds_connections, we use this
+        # struct to stub out those that are not found to be attached to
+        # any apps.
+        MockRdsDatabaseAccountShell = Struct.new(
+          :handle, :id, :created_at, keyword_init: true
+        )
+        # using an ID that cannot be hit for visual segregation of
+        # unattached databases
         UNATTACHED_RDS_ACCOUNT_ID = -9999
 
         def ensure_database(options = {})
@@ -56,26 +61,21 @@ module Aptible
           )
         end
 
-        def is_aws_rds_db?(handle)
-          handle.start_with? "aws:rds::"
+        def aws_rds_db?(handle)
+          handle.start_with? 'aws:rds::'
         end
 
-        def external_rds_databases_map() 
+        def external_rds_databases_map
           external_rds_databases_all.map { |rds| [rds[:id], rds] }.to_h
         end
-
 
         def accounts_external_rds_databases_map(rds_map)
           return {} if rds_map.empty?
 
-          apps = Aptible::Api::App.all(
-            token: fetch_token,
-            href: apps_href
-          )
-          accts_rds_map = map_of_accounts_to_rds(rds_map, apps)
+          map_of_accounts_to_rds(rds_map)
         end
 
-        def map_of_accounts_to_rds(rds_map, apps)
+        def map_of_accounts_to_rds(rds_map)
           # one rds db can be on multiple accounts
           accts_rds_map = {}
           rds_map.each_value do |db|
@@ -91,30 +91,37 @@ module Aptible
         def rds_shell_account
           MockRdsDatabaseAccountShell.new(
             id: UNATTACHED_RDS_ACCOUNT_ID,
-            handle: "unattached rds databases",
+            handle: 'unattached rds databases'
           )
         end
 
         def external_rds_databases_all
-          Aptible::Api::ExternalAwsResource.all(
+          Aptible::Api::ExternalAwsResource
+            .all(
               token: fetch_token
-          )
-            .select { |db| db.resource_type == "aws_rds_db_instance" }
-            .map { |db| RdsDatabase.new(
-              "aws:rds::#{db.resource_name}",
-              db.id,
-              db.created_at,
-              db
-            ) }
+            )
+            .select { |db| db.resource_type == 'aws_rds_db_instance' }
+            .map do |db|
+              RdsDatabase.new(
+                "aws:rds::#{db.resource_name}",
+                db.id,
+                db.created_at,
+                db
+              )
+            end
         end
 
         def derive_account_from_conns(db, preferred_acct = nil)
           conns = db.raw.app_external_aws_rds_connections
           return nil if conns.empty?
 
-          valid_conns = conns.find { |conn| conn.present? && conn.app.account.id == preferred_acct.id } if preferred_acct.present?
-          return nil if preferred_acct.present? && (valid_conns.nil?)
-          return valid_conns.app.account if preferred_acct.present?
+          if preferred_acct.present?
+            valid_conns = conns.find do |conn|
+              conn.present? && conn.app.account.id == preferred_acct.id
+            end
+            return nil if valid_conns.nil?
+            return valid_conns.app.account
+          end
           conns.first.app.account
         end
 
@@ -167,11 +174,18 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(credential, port = 0, target_account = nil)
-          op = if target_account.nil? 
-            credential.create_operation!(type: 'tunnel', status: 'succeeded')
-          else
-            credential.create_operation!(type: 'tunnel', status: 'succeeded', destination_account: target_account.id)
-          end
+          op = if target_account.nil?
+                 credential.create_operation!(
+                   type: 'tunnel',
+                   status: 'succeeded'
+                 )
+               else
+                 credential.create_operation!(
+                   type: 'tunnel',
+                   status: 'succeeded',
+                   destination_account: target_account.id
+                 )
+               end
 
           with_ssh_cmd(op) do |base_ssh_cmd, ssh_credential|
             ssh_cmd = base_ssh_cmd + ['-o', 'SendEnv=ACCESS_TOKEN']
@@ -188,10 +202,25 @@ module Aptible
 
         def with_rds_tunnel(handle, port = 0)
           external_rds = external_rds_database_from_handle(handle)
+          if external_rds.empty?
+            raise Thor::Error, "No rds db found with handle #{handle}"
+          end
+
           credential = external_rds.raw.external_aws_database_credentials.first
-          target_account = derive_account_from_conns(external_rds) 
+          if credential.empty?
+            raise Thor::Error, "No rds credential found with handle #{handle}"
+          end
+
+          target_account = derive_account_from_conns(external_rds)
+          if credential.empty?
+            raise Thor::Error,
+                  "No env for rds found with handle #{handle}. Check to see " \
+                  'if you have run db:attach or a scan has properly completed.'
+          end
+
           with_local_tunnel(credential, port, target_account) do |tunnel_helper|
-            yield local_rds_url(credential, tunnel_helper.port, target_account), tunnel_helper
+            url = local_rds_url(credential, tunnel_helper.port, target_account)
+            yield url, tunnel_helper
           end
         end
 
@@ -248,7 +277,7 @@ module Aptible
             yield local_url(credential, tunnel_helper.port)
           end
         end
-        
+
         def local_rds_url(credential, local_port, forced_account)
           remote_url = credential.connection_url
 
@@ -257,7 +286,6 @@ module Aptible
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end
-
 
         def local_url(credential, local_port)
           remote_url = credential.connection_url

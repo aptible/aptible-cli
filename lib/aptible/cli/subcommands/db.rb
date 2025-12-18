@@ -27,13 +27,13 @@ module Aptible
                   accounts = scoped_environments(options)
                   acc_map = environment_map(accounts)
 
-                  rds_map = external_rds_databases_map()
+                  rds_map = external_rds_databases_map
                   accts_rds_map = accounts_external_rds_databases_map(rds_map)
 
                   if Renderer.format == 'json'
                     accounts.each do |account|
                       external_rds_databases_all.each do |db|
-                        account = derive_account_from_conns(db, account) 
+                        account = derive_account_from_conns(db, account)
                         next unless account.present?
 
                         node.object do |n|
@@ -64,13 +64,13 @@ module Aptible
                       account = acc_map[db.links.account.href]
                       next if account.nil?
 
-                      if accts_rds_map.has_key? account.id 
-                        accts_rds_map[account.id].each do |db|
-                          rds_map.delete(db.id)
+                      if accts_rds_map.key? account.id
+                        accts_rds_map[account.id].each do |rds_db|
+                          rds_map.delete(rds_db.id)
                           node.object do |n|
                             ResourceFormatter.inject_database_minimal(
                               n,
-                              db,
+                              rds_db,
                               account
                             )
                           end
@@ -279,7 +279,9 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               filename = "#{handle}.dump"
-              return use_rds_dump(handle, filename, dump_options) if is_aws_rds_db?(handle)
+              if aws_rds_db?(handle)
+                return use_rds_dump(handle, filename, dump_options)
+              end
 
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
@@ -300,7 +302,9 @@ module Aptible
               )
               telemetry(__method__, opts)
 
-              return use_rds_execute(handle, sql_path, options) if is_aws_rds_db?(handle)
+              if aws_rds_db?(handle)
+                return use_rds_execute(handle, sql_path, options)
+              end
 
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
@@ -320,7 +324,7 @@ module Aptible
 
               desired_port = Integer(options[:port] || 0)
 
-              return use_rds_tunnel(handle, desired_port) if is_aws_rds_db?(handle)
+              return use_rds_tunnel(handle, desired_port) if aws_rds_db?(handle)
 
               database = ensure_database(options.merge(db: handle))
               credential = find_credential(database, options[:type])
