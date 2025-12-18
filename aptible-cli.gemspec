@@ -21,8 +21,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', '>= 4.0', '< 6.0'
-  spec.add_dependency 'aptible-api', '~> 1.10.0'
-  spec.add_dependency 'aptible-auth', '~> 1.3'
+  spec.add_dependency 'aptible-api', '~> 1.12'
+  spec.add_dependency 'aptible-auth', '~> 1.4'
   spec.add_dependency 'aptible-billing', '~> 1.0'
   spec.add_dependency 'aptible-resource', '~> 1.1'
   spec.add_dependency 'aws-eventstream', '~> 1.1.1'
