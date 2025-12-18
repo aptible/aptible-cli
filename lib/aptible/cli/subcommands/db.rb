@@ -27,6 +27,9 @@ module Aptible
                   accounts = scoped_environments(options)
                   acc_map = environment_map(accounts)
 
+                  rds_map = external_rds_databases_map()
+                  accts_rds_map = accounts_external_rds_databases_map(rds_map)
+
                   if Renderer.format == 'json'
                     accounts.each do |account|
                       external_rds_databases_all.each do |db|
@@ -46,26 +49,31 @@ module Aptible
                           ResourceFormatter.inject_database(n, db, account)
                         end
                       end
-
-                      # TODO - render external_rds_databases that do not share environments
-                      # with aptible-managed dbs
+                      rds_map.each_value do |db|
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            db,
+                            rds_shell_account
+                          )
+                        end
+                      end
                     end
                   else
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
 
-                      # move this to outer loop and do a map check
-                      external_rds_databases_all.each do |db|
-                        rds_account = derive_account_from_conns(db, account) 
-                        next unless rds_account.present?
-
-                        node.object do |n|
-                          ResourceFormatter.inject_database_minimal(
-                            n,
-                            db,
-                            rds_account
-                          )
+                      if accts_rds_map.has_key? account.id 
+                        accts_rds_map[account.id].each do |db|
+                          rds_map.delete(db.id)
+                          node.object do |n|
+                            ResourceFormatter.inject_database_minimal(
+                              n,
+                              db,
+                              account
+                            )
+                          end
                         end
                       end
 
@@ -76,9 +84,15 @@ module Aptible
                           account
                         )
                       end
-
-                      # TODO - render external_rds_databases that do not share environments
-                      # with aptible-managed dbs
+                    end
+                    rds_map.each_value do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          rds_shell_account
+                        )
+                      end
                     end
                   end
                 end

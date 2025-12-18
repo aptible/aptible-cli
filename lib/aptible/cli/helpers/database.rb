@@ -8,6 +8,16 @@ module Aptible
         include Helpers::Environment
         include Helpers::Ssh
 
+        # RdsDatabase is a translation struct so the same renderer can be used for
+        # external_aws_resource as those for databases
+        RdsDatabase = Struct.new(:handle, :id, :created_at, :raw)
+        # MockRdsDatabaseAccountShell - there is no direct 1:1 mapping between accounts
+        # and external_aws_resources. Since this is coerced via app_external_aws_rds_connections,
+        # we use this struct to stub out those that are not found to be attached to any apps.
+        MockRdsDatabaseAccountShell = Struct.new(:handle, :id, :created_at, keyword_init: true)
+        # using an ID that cannot be hit for visual segregation of unattached databases
+        UNATTACHED_RDS_ACCOUNT_ID = -9999
+
         def ensure_database(options = {})
           db_handle = options[:db]
           environment_handle = options[:environment]
@@ -50,12 +60,42 @@ module Aptible
           handle.start_with? "aws:rds::"
         end
 
-        RdsDatabase = Struct.new(:handle, :created_at, :id, :raw)
+        def external_rds_databases_map() 
+          external_rds_databases_all.map { |rds| [rds[:id], rds] }.to_h
+        end
+
+
+        def accounts_external_rds_databases_map(rds_map)
+          return {} if rds_map.empty?
+
+          apps = Aptible::Api::App.all(
+            token: fetch_token,
+            href: apps_href
+          )
+          accts_rds_map = map_of_accounts_to_rds(rds_map, apps)
+        end
+
+        def map_of_accounts_to_rds(rds_map, apps)
+          # one rds db can be on multiple accounts
+          accts_rds_map = {}
+          rds_map.each_value do |db|
+            account = derive_account_from_conns(db)
+            next if account.nil?
+
+            accts_rds_map[account.id] = [] if accts_rds_map[account.id].nil?
+            accts_rds_map[account.id] << db
+          end
+          accts_rds_map
+        end
+
+        def rds_shell_account
+          MockRdsDatabaseAccountShell.new(
+            id: UNATTACHED_RDS_ACCOUNT_ID,
+            handle: "unattached rds databases",
+          )
+        end
 
         def external_rds_databases_all
-          # HACK: 
-          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
-          # to put around a rescue
           Aptible::Api::ExternalAwsResource.all(
               token: fetch_token
           )
@@ -69,19 +109,16 @@ module Aptible
         end
 
         def derive_account_from_conns(db, preferred_acct = nil)
-          # HACK: 
-          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
-          # to put around a rescue
           conns = db.raw.app_external_aws_rds_connections
-          return conns.find { |conn| conn.app.account.id == preferred_acct.id }.app.account if preferred_acct.present?
+          return nil if conns.empty?
 
+          valid_conns = conns.find { |conn| conn.present? && conn.app.account.id == preferred_acct.id } if preferred_acct.present?
+          return nil if preferred_acct.present? && (valid_conns.nil?)
+          return valid_conns.app.account if preferred_acct.present?
           conns.first.app.account
         end
 
         def external_rds_database_from_handle(handle)
-          # HACK: 
-          # must be super fault tolerant and cannot disrupt conventional db activity. probably need
-          # to put around a rescue
           external_rds_databases_all.find { |a| a.handle == handle }
         end
 
