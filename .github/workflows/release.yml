@@ -1,0 +1,24 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  push:
+    name: Push gem to RubyGems.org
+    runs-on: ubuntu-latest
+
+    permissions:
+        id-token: write
+        contents: write
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@a4effe49ee8ee5b8b5091268c473a4628afb5651
+        with:
+          bundler-cache: false
+          ruby-version: "3.4"
+
+      - uses: rubygems/release-gem@a25424ba2ba8b387abc8ef40807c2c85b96cbe32
