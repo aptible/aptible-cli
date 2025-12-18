@@ -294,8 +294,7 @@ module Aptible
           remote_url = credential.connection_url
 
           uri = URI.parse(remote_url)
-          account = Aptible::Api::Account.all(token: fetch_token).first
-          domain = account.stack.internal_domain
+          domain = credential.database.account.stack.internal_domain
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end
