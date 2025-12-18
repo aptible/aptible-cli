@@ -90,13 +90,17 @@ module Aptible
                     end
                   end
 
-                  rds_map.each_value do |db|
-                    node.object do |n|
-                      ResourceFormatter.inject_database_minimal(
-                        n,
-                        db,
-                        rds_shell_account
-                      )
+                  # Render unattached RDS databases, but exclude
+                  # if environment filter set
+                  unless options[:environment]
+                    rds_map.each_value do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          rds_shell_account
+                        )
+                      end
                     end
                   end
                 end

@@ -613,16 +613,23 @@ describe Aptible::CLI::Agent do
         expect(captured_output_text).not_to include('=== production')
       end
 
-      it 'shows RDS databases from other accounts as unattached' do
+      it 'does not show unattached RDS databases when filtering' do
         subject.options = { environment: 'staging' }
         subject.send('db:list')
 
-        # RDS databases attached to other (filtered out) accounts
-        # appear in the unattached section
+        # When filtering by environment, unattached RDS databases
+        # are not shown at all
         expect(captured_output_text)
-          .to include('=== unattached rds databases')
-        expect(captured_output_text).to include('aws:rds::prod-rds-db')
-        expect(captured_output_text).to include('aws:rds::unattached-rds-db')
+          .not_to include('=== unattached rds databases')
+        expect(captured_output_text)
+          .not_to include('aws:rds::unattached-rds-db')
+
+        # RDS databases attached to other filtered-out accounts don't show
+        expect(captured_output_text).not_to include('aws:rds::prod-rds-db')
+
+        # Only staging databases appear
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
       end
     end
 
