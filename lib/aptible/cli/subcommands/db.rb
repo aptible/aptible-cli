@@ -43,26 +43,26 @@ module Aptible
                           ResourceFormatter.inject_database(n, db, account)
                         end
                       end
-                      external_rds_databases_all.each do |db|
-                        account = derive_account_from_conns(db, account)
-                        next unless account.present?
-
-                        node.object do |n|
-                          ResourceFormatter.inject_database_minimal(
-                            n,
-                            db,
-                            account
-                          )
+                      if accts_rds_map.key? account.id
+                        accts_rds_map[account.id].each do |rds_db|
+                          rds_map.delete(rds_db.id)
+                          node.object do |n|
+                            ResourceFormatter.inject_database_minimal(
+                              n,
+                              rds_db,
+                              account
+                            )
+                          end
                         end
                       end
-                      rds_map.each_value do |db|
-                        node.object do |n|
-                          ResourceFormatter.inject_database_minimal(
-                            n,
-                            db,
-                            rds_shell_account
-                          )
-                        end
+                    end
+                    rds_map.each_value do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          rds_shell_account
+                        )
                       end
                     end
                   else
