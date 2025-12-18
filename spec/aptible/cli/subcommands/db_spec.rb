@@ -289,6 +289,9 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
+      allow(Aptible::Api::ExternalAwsResource).to receive(:all)
+        .with(token: token)
+        .and_return([])
     end
 
     context 'when no account is specified' do
