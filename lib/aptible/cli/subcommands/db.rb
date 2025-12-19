@@ -38,7 +38,7 @@ module Aptible
                   begin
                     rds_map, accts_rds_map = fetch_rds_databases_with_accounts
                   rescue StandardError => e
-                    CLI.logger.warn 'Unable to fetch RDS databases:' \
+                    CLI.logger.warn 'Unable to fetch RDS databases: ' \
                                     "#{e.message}"
                   end
 
