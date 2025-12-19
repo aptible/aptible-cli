@@ -20,7 +20,6 @@ PATH
       httpclient (~> 2.8.0)
       json (~> 2.5.0)
       jwt (~> 2.3.0)
-      pry
       rack (~> 1.0)
       stripe (< 5.0)
       term-ansicolor (~> 1.8.0)
@@ -186,6 +185,7 @@ DEPENDENCIES
   climate_control (= 0.0.3)
   fabrication (~> 2.15.2)
   httplog (< 1.6)
+  pry
   rack (~> 1.0)
   rake
   rspec (~> 3.2)
