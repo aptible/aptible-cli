@@ -33,4 +33,122 @@ describe Aptible::CLI::Helpers::Database do
       expect(subject.validate_image_type(pg.type)).to be(true)
     end
   end
+
+  describe '#derive_account_from_conns' do
+    let(:stack) { Fabricate(:stack) }
+    let(:account1) { Fabricate(:account, handle: 'account1', stack: stack) }
+    let(:account2) { Fabricate(:account, handle: 'account2', stack: stack) }
+    let(:app1) { Fabricate(:app, account: account1) }
+    let(:app2) { Fabricate(:app, account: account2) }
+
+    let(:raw_rds_resource) do
+      Fabricate(:external_aws_resource, resource_type: 'aws_rds_db_instance')
+    end
+
+    let(:rds_db) do
+      Aptible::CLI::Helpers::Database::RdsDatabase.new(
+        'aws:rds::test-db',
+        raw_rds_resource.id,
+        raw_rds_resource.created_at,
+        raw_rds_resource
+      )
+    end
+
+    let(:conn1) do
+      double('connection1', present?: true, app: app1)
+    end
+
+    let(:conn2) do
+      double('connection2', present?: true, app: app2)
+    end
+
+    before do
+      allow(app1).to receive(:account).and_return(account1)
+      allow(app2).to receive(:account).and_return(account2)
+    end
+
+    context 'when connections are empty' do
+      it 'returns nil' do
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          []
+        )
+
+        result = subject.derive_account_from_conns(rds_db)
+        expect(result).to be_nil
+      end
+    end
+
+    context 'when no preferred account is specified' do
+      it 'returns the account from the first connection' do
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn1, conn2]
+        )
+
+        result = subject.derive_account_from_conns(rds_db)
+        expect(result).to eq(account1)
+      end
+
+      it 'handles a single connection' do
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn2]
+        )
+
+        result = subject.derive_account_from_conns(rds_db)
+        expect(result).to eq(account2)
+      end
+    end
+
+    context 'when a preferred account is specified' do
+      it 'returns the matching account when found' do
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn1, conn2]
+        )
+
+        result = subject.derive_account_from_conns(rds_db, account2)
+        expect(result).to eq(account2)
+      end
+
+      it 'returns nil when no matching connection is found' do
+        account3 = Fabricate(:account, handle: 'account3', stack: stack)
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn1, conn2]
+        )
+
+        result = subject.derive_account_from_conns(rds_db, account3)
+        expect(result).to be_nil
+      end
+
+      it 'skips connections where conn.present? is false' do
+        conn_not_present = double('connection_not_present', present?: false)
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn_not_present, conn2]
+        )
+
+        result = subject.derive_account_from_conns(rds_db, account2)
+        expect(result).to eq(account2)
+      end
+
+      it 'returns the first matching account when multiple matches exist' do
+        app1_duplicate = Fabricate(:app, account: account1)
+        allow(app1_duplicate).to receive(:account).and_return(account1)
+        conn1_duplicate = double('connection1_dup',
+                                 present?: true,
+                                 app: app1_duplicate)
+
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [conn1, conn1_duplicate]
+        )
+
+        result = subject.derive_account_from_conns(rds_db, account1)
+        expect(result).to eq(account1)
+      end
+    end
+  end
 end

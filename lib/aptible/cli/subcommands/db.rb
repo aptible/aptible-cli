@@ -27,6 +27,21 @@ module Aptible
                   accounts = scoped_environments(options)
                   acc_map = environment_map(accounts)
 
+                  # the below is done because an rds resource can belong to
+                  # multiple accounts or none. we go through and iterate
+                  # through all external_aws_resources and print them based
+                  # on connections. To avoid repeated API calls, we keep
+                  # them in these maps and only fetch relations when
+                  # necessary.
+                  rds_map = {}
+                  accts_rds_map = {}
+                  begin
+                    rds_map, accts_rds_map = fetch_rds_databases_with_accounts
+                  rescue StandardError => e
+                    CLI.logger.warn 'Unable to fetch RDS databases: ' \
+                                    "#{e.message}"
+                  end
+
                   if Renderer.format == 'json'
                     accounts.each do |account|
                       account.each_database do |db|
@@ -34,17 +49,56 @@ module Aptible
                           ResourceFormatter.inject_database(n, db, account)
                         end
                       end
+                      next unless accts_rds_map.key? account.id
+
+                      accts_rds_map[account.id].each do |rds_db|
+                        rds_map.delete(rds_db.id)
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            rds_db,
+                            account
+                          )
+                        end
+                      end
                     end
                   else
                     databases_all.each do |db|
                       account = acc_map[db.links.account.href]
                       next if account.nil?
-
                       node.object do |n|
                         ResourceFormatter.inject_database_minimal(
                           n,
                           db,
                           account
+                        )
+                      end
+                    end
+                    accounts.each do |account|
+                      next unless accts_rds_map.key? account.id
+
+                      accts_rds_map[account.id].each do |rds_db|
+                        rds_map.delete(rds_db.id)
+                        node.object do |n|
+                          ResourceFormatter.inject_database_minimal(
+                            n,
+                            rds_db,
+                            account
+                          )
+                        end
+                      end
+                    end
+                  end
+
+                  # Render unattached RDS databases, but exclude
+                  # if environment filter set
+                  unless options[:environment]
+                    rds_map.each_value do |db|
+                      node.object do |n|
+                        ResourceFormatter.inject_database_minimal(
+                          n,
+                          db,
+                          rds_shell_account
                         )
                       end
                     end
@@ -232,9 +286,13 @@ module Aptible
             define_method 'db:dump' do |handle, *dump_options|
               telemetry(__method__, options.merge(handle: handle))
 
+              filename = "#{handle}.dump"
+              if aws_rds_db?(handle)
+                return use_rds_dump(handle, filename, dump_options)
+              end
+
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
-                filename = "#{handle}.dump"
                 CLI.logger.info "Dumping to #{filename}"
                 `pg_dump #{url} #{dump_options.shelljoin} > #{filename}`
                 exit $CHILD_STATUS.exitstatus unless $CHILD_STATUS.success?
@@ -251,6 +309,10 @@ module Aptible
                 sql_path: sql_path
               )
               telemetry(__method__, opts)
+
+              if aws_rds_db?(handle)
+                return use_rds_execute(handle, sql_path, options)
+              end
 
               database = ensure_database(options.merge(db: handle))
               with_postgres_tunnel(database) do |url|
@@ -269,8 +331,10 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               desired_port = Integer(options[:port] || 0)
-              database = ensure_database(options.merge(db: handle))
 
+              return use_rds_tunnel(handle, desired_port) if aws_rds_db?(handle)
+
+              database = ensure_database(options.merge(db: handle))
               credential = find_credential(database, options[:type])
 
               m = "Creating #{credential.type} tunnel to #{database.handle}..."
