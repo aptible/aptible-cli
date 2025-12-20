@@ -26,11 +26,22 @@ module Aptible
               if options[:with_organization_role]
                 user = Aptible::Auth::User.all(token: token).first
                 user.roles.each do |role|
-                  org_id = role.organization&.id rescue nil
-                  next unless org_id
+                  begin
+                    org = role.organization
+                  rescue StandardError
+                    next
+                  end
+                  next unless org
+
+                  org_id = org.id
+                  role_name = begin
+                                role.name
+                              rescue StandardError
+                                'unnamed'
+                              end
 
                   user_roles_by_org[org_id] ||= []
-                  user_roles_by_org[org_id] << (role.name rescue 'unnamed')
+                  user_roles_by_org[org_id] << role_name
                 end
               end
 
