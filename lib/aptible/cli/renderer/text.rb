@@ -32,8 +32,14 @@ module Aptible
             # children are KeyedObject instances so they can render properly,
             # but we need to warn in tests that this is required.
             node.children.each_pair do |k, c|
-              io.print "#{format_key(k)}: "
-              visit(c, io)
+              io.print "#{format_key(k)}:"
+              if c.is_a?(Formatter::List)
+                io.puts
+                visit_indented(c, io, '  ')
+              else
+                io.print ' '
+                visit(c, io)
+              end
             end
           when Formatter::GroupedKeyedList
             enum = spacer_enumerator
@@ -64,6 +70,31 @@ module Aptible
         end
 
         private
+
+        def visit_indented(node, io, indent)
+          return unless node.is_a?(Formatter::List)
+
+          node.children.each do |child|
+            case child
+            when Formatter::Object
+              child.children.each_pair do |k, c|
+                io.print "#{indent}#{format_key(k)}:"
+                if c.is_a?(Formatter::List)
+                  io.puts
+                  visit_indented(c, io, indent + '  ')
+                else
+                  io.print ' '
+                  visit(c, io)
+                end
+              end
+              io.puts unless child == node.children.last
+            when Formatter::Value
+              io.puts "#{indent}#{child.value}"
+            else
+              visit(child, io)
+            end
+          end
+        end
 
         def output_list(nodes, io)
           if nodes.all? { |v| v.is_a?(Formatter::Value) }
