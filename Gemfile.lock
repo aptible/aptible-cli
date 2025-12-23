@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/aptible/aptible-auth-ruby
-  revision: ab423d119aca9d1667c58a28216785ba96149949
+  revision: e67225d62994219fc2b186d3dba8b061acecbf75
   branch: all-roles-for-a-user
   specs:
-    aptible-auth (1.4.0)
+    aptible-auth (1.5.0)
       aptible-resource (~> 1.0)
       gem_config
       multipart-post (= 2.1.1)
