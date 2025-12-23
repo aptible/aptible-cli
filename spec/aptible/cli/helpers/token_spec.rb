@@ -58,8 +58,9 @@ describe Aptible::CLI::Helpers::Token do
 
     it 'raises Thor::Error on 401 unauthorized' do
       response = Faraday::Response.new(status: 401)
-      error = HyperResource::ClientError.new('401 (invalid_token) Invalid Token',
-                                             response: response)
+      error = HyperResource::ClientError.new(
+        '401 (invalid_token) Invalid Token', response: response
+      )
       expect(Aptible::Auth::Token).to receive(:current_token)
         .with(token: token)
         .and_raise(error)
@@ -96,8 +97,9 @@ describe Aptible::CLI::Helpers::Token do
 
     it 'raises Thor::Error on API error' do
       response = Faraday::Response.new(status: 401)
-      error = HyperResource::ClientError.new('401 (invalid_token) Invalid Token',
-                                             response: response)
+      error = HyperResource::ClientError.new(
+        '401 (invalid_token) Invalid Token', response: response
+      )
       expect(Aptible::Auth::Token).to receive(:current_token)
         .with(token: token)
         .and_raise(error)

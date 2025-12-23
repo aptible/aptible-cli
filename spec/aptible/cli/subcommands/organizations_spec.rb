@@ -9,10 +9,19 @@ describe Aptible::CLI::Agent do
   describe '#organizations' do
     let(:org1) { double('org1', id: 'org-1-id', name: 'Org One') }
     let(:org2) { double('org2', id: 'org-2-id', name: 'Org Two') }
-    let(:role1) { double('role1', id: 'role-1-id', name: 'Admin', organization: org1) }
-    let(:role2) { double('role2', id: 'role-2-id', name: 'Developer', organization: org1) }
-    let(:role3) { double('role3', id: 'role-3-id', name: 'Account Owners', organization: org2) }
-    let(:user) { double('user', roles_with_organizations: [role1, role2, role3]) }
+    let(:role1) do
+      double('role1', id: 'role-1-id', name: 'Admin', organization: org1)
+    end
+    let(:role2) do
+      double('role2', id: 'role-2-id', name: 'Developer', organization: org1)
+    end
+    let(:role3) do
+      double('role3', id: 'role-3-id', name: 'Account Owners',
+                      organization: org2)
+    end
+    let(:user) do
+      double('user', roles_with_organizations: [role1, role2, role3])
+    end
 
     before do
       allow(subject).to receive(:whoami).and_return(user)
@@ -51,7 +60,8 @@ describe Aptible::CLI::Agent do
       org1_json = json.find { |o| o['id'] == 'org-1-id' }
       expect(org1_json['name']).to eq('Org One')
       expect(org1_json['roles'].length).to eq(2)
-      expect(org1_json['roles'].map { |r| r['name'] }).to contain_exactly('Admin', 'Developer')
+      role_names = org1_json['roles'].map { |r| r['name'] }
+      expect(role_names).to contain_exactly('Admin', 'Developer')
 
       org2_json = json.find { |o| o['id'] == 'org-2-id' }
       expect(org2_json['name']).to eq('Org Two')
