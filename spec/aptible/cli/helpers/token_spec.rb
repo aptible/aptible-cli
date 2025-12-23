@@ -7,6 +7,10 @@ describe Aptible::CLI::Helpers::Token do
 
   subject { Class.new.send(:include, described_class).new }
 
+  let(:token) { 'test-token' }
+  let(:user) { double('user', id: 'user-id', email: 'test@example.com') }
+  let(:auth_token) { double('auth_token', user: user) }
+
   describe '#save_token / #fetch_token' do
     it 'reads back a token it saved' do
       subject.save_token('foo')
@@ -36,6 +40,70 @@ describe Aptible::CLI::Helpers::Token do
         expect(format('%o', File.stat(subject.token_file).mode))
           .to eq('100600')
       end
+    end
+  end
+
+  describe '#current_token' do
+    before do
+      subject.save_token(token)
+    end
+
+    it 'returns the current auth token' do
+      expect(Aptible::Auth::Token).to receive(:current_token)
+        .with(token: token)
+        .and_return(auth_token)
+
+      expect(subject.current_token).to eq(auth_token)
+    end
+
+    it 'raises Thor::Error on 401 unauthorized' do
+      response = Faraday::Response.new(status: 401)
+      error = HyperResource::ClientError.new('401 (invalid_token) Invalid Token',
+                                             response: response)
+      expect(Aptible::Auth::Token).to receive(:current_token)
+        .with(token: token)
+        .and_raise(error)
+
+      expect { subject.current_token }
+        .to raise_error(Thor::Error, /Invalid Token/)
+    end
+
+    it 'raises Thor::Error on 403 forbidden' do
+      response = Faraday::Response.new(status: 403)
+      error = HyperResource::ClientError.new('403 (forbidden) Access denied',
+                                             response: response)
+      expect(Aptible::Auth::Token).to receive(:current_token)
+        .with(token: token)
+        .and_raise(error)
+
+      expect { subject.current_token }
+        .to raise_error(Thor::Error, /Access denied/)
+    end
+  end
+
+  describe '#whoami' do
+    before do
+      subject.save_token(token)
+    end
+
+    it 'returns the current user' do
+      expect(Aptible::Auth::Token).to receive(:current_token)
+        .with(token: token)
+        .and_return(auth_token)
+
+      expect(subject.whoami).to eq(user)
+    end
+
+    it 'raises Thor::Error on API error' do
+      response = Faraday::Response.new(status: 401)
+      error = HyperResource::ClientError.new('401 (invalid_token) Invalid Token',
+                                             response: response)
+      expect(Aptible::Auth::Token).to receive(:current_token)
+        .with(token: token)
+        .and_raise(error)
+
+      expect { subject.whoami }
+        .to raise_error(Thor::Error, /Invalid Token/)
     end
   end
 end

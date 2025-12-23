@@ -13,9 +13,13 @@ module Aptible
             def organizations
               telemetry(__method__, options)
 
-              user = Aptible::Auth::Token.current_token(token: fetch_token).user
               user_orgs_and_roles = {}
-              user.roles_with_organizations.each do |role|
+              begin
+                roles = whoami.roles_with_organizations
+              rescue HyperResource::ClientError => e
+                raise Thor::Error, e.message
+              end
+              roles.each do |role|
                 user_orgs_and_roles[role.organization.id] ||= {
                   'org' => role.organization,
                   'roles' => []

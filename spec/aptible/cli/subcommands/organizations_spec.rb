@@ -13,12 +13,9 @@ describe Aptible::CLI::Agent do
     let(:role2) { double('role2', id: 'role-2-id', name: 'Developer', organization: org1) }
     let(:role3) { double('role3', id: 'role-3-id', name: 'Account Owners', organization: org2) }
     let(:user) { double('user', roles_with_organizations: [role1, role2, role3]) }
-    let(:current_token) { double('current_token', user: user) }
 
     before do
-      allow(Aptible::Auth::Token).to receive(:current_token)
-        .with(token: token)
-        .and_return(current_token)
+      allow(subject).to receive(:whoami).and_return(user)
     end
 
     it 'lists organizations with roles' do
@@ -60,6 +57,24 @@ describe Aptible::CLI::Agent do
       expect(org2_json['name']).to eq('Org Two')
       expect(org2_json['roles'].length).to eq(1)
       expect(org2_json['roles'][0]['name']).to eq('Account Owners')
+    end
+
+    it 'raises Thor::Error on whoami API error' do
+      allow(subject).to receive(:whoami)
+        .and_raise(Thor::Error, '401 (invalid_token) Invalid Token')
+
+      expect { subject.send('organizations') }
+        .to raise_error(Thor::Error, /Invalid Token/)
+    end
+
+    it 'raises Thor::Error on roles_with_organizations API error' do
+      response = Faraday::Response.new(status: 403)
+      error = HyperResource::ClientError.new('403 (forbidden) Access denied',
+                                             response: response)
+      allow(user).to receive(:roles_with_organizations).and_raise(error)
+
+      expect { subject.send('organizations') }
+        .to raise_error(Thor::Error, /Access denied/)
     end
   end
 end
