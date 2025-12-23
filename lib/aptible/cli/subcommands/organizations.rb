@@ -28,7 +28,7 @@ module Aptible
                     org = org_and_role['org']
                     roles = org_and_role['roles']
                     list.object do |node|
-                      node.value('id', org.id)
+                      node.value('id', org_id)
                       node.value('name', org.name)
                       node.list('roles') do |roles_list|
                         roles.each do |role|
