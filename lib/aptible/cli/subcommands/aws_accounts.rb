@@ -220,31 +220,23 @@ module Aptible
 
               response = check_external_aws_account!(id)
 
-              if Renderer.format == 'json'
-                Formatter.render(Renderer.current) do |root|
-                  root.object do |node|
-                    node.value('state', response.state)
-                    node.list('checks') do |check_list|
-                      response.checks.each do |check|
-                        check_list.object do |check_node|
-                          check_node.value('name', check.check_name)
-                          check_node.value('state', check.state)
-                          check_node.value('details', check.details) \
-                            unless check.details.nil?
-                        end
+              fmt_state = lambda do |state|
+                Renderer.format == 'json' ? state : format_check_state(state)
+              end
+
+              Formatter.render(Renderer.current) do |root|
+                root.object do |node|
+                  node.value('state', fmt_state.call(response.state))
+                  node.list('checks') do |check_list|
+                    response.checks.each do |check|
+                      check_list.object do |check_node|
+                        check_node.value('name', check.check_name)
+                        check_node.value('state', fmt_state.call(check.state))
+                        check_node.value('details', check.details) \
+                          unless check.details.nil?
                       end
                     end
                   end
-                end
-              else
-                puts "State: #{format_check_state(response.state)}"
-                puts ''
-                puts 'Checks:'
-                response.checks.each do |check|
-                  puts "  Name: #{check.check_name}"
-                  puts "  State: #{format_check_state(check.state)}"
-                  puts "  Details: #{check.details}" unless check.details.nil?
-                  puts ''
                 end
               end
 

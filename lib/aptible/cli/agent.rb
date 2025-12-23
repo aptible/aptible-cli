@@ -47,6 +47,7 @@ require_relative 'subcommands/metric_drain'
 require_relative 'subcommands/maintenance'
 require_relative 'subcommands/backup_retention_policy'
 require_relative 'subcommands/aws_accounts'
+require_relative 'subcommands/organizations'
 
 module Aptible
   module CLI
@@ -77,6 +78,7 @@ module Aptible
       include Subcommands::Maintenance
       include Subcommands::BackupRetentionPolicy
       include Subcommands::AwsAccounts
+      include Subcommands::Organizations
 
       # Forward return codes on failures.
       def self.exit_on_failure?
