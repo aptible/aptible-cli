@@ -1,3 +1,14 @@
+GIT
+  remote: https://github.com/aptible/aptible-auth-ruby
+  revision: ab423d119aca9d1667c58a28216785ba96149949
+  branch: all-roles-for-a-user
+  specs:
+    aptible-auth (1.4.0)
+      aptible-resource (~> 1.0)
+      gem_config
+      multipart-post (= 2.1.1)
+      oauth2 (= 2.0.9)
+
 PATH
   remote: .
   specs:
@@ -40,11 +51,6 @@ GEM
       aptible-resource
       gem_config
       multipart-post (< 2.2.0)
-    aptible-auth (1.4.0)
-      aptible-resource (~> 1.0)
-      gem_config
-      multipart-post (= 2.1.1)
-      oauth2 (= 2.0.9)
     aptible-billing (1.0.1)
       activesupport (>= 4.0, < 6.0)
       aptible-resource (~> 1.0)
@@ -179,6 +185,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport (~> 4.0)
+  aptible-auth!
   aptible-cli!
   aptible-tasks (~> 0.5.8)
   bundler (~> 1.3)
