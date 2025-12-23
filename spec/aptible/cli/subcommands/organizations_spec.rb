@@ -7,175 +7,59 @@ describe Aptible::CLI::Agent do
   before { allow(subject).to receive(:fetch_token).and_return(token) }
 
   describe '#organizations' do
-    it 'lists organizations' do
-      org1 = double('org1', id: 'org-1-id', name: 'Org One', handle: 'org-one')
-      org2 = double('org2', id: 'org-2-id', name: 'Org Two', handle: 'org-two')
+    let(:org1) { double('org1', id: 'org-1-id', name: 'Org One') }
+    let(:org2) { double('org2', id: 'org-2-id', name: 'Org Two') }
+    let(:role1) { double('role1', id: 'role-1-id', name: 'Admin', organization: org1) }
+    let(:role2) { double('role2', id: 'role-2-id', name: 'Developer', organization: org1) }
+    let(:role3) { double('role3', id: 'role-3-id', name: 'Account Owners', organization: org2) }
+    let(:user) { double('user', roles_with_organizations: [role1, role2, role3]) }
+    let(:current_token) { double('current_token', user: user) }
 
-      expect(Aptible::Auth::Organization).to receive(:all)
+    before do
+      allow(Aptible::Auth::Token).to receive(:current_token)
         .with(token: token)
-        .and_return([org1, org2])
+        .and_return(current_token)
+    end
 
+    it 'lists organizations with roles' do
       subject.send('organizations')
 
       expect(captured_output_text).to include('Id: org-1-id')
       expect(captured_output_text).to include('Name: Org One')
-      expect(captured_output_text).to include('Handle: org-one')
       expect(captured_output_text).to include('Id: org-2-id')
       expect(captured_output_text).to include('Name: Org Two')
-      expect(captured_output_text).to include('Handle: org-two')
+      expect(captured_output_text).to include('Roles:')
+      expect(captured_output_text).to include('Name: Admin')
+      expect(captured_output_text).to include('Name: Developer')
+      expect(captured_output_text).to include('Name: Account Owners')
     end
 
-    it 'handles empty list' do
-      expect(Aptible::Auth::Organization).to receive(:all)
-        .with(token: token)
-        .and_return([])
+    it 'handles user with no roles' do
+      allow(user).to receive(:roles_with_organizations).and_return([])
 
       subject.send('organizations')
 
       expect(captured_output_text).to eq('')
     end
 
-    it 'handles organizations without handle' do
-      org = double('org', id: 'org-id', name: 'Org Name')
-      allow(org).to receive(:respond_to?).with(:handle).and_return(false)
-
-      expect(Aptible::Auth::Organization).to receive(:all)
-        .with(token: token)
-        .and_return([org])
-
-      subject.send('organizations')
-
-      expect(captured_output_text).to include('Id: org-id')
-      expect(captured_output_text).to include('Name: Org Name')
-      expect(captured_output_text).not_to include('Handle:')
-    end
-
-    it 'handles organizations with nil handle' do
-      org = double('org', id: 'org-id', name: 'Org Name', handle: nil)
-
-      expect(Aptible::Auth::Organization).to receive(:all)
-        .with(token: token)
-        .and_return([org])
-
-      subject.send('organizations')
-
-      expect(captured_output_text).to include('Id: org-id')
-      expect(captured_output_text).to include('Name: Org Name')
-      expect(captured_output_text).not_to include('Handle:')
-    end
-
     it 'renders JSON output' do
-      org1 = double('org1', id: 'org-1-id', name: 'Org One', handle: 'org-one')
-      org2 = double('org2', id: 'org-2-id', name: 'Org Two', handle: 'org-two')
-
       allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
-
-      expect(Aptible::Auth::Organization).to receive(:all)
-        .with(token: token)
-        .and_return([org1, org2])
 
       subject.send('organizations')
 
       json = captured_output_json
       expect(json).to be_a(Array)
       expect(json.length).to eq(2)
-      expect(json[0]['id']).to eq('org-1-id')
-      expect(json[0]['name']).to eq('Org One')
-      expect(json[0]['handle']).to eq('org-one')
-      expect(json[1]['id']).to eq('org-2-id')
-      expect(json[1]['name']).to eq('Org Two')
-      expect(json[1]['handle']).to eq('org-two')
-    end
 
-    it 'does not include role by default' do
-      org = double('org', id: 'org-id', name: 'Org Name', handle: nil)
+      org1_json = json.find { |o| o['id'] == 'org-1-id' }
+      expect(org1_json['name']).to eq('Org One')
+      expect(org1_json['roles'].length).to eq(2)
+      expect(org1_json['roles'].map { |r| r['name'] }).to contain_exactly('Admin', 'Developer')
 
-      expect(Aptible::Auth::Organization).to receive(:all)
-        .with(token: token)
-        .and_return([org])
-
-      subject.send('organizations')
-
-      expect(captured_output_text).not_to include('Role:')
-    end
-
-    context 'with --with-organization-role flag' do
-      before { subject.options = { with_organization_role: true } }
-
-      it 'includes user roles in each organization' do
-        org1 = double('org1', id: 'org-1-id', name: 'Org One', handle: nil)
-        org2 = double('org2', id: 'org-2-id', name: 'Org Two', handle: nil)
-
-        role1_org = double('role1_org', id: 'org-1-id')
-        role2_org = double('role2_org', id: 'org-1-id')
-        role3_org = double('role3_org', id: 'org-2-id')
-
-        role1 = double('role1', name: 'Admin', organization: role1_org)
-        role2 = double('role2', name: 'Developer', organization: role2_org)
-        role3 = double('role3', name: 'Account Owners', organization: role3_org)
-
-        user = double('user', roles: [role1, role2, role3])
-
-        expect(Aptible::Auth::Organization).to receive(:all)
-          .with(token: token)
-          .and_return([org1, org2])
-
-        expect(Aptible::Auth::User).to receive(:all)
-          .with(token: token)
-          .and_return([user])
-
-        subject.send('organizations')
-
-        expect(captured_output_text).to include('Id: org-1-id')
-        expect(captured_output_text).to include('Name: Org One')
-        expect(captured_output_text).to include('Role: Admin, Developer')
-        expect(captured_output_text).to include('Id: org-2-id')
-        expect(captured_output_text).to include('Name: Org Two')
-        expect(captured_output_text).to include('Role: Account Owners')
-      end
-
-      it 'shows empty role when user has no roles in org' do
-        org = double('org', id: 'org-id', name: 'Org Name', handle: nil)
-        user = double('user', roles: [])
-
-        expect(Aptible::Auth::Organization).to receive(:all)
-          .with(token: token)
-          .and_return([org])
-
-        expect(Aptible::Auth::User).to receive(:all)
-          .with(token: token)
-          .and_return([user])
-
-        subject.send('organizations')
-
-        expect(captured_output_text).to include('Id: org-id')
-        expect(captured_output_text).to include('Role:')
-      end
-
-      it 'renders JSON output with roles' do
-        org = double('org', id: 'org-id', name: 'Org Name', handle: nil)
-        role_org = double('role_org', id: 'org-id')
-        role = double('role', name: 'Owner', organization: role_org)
-        user = double('user', roles: [role])
-
-        allow(Aptible::CLI::Renderer).to receive(:format).and_return('json')
-
-        expect(Aptible::Auth::Organization).to receive(:all)
-          .with(token: token)
-          .and_return([org])
-
-        expect(Aptible::Auth::User).to receive(:all)
-          .with(token: token)
-          .and_return([user])
-
-        subject.send('organizations')
-
-        json = captured_output_json
-        expect(json).to be_a(Array)
-        expect(json[0]['id']).to eq('org-id')
-        expect(json[0]['name']).to eq('Org Name')
-        expect(json[0]['role']).to eq('Owner')
-      end
+      org2_json = json.find { |o| o['id'] == 'org-2-id' }
+      expect(org2_json['name']).to eq('Org Two')
+      expect(org2_json['roles'].length).to eq(1)
+      expect(org2_json['roles'][0]['name']).to eq('Account Owners')
     end
   end
 end
