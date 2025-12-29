@@ -40,7 +40,7 @@ GEM
       aptible-resource
       gem_config
       multipart-post (< 2.2.0)
-    aptible-auth (1.4.0)
+    aptible-auth (1.5.0)
       aptible-resource (~> 1.0)
       gem_config
       multipart-post (= 2.1.1)
@@ -49,7 +49,7 @@ GEM
       activesupport (>= 4.0, < 6.0)
       aptible-resource (~> 1.0)
       stripe (>= 1.13.0)
-    aptible-resource (1.1.3)
+    aptible-resource (1.1.4)
       activesupport
       fridge
       gem_config (~> 0.3.1)
@@ -86,7 +86,7 @@ GEM
     fabrication (2.15.2)
     faraday (0.17.6)
       multipart-post (>= 1.2, < 3)
-    fridge (1.0.0)
+    fridge (1.0.1)
       gem_config
       jwt (~> 2.3.0)
     gem_config (0.3.2)
@@ -104,7 +104,7 @@ GEM
     json (2.5.1)
     jwt (2.3.0)
     method_source (1.1.0)
-    minitest (5.12.0)
+    minitest (5.15.0)
     multi_xml (0.6.0)
     multipart-post (2.1.1)
     net-http-persistent (3.1.0)
@@ -184,7 +184,9 @@ DEPENDENCIES
   bundler (~> 1.3)
   climate_control (= 0.0.3)
   fabrication (~> 2.15.2)
+  hashie (< 5.1)
   httplog (< 1.6)
+  minitest (< 5.16)
   pry
   rack (~> 1.0)
   rake

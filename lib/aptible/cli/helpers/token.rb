@@ -52,6 +52,20 @@ module Aptible
           tok = fetch_token
           JWT.decode(tok, nil, false)
         end
+
+        # Instance of Aptible::Auth::Token from current token
+        def current_token
+          Aptible::Auth::Token.current_token(token: fetch_token)
+        rescue HyperResource::ClientError => e
+          raise Thor::Error, e.message
+        end
+
+        # Instance of Aptible::Auth::User associated with current token
+        def whoami
+          current_token.user
+        rescue HyperResource::ClientError => e
+          raise Thor::Error, e.message
+        end
       end
     end
   end
