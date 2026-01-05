@@ -264,6 +264,120 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#db:tunnel (rds databases)' do
+    let(:rds_handle) { 'aws:rds::test-rds-db' }
+    let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+    let(:account) { Fabricate(:account, stack: stack) }
+    let(:app) { Fabricate(:app, account: account) }
+
+    let(:raw_rds_resource) do
+      Fabricate(:external_aws_resource,
+                resource_name: 'test-rds-db',
+                resource_type: 'aws_rds_db_instance')
+    end
+
+    let(:rds_db) do
+      Aptible::CLI::Helpers::Database::RdsDatabase.new(
+        rds_handle,
+        raw_rds_resource.id,
+        raw_rds_resource.created_at,
+        raw_rds_resource
+      )
+    end
+
+    let(:rds_credential) do
+      url = 'postgres://user:pass@host.com:5432/dbname'
+      cred = Fabricate(:external_aws_database_credential,
+                       external_aws_resource: raw_rds_resource,
+                       connection_url: url)
+      cred
+    end
+
+    let(:rds_connection) do
+      double('rds_connection', present?: true, app: app)
+    end
+
+    before do
+      allow(app).to receive(:account).and_return(account)
+      allow(subject).to receive(:external_rds_database_from_handle)
+        .with(rds_handle).and_return(rds_db)
+    end
+
+    it 'fails if RDS database is non-existent' do
+      allow(subject).to receive(:external_rds_database_from_handle)
+        .with(rds_handle).and_return(nil)
+
+      expect do
+        subject.send('db:tunnel', rds_handle)
+      end.to raise_error(Thor::Error, /no rds db found/i)
+    end
+
+    context 'valid RDS database' do
+      before do
+        raw_rds_resource.instance_variable_set(
+          :@external_aws_database_credentials,
+          [rds_credential]
+        )
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [rds_connection]
+        )
+      end
+
+      it 'prints a message explaining how to connect' do
+        expect(subject).to receive(:with_local_tunnel)
+          .with(rds_credential, 0, account)
+          .and_yield(socat_helper)
+
+        subject.send('db:tunnel', rds_handle)
+
+        local_url = 'postgres://user:pass@localhost.aptible.in:4242/dbname'
+
+        expect(captured_logs)
+          .to match(/connect at #{Regexp.escape(local_url)}/i)
+        expect(captured_logs).to match(/host: localhost\.aptible\.in/i)
+        expect(captured_logs).to match(/port: 4242/i)
+        expect(captured_logs).to match(/username: user/i)
+        expect(captured_logs).to match(/password: pass/i)
+        expect(captured_logs).to match(/database: dbname/i)
+      end
+
+      it 'supports custom port option' do
+        subject.options = { port: 5555 }
+
+        expect(subject).to receive(:with_local_tunnel)
+          .with(rds_credential, 5555, account)
+          .and_yield(socat_helper)
+
+        subject.send('db:tunnel', rds_handle)
+
+        expect(captured_logs).to match(/connected\. ctrl-c to close/i)
+      end
+
+      it 'fails when no credential is found' do
+        raw_rds_resource.instance_variable_set(
+          :@external_aws_database_credentials,
+          []
+        )
+
+        expect do
+          subject.send('db:tunnel', rds_handle)
+        end.to raise_error(Thor::Error, /no rds credential found/i)
+      end
+
+      it 'fails when no account connection is found' do
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          []
+        )
+
+        expect do
+          subject.send('db:tunnel', rds_handle)
+        end.to raise_error(Thor::Error, /no env for rds found/i)
+      end
+    end
+  end
+
   describe '#db:list' do
     before do
       staging = Fabricate(:account, handle: 'staging')
@@ -289,6 +403,9 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
+      allow(Aptible::Api::ExternalAwsResource).to receive(:all)
+        .with(token: token)
+        .and_return([])
     end
 
     context 'when no account is specified' do
@@ -325,6 +442,217 @@ describe Aptible::CLI::Agent do
         subject.options = { environment: 'foo' }
         expect { subject.send('db:list') }
           .to raise_error('Specified account does not exist')
+      end
+    end
+  end
+
+  describe '#db:list (rds databases)' do
+    let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+    let(:staging) { Fabricate(:account, handle: 'staging', stack: stack) }
+    let(:prod) { Fabricate(:account, handle: 'production', stack: stack) }
+    let(:token) { 'the-token' }
+
+    # Create apps for each account
+    let(:staging_app) do
+      Fabricate(:app, handle: 'staging-app', account: staging)
+    end
+    let(:prod_app) { Fabricate(:app, handle: 'prod-app', account: prod) }
+
+    # Create RDS resources
+    let(:staging_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'staging-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    let(:prod_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'prod-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    let(:unattached_rds) do
+      Fabricate(
+        :external_aws_resource,
+        resource_name: 'unattached-rds-db',
+        resource_type: 'aws_rds_db_instance'
+      )
+    end
+
+    # Create credentials
+    let(:staging_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: staging_rds
+      )
+    end
+
+    let(:prod_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: prod_rds
+      )
+    end
+
+    let(:unattached_cred) do
+      Fabricate(
+        :external_aws_database_credential,
+        external_aws_resource: unattached_rds
+      )
+    end
+
+    # Create connection doubles
+    let(:staging_conn) do
+      double('staging_conn', present?: true, app: staging_app)
+    end
+
+    let(:prod_conn) do
+      double('prod_conn', present?: true, app: prod_app)
+    end
+
+    before do
+      # Force lazy evaluation of all let blocks in the correct order
+      staging_app
+      prod_app
+      staging_conn
+      prod_conn
+
+      # Create stub regular databases to establish account sections
+      # (RDS databases piggyback on regular database account sections)
+      staging_regular_db = Fabricate(
+        :database,
+        account: staging,
+        handle: 'staging-regular-db'
+      )
+      prod_regular_db = Fabricate(
+        :database,
+        account: prod,
+        handle: 'prod-regular-db'
+      )
+      Fabricate(:database_credential, database: staging_regular_db)
+      Fabricate(:database_credential, database: prod_regular_db)
+
+      # Ensure apps properly return their accounts
+      allow(staging_app).to receive(:account).and_return(staging)
+      allow(prod_app).to receive(:account).and_return(prod)
+
+      # Set the connections directly on the RDS resources
+      staging_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        [staging_conn]
+      )
+      prod_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        [prod_conn]
+      )
+      unattached_rds.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        []
+      )
+
+      # Set the credentials directly on the RDS resources
+      staging_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [staging_cred]
+      )
+      prod_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [prod_cred]
+      )
+      unattached_rds.instance_variable_set(
+        :@external_aws_database_credentials,
+        [unattached_cred]
+      )
+
+      # Setup API mocks
+      allow(subject).to receive(:fetch_token).and_return(token)
+      allow(Aptible::Api::Database).to receive(:all)
+        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+        .and_return([staging_regular_db, prod_regular_db])
+      allow(Aptible::Api::Account).to receive(:all)
+        .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
+        .and_return([staging, prod])
+      allow(Aptible::Api::ExternalAwsResource).to receive(:all)
+        .with(token: token)
+        .and_return([staging_rds, prod_rds, unattached_rds])
+    end
+
+    context 'when no account is specified' do
+      it 'prints out RDS databases grouped by account' do
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+
+        expect(captured_output_text).to include('=== production')
+        expect(captured_output_text).to include('aws:rds::prod-rds-db')
+      end
+
+      it 'prints out unattached RDS databases' do
+        subject.send('db:list')
+
+        expect(captured_output_text)
+          .to include('=== unattached rds databases')
+        expect(captured_output_text).to include('aws:rds::unattached-rds-db')
+      end
+    end
+
+    context 'when a valid account is specified' do
+      it 'prints out RDS databases for that account' do
+        subject.options = { environment: 'staging' }
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+        expect(captured_output_text).to include('staging-regular-db')
+
+        expect(captured_output_text).not_to include('=== production')
+      end
+
+      it 'does not show unattached RDS databases when filtering' do
+        subject.options = { environment: 'staging' }
+        subject.send('db:list')
+
+        # When filtering by environment, unattached RDS databases
+        # are not shown at all
+        expect(captured_output_text)
+          .not_to include('=== unattached rds databases')
+        expect(captured_output_text)
+          .not_to include('aws:rds::unattached-rds-db')
+
+        # RDS databases attached to other filtered-out accounts don't show
+        expect(captured_output_text).not_to include('aws:rds::prod-rds-db')
+
+        # Only staging databases appear
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
+      end
+    end
+
+    context 'with both regular databases and RDS databases' do
+      before do
+        staging_db = Fabricate(
+          :database,
+          handle: 'staging-postgres-db',
+          account: staging
+        )
+        Fabricate(:database_credential, database: staging_db)
+
+        allow(Aptible::Api::Database).to receive(:all)
+          .with(token: token, href: '/databases?per_page=5000&no_embed=true')
+          .and_return([staging_db])
+      end
+
+      it 'prints both regular and RDS databases' do
+        subject.send('db:list')
+
+        expect(captured_output_text).to include('=== staging')
+        expect(captured_output_text).to include('staging-postgres-db')
+        expect(captured_output_text).to include('aws:rds::staging-rds-db')
       end
     end
   end
@@ -750,6 +1078,105 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#db:dump (rds databases)' do
+    let(:rds_handle) { 'aws:rds::test-rds-db' }
+    let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+    let(:account) { Fabricate(:account, stack: stack) }
+    let(:app) { Fabricate(:app, account: account) }
+
+    let(:raw_rds_resource) do
+      Fabricate(:external_aws_resource,
+                resource_name: 'test-rds-db',
+                resource_type: 'aws_rds_db_instance')
+    end
+
+    let(:rds_db) do
+      Aptible::CLI::Helpers::Database::RdsDatabase.new(
+        rds_handle,
+        raw_rds_resource.id,
+        raw_rds_resource.created_at,
+        raw_rds_resource
+      )
+    end
+
+    let(:rds_credential) do
+      url = 'postgres://user:pass@host.com:5432/dbname'
+      Fabricate(:external_aws_database_credential,
+                external_aws_resource: raw_rds_resource,
+                connection_url: url)
+    end
+
+    let(:rds_connection) do
+      double('rds_connection', present?: true, app: app)
+    end
+
+    before do
+      allow(app).to receive(:account).and_return(account)
+      allow(subject).to receive(:external_rds_database_from_handle)
+        .with(rds_handle).and_return(rds_db)
+
+      raw_rds_resource.instance_variable_set(
+        :@external_aws_database_credentials,
+        [rds_credential]
+      )
+      raw_rds_resource.instance_variable_set(
+        :@app_external_aws_rds_connections,
+        [rds_connection]
+      )
+    end
+
+    it 'exits with the same code as pg_dump' do
+      exit_status = 123
+
+      allow(subject).to receive(:`).with(/pg_dump/) do
+        `exit #{exit_status}`
+      end
+
+      expect(subject).to receive(:with_local_tunnel)
+        .with(rds_credential, 0, account)
+        .and_yield(socat_helper)
+
+      expect do
+        subject.send('db:dump', rds_handle)
+      end.to raise_error { |error|
+        expect(error).to be_a SystemExit
+        expect(error.status).to eq exit_status
+      }
+    end
+
+    context 'successful dump' do
+      before do
+        allow(subject).to receive(:`).with(/pg_dump .*/) do
+          `exit 0`
+        end
+      end
+
+      it 'prints a message indicating the dump is happening' do
+        expect(subject).to receive(:with_local_tunnel)
+          .with(rds_credential, 0, account)
+          .and_yield(socat_helper)
+
+        subject.send('db:dump', rds_handle)
+
+        expect(captured_logs)
+          .to match(/Dumping to aws:rds::test-rds-db.dump/i)
+      end
+
+      it 'invokes pg_dump with the tunnel url' do
+        expect(subject).to receive(:with_local_tunnel)
+          .with(rds_credential, 0, account)
+          .and_yield(socat_helper)
+
+        local_url = 'postgres://user:pass@localhost.aptible.in:4242/dbname'
+
+        expect(subject).to receive(:`)
+          .with(/pg_dump #{Regexp.escape(local_url)}  > #{rds_handle}.dump/)
+
+        subject.send('db:dump', rds_handle)
+      end
+    end
+  end
+
   describe '#db:execute' do
     sql_path = 'file.sql'
     it 'should fail if database is non-existent' do
@@ -823,6 +1250,132 @@ describe Aptible::CLI::Agent do
 
           expect do
             subject.send('db:execute', handle, sql_path)
+          end.to raise_error { |error|
+            expect(error).to be_a SystemExit
+            expect(error.status).to eq exit_status
+          }
+        end
+      end
+    end
+  end
+
+  describe '#db:execute (rds databases)' do
+    let(:sql_path) { 'file.sql' }
+    let(:rds_handle) { 'aws:rds::test-rds-db' }
+    let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
+    let(:account) { Fabricate(:account, stack: stack) }
+    let(:app) { Fabricate(:app, account: account) }
+
+    let(:raw_rds_resource) do
+      Fabricate(:external_aws_resource,
+                resource_name: 'test-rds-db',
+                resource_type: 'aws_rds_db_instance')
+    end
+
+    let(:rds_db) do
+      Aptible::CLI::Helpers::Database::RdsDatabase.new(
+        rds_handle,
+        raw_rds_resource.id,
+        raw_rds_resource.created_at,
+        raw_rds_resource
+      )
+    end
+
+    let(:rds_credential) do
+      url = 'postgres://user:pass@host.com:5432/dbname'
+      Fabricate(:external_aws_database_credential,
+                external_aws_resource: raw_rds_resource,
+                connection_url: url)
+    end
+
+    let(:rds_connection) do
+      double('rds_connection', present?: true, app: app)
+    end
+
+    it 'should fail if database is non-existent' do
+      allow(subject).to receive(:external_rds_database_from_handle)
+        .with(rds_handle).and_return(nil)
+
+      expect do
+        subject.send('db:execute', rds_handle, sql_path)
+      end.to raise_error(Thor::Error, /no rds db found/i)
+    end
+
+    context 'valid database' do
+      before do
+        allow(app).to receive(:account).and_return(account)
+        allow(subject).to receive(:external_rds_database_from_handle)
+          .with(rds_handle).and_return(rds_db)
+        allow(subject).to receive(:`).with(/psql .*/) { `exit 0` }
+
+        raw_rds_resource.instance_variable_set(
+          :@external_aws_database_credentials,
+          [rds_credential]
+        )
+        raw_rds_resource.instance_variable_set(
+          :@app_external_aws_rds_connections,
+          [rds_connection]
+        )
+      end
+
+      it 'executes the file against the URL' do
+        expect(subject).to receive(:with_local_tunnel)
+          .with(rds_credential, 0, account)
+          .and_yield(socat_helper)
+
+        local_url = 'postgres://user:pass@localhost.aptible.in:4242/dbname'
+
+        expect(subject).to receive(:`)
+          .with(/psql #{Regexp.escape(local_url)} < #{sql_path}/)
+
+        subject.send('db:execute', rds_handle, sql_path)
+
+        expect(captured_logs)
+          .to match(/Executing #{sql_path} against #{rds_handle}/)
+      end
+
+      it 'fails when no credential is found' do
+        raw_rds_resource.instance_variable_set(
+          :@external_aws_database_credentials,
+          []
+        )
+
+        expect do
+          subject.send('db:execute', rds_handle, sql_path)
+        end.to raise_error(Thor::Error, /no rds credential found/i)
+      end
+
+      context 'on error stop' do
+        before do
+          subject.options = { on_error_stop: true }
+        end
+
+        it 'adds the ON_ERROR_STOP argument' do
+          expect(subject).to receive(:with_local_tunnel)
+            .with(rds_credential, 0, account)
+            .and_yield(socat_helper)
+
+          local_url = 'postgres://user:pass@localhost.aptible.in:4242/dbname'
+          escaped_url = Regexp.escape(local_url)
+
+          expect(subject).to receive(:`)
+            .with(/psql -v ON_ERROR_STOP=true #{escaped_url} < #{sql_path}/)
+
+          subject.send('db:execute', rds_handle, sql_path)
+        end
+
+        it 'exits with the same code as psql' do
+          exit_status = 123
+          allow(subject).to receive(:`).with(/psql .*/) do
+            `exit #{exit_status}`
+          end
+
+          expect(subject).to receive(:with_local_tunnel)
+            .with(rds_credential, 0, account)
+            .and_yield(socat_helper)
+
+          expect do
+            subject.send('db:execute', rds_handle, sql_path)
           end.to raise_error { |error|
             expect(error).to be_a SystemExit
             expect(error.status).to eq exit_status

@@ -692,10 +692,9 @@ describe Aptible::CLI::Agent do
         .with('42', token: token).and_return(ext)
       expect(ext).to receive(:check!).and_return(check_result)
 
-      # check command uses puts directly (not Formatter) for non-JSON output
-      expect { subject.send('aws_accounts:check', '42') }.to output(
-        /State:.*success/m
-      ).to_stdout
+      subject.send('aws_accounts:check', '42')
+
+      expect(captured_output_text).to match(/State:.*success/m)
     end
 
     it 'raises error on check failure' do
