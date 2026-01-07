@@ -45,7 +45,10 @@ describe Aptible::CLI::Agent do
         stub_options(docker_image: 'foobar')
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+          .with(
+            type: 'deploy',
+            settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' }
+          )
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
@@ -60,14 +63,13 @@ describe Aptible::CLI::Agent do
           private_registry_password: 'qux'
         )
 
-        env = {
-          'APTIBLE_PRIVATE_REGISTRY_EMAIL' => 'foo',
+        sensitive_settings = {
           'APTIBLE_PRIVATE_REGISTRY_USERNAME' => 'bar',
           'APTIBLE_PRIVATE_REGISTRY_PASSWORD' => 'qux'
         }
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: env)
+          .with(type: 'deploy', sensitive_settings: sensitive_settings)
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
@@ -96,10 +98,12 @@ describe Aptible::CLI::Agent do
       end
 
       it 'allows setting configuration variables' do
-        stub_options
+        stub_options(docker_image: 'foobar')
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: { 'FOO' => 'bar', 'BAR' => 'qux' })
+          .with(type: 'deploy',
+                env: { 'FOO' => 'bar', 'BAR' => 'qux' },
+                settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
@@ -137,12 +141,43 @@ describe Aptible::CLI::Agent do
         stub_options(docker_image: 'foobar')
 
         expect(app).to receive(:create_operation!)
-          .with(type: 'deploy', env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+          .with(type: 'deploy',
+                env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' },
+                settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
           .and_return(operation)
         expect(subject).to receive(:attach_to_operation_logs)
           .with(operation)
 
         subject.deploy('APTIBLE_DOCKER_IMAGE=foobar')
+      end
+
+      context 'dasherized option for image' do
+        it 'deploys via operation.settings' do
+          stub_options(docker_image: 'foobar')
+
+          expect(app).to receive(:create_operation!)
+            .with(type: 'deploy',
+                  settings: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+            .and_return(operation)
+          expect(subject).to receive(:attach_to_operation_logs)
+            .with(operation)
+
+          subject.deploy
+        end
+      end
+
+      context '(deprecated) environment variable style for image' do
+        it 'deploys via operation.env' do
+          stub_options
+
+          expect(app).to receive(:create_operation!)
+            .with(type: 'deploy', env: { 'APTIBLE_DOCKER_IMAGE' => 'foobar' })
+            .and_return(operation)
+          expect(subject).to receive(:attach_to_operation_logs)
+            .with(operation)
+
+          subject.deploy('APTIBLE_DOCKER_IMAGE=foobar')
+        end
       end
 
       it 'reject contradictory command line argumnts' do

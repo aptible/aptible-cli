@@ -2,9 +2,8 @@ module Aptible
   module CLI
     module Subcommands
       module Deploy
-        DOCKER_IMAGE_DEPLOY_ARGS = Hash[%w(
+        DEPRECATED_ENV = Hash[%w(
           APTIBLE_DOCKER_IMAGE
-          APTIBLE_PRIVATE_REGISTRY_EMAIL
           APTIBLE_PRIVATE_REGISTRY_USERNAME
           APTIBLE_PRIVATE_REGISTRY_PASSWORD
         ).map do |var|
@@ -40,11 +39,23 @@ module Aptible
                                        desc: 'This option only affects new ' \
                                              'services, not existing ones. ' \
                                              'Examples: m c r'
-            DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
-              option opt,
-                     type: :string, banner: var,
-                     desc: "Shorthand for #{var}=..."
-            end
+
+            option :docker_image,
+                   type: :string,
+                   desc: 'The docker image to deploy. If none specified, ' \
+                         'the currently deployed image will be pulled again'
+            option :private_registry_username,
+                   type: :string,
+                   desc: 'Username for Docker images located in a private ' \
+                        'repository'
+            option :private_registry_password,
+                   type: :string,
+                   desc: 'Password for Docker images located in a private ' \
+                         'repository'
+            option :private_registry_email,
+                   type: :string,
+                   desc: 'This parameter is deprecated'
+
             app_options
             def deploy(*args)
               telemetry(__method__, options)
@@ -62,20 +73,43 @@ module Aptible
 
               env = extract_env(args)
 
-              DOCKER_IMAGE_DEPLOY_ARGS.each_pair do |opt, var|
+              DEPRECATED_ENV.each_pair do |opt, var|
                 val = options[opt]
+                dasherized = "--#{opt.to_s.tr('_', '-')}"
+                if env[var]
+                  m = "WARNING: The environment variable #{var} " \
+                      'will be deprecated. Use the option ' \
+                      "#{dasherized}, instead."
+                  CLI.logger.warn m
+                end
                 next unless val
                 if env[var] && env[var] != val
-                  dasherized = "--#{opt.to_s.tr('_', '-')}"
                   raise Thor::Error, "The options #{dasherized} and #{var} " \
                                      'cannot be set to different values'
                 end
-                env[var] = val
+              end
+
+              settings = {}
+              sensitive_settings = {}
+
+              if options[:docker_image]
+                settings['APTIBLE_DOCKER_IMAGE'] = options[:docker_image]
+              end
+
+              if options[:private_registry_username]
+                sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'] =
+                  options[:private_registry_username]
+              end
+              if options[:private_registry_password]
+                sensitive_settings['APTIBLE_PRIVATE_REGISTRY_PASSWORD'] =
+                  options[:private_registry_password]
               end
 
               opts = {
                 type: 'deploy',
                 env: env,
+                settings: settings,
+                sensitive_settings: sensitive_settings,
                 git_ref: git_ref,
                 container_count: options[:container_count],
                 container_size: options[:container_size],
@@ -84,7 +118,7 @@ module Aptible
 
               allow_it = [
                 opts[:git_ref],
-                opts[:env].try(:[], 'APTIBLE_DOCKER_IMAGE'),
+                opts[:settings].try(:[], 'APTIBLE_DOCKER_IMAGE'),
                 app.status == 'provisioned'
               ].any? { |x| x }
 
