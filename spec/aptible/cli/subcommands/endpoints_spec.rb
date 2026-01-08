@@ -22,12 +22,12 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  def expect_create_vhost(service, options)
+  def expect_create_vhost(service, options, settings: nil)
     expect(service).to receive(:create_vhost!).with(
       hash_including(options)
     ) do |args|
       Fabricate(:vhost, service: service, **args).tap do |v|
-        expect_operation(v, 'provision')
+        expect_operation(v, 'provision', settings: settings)
         expect(v).to receive(:reload).and_return(v)
         expect(Aptible::CLI::ResourceFormatter).to receive(:inject_vhost)
           .with(an_instance_of(Aptible::CLI::Formatter::Object), v, service)
@@ -46,8 +46,16 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  def expect_operation(vhost, type)
-    expect(vhost).to receive(:create_operation!).with(type: type) do
+  def expect_operation(vhost, type, settings: nil)
+    expect(vhost).to receive(:create_operation!) do |args|
+      expect(args[:type]).to eq(type)
+
+      if settings.nil?
+        expect(args).not_to have_key(:settings)
+      else
+        expect(args[:settings]).to eq(settings)
+      end
+
       Fabricate(:operation).tap do |o|
         expect(subject).to receive(:attach_to_operation_logs).with(o)
       end
@@ -225,6 +233,75 @@ describe Aptible::CLI::Agent do
         .and_return([app])
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options
+    end
+
+    shared_examples 'shared create and modify ALB settings examples' do |method|
+      context 'App Vhost Settings (string)' do
+        string_options = %i(
+          client_body_timeout
+          idle_timeout
+          maintenance_page_url
+          nginx_error_log_level
+          release_healthcheck_timeout
+          ssl_protocols_override
+        )
+
+        let(:value) { 'some value' }
+
+        string_options.each do |option|
+          context "--#{option.to_s.tr('_', '-')}" do
+            it 'passes a value if provided' do
+              wanted = { option.to_s.upcase => value }
+              expect_create_vhost(service, {}, { settings: wanted })
+              stub_options(option => value)
+              subject.send(method, 'web')
+            end
+
+            it 'passes nothing if not provided' do
+              expect_create_vhost(service, {})
+              subject.send(method, 'web')
+            end
+
+            context 'reverting to default' do
+              it 'sends an empty string if passed an empty string' do
+                wanted = { option.to_s.upcase => '' }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => '')
+                subject.send(method, 'web')
+              end
+
+              it 'sends an empty string if passed the string "default"' do
+                wanted = { option.to_s.upcase => '' }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => 'default')
+                subject.send(method, 'web')
+              end
+            end
+          end
+        end
+      end
+
+      context 'App Vhost Settings (boolean)' do
+        boolean_options = %i(
+          force_ssl
+          ignore_invalid_headers
+          show_elb_healthchecks
+          strict_health_checks
+        )
+
+        boolean_options.each do |option|
+          [true, false].each do |value|
+            context "--#{value ? '' : 'no-'}#{option.to_s.tr('_', '-')}" do
+              it "sets the value to the string '#{value}'" do
+                wanted = { option.to_s.upcase => value.to_s }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => value)
+                subject.send(method, 'web')
+              end
+            end
+          end
+        end
+      end
     end
 
     shared_examples 'shared create app vhost examples' do |method|
@@ -468,6 +545,7 @@ describe Aptible::CLI::Agent do
       m = 'endpoints:https:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create and modify ALB settings examples', m
 
       it 'creates a HTTP Endpoint' do
         expect_create_vhost(

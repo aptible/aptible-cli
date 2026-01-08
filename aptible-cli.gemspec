@@ -51,7 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'aptible-tasks', '~> 0.5.8'
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec', '~> 3.2'
-  spec.add_development_dependency 'pry'
+  spec.add_dependency 'pry'
   spec.add_development_dependency 'climate_control', '= 0.0.3'
   spec.add_development_dependency 'fabrication', '~> 2.15.2'
   spec.add_development_dependency 'httplog', '< 1.6'

@@ -2,8 +2,11 @@ module Aptible
   module CLI
     module Helpers
       module Vhost
-        def provision_vhost_and_explain(service, vhost)
-          op = vhost.create_operation!(type: 'provision')
+        def provision_vhost_and_explain(service, vhost, settings)
+          op = vhost.create_operation!(
+            type: 'provision',
+            **(settings.empty? ? {} : { settings: settings })
+          )
           attach_to_operation_logs(op)
 
           Formatter.render(Renderer.current) do |root|

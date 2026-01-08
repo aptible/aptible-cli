@@ -1,3 +1,5 @@
+require 'pry'
+
 module Aptible
   module CLI
     module Helpers
@@ -69,6 +71,76 @@ module Aptible
                     desc: "Share this Endpoint's load balancer with other " \
                           'Endpoints'
                   )
+
+                  option(
+                    :client_body_timeout,
+                    type: :string,
+                    desc: 'Timeout (seconds) for receiving the request body, ' \
+                          'applying only between successive read operations ' \
+                          'rather than to the entire request body transmission'
+                  )
+
+                  option(
+                    :force_ssl,
+                    type: :boolean,
+                    desc: 'Redirect all HTTP requests to HTTPS, and ' \
+                          'enable the Strict-Transport-Security header (HSTS)'
+                  )
+
+                  option(
+                    :idle_timeout,
+                    type: :string,
+                    desc: 'Timeout (seconds) to enforce idle timeouts while ' \
+                          'sending and receiving responses'
+                  )
+
+                  option(
+                    :ignore_invalid_headers,
+                    type: :boolean,
+                    desc: 'Controls whether header fields with invalid names ' \
+                          'should be dropped by the endpoint'
+                  )
+
+                  option(
+                    :maintenance_page_url,
+                    type: :string,
+                    desc: 'The URL of a maintenance page to cache and serve ' \
+                          'when requests time out, or your app is unhealthy'
+                  )
+
+                  option(
+                    :nginx_error_log_level,
+                    type: :string,
+                    desc: "Sets the log level for the endpoint's error logs"
+                  )
+
+                  option(
+                    :release_healthcheck_timeout,
+                    type: :string,
+                    desc: 'Timeout (seconds) to wait for your app to ' \
+                          'respond to a release health check'
+                  )
+
+                  option(
+                    :show_elb_healthchecks,
+                    type: :boolean,
+                    desc: 'Show all runtime health check requets in the ' \
+                          "endpoint's logs"
+                  )
+
+                  option(
+                    :ssl_protocols_override,
+                    type: :string,
+                    desc: 'Specify a list of allowed SSL protocols'
+                  )
+
+                  option(
+                    :strict_health_checks,
+                    type: :boolean,
+                    desc: 'Require containers to respond to health checks ' \
+                          'with a 200 OK HTTP response.'
+                  )
+
                 end
               end
 
@@ -128,6 +200,18 @@ module Aptible
                   desc: 'The fingerprint of an existing Certificate to use ' \
                         'on this Endpoint'
                 )
+
+                option(
+                  :ssl_ciphers_override,
+                  type: :string,
+                  desc: 'Specify the allowed SSL ciphers'
+                )
+
+                option(
+                  :ssl_protocols_override,
+                  type: :string,
+                  desc: 'Specify a list of allowed SSL protocols'
+                )
               end
             end
           end
@@ -137,6 +221,7 @@ module Aptible
             verify_option_conflicts(options)
 
             params = {}
+            settings = {}
 
             params[:ip_whitelist] = options.delete(:ip_whitelist) do
               create? ? [] : nil
@@ -203,6 +288,46 @@ module Aptible
               params[:shared] = options.delete(:shared)
             end
 
+            vhost_settings = %i(
+              client_body_timeout
+              idle_timeout
+              maintenance_page_url
+              nginx_error_log_level
+              release_healthcheck_timeout
+              ssl_protocols_override
+            )
+
+            vhost_settings.each do |key|
+              val = options.delete(key)
+              next if val.nil?
+
+              settings[key.to_s.upcase] = case val
+                                          when 'default'
+                                            ''
+                                          else
+                                            val
+                                          end
+            end
+
+            boolean_vhost_settings = %i(
+              force_ssl
+              ignore_invalid_headers
+              show_elb_healthchecks
+              strict_health_checks
+            )
+
+            # TODO: there seems to be no Thor way to let the user unset/revert
+            # to the default sweetness behavior?
+
+            boolean_vhost_settings.each do |key|
+              value = options.delete(key)
+              next if value.nil?
+
+              settings[key.to_s.upcase] = value.to_s
+            end
+
+            options.delete(:client_body_timeout)
+
             options.delete(:environment)
 
             # NOTE: This is here to ensure that specs don't test for options
@@ -210,7 +335,7 @@ module Aptible
             # this.
             raise "Unexpected options: #{options}" if options.any?
 
-            params.delete_if { |_, v| v.nil? }
+            [params.delete_if { |_, v| v.nil? }, settings]
           end
 
           FLAGS.each do |f|
@@ -309,6 +434,8 @@ module Aptible
                 %i(no-ip_whitelist),
                 %i(ip_whitelist)
               ]
+
+              # TODO: are there new conflicts?
             ]
 
             conflict_groups.each do |group|
