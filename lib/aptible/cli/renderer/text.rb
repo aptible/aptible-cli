@@ -8,7 +8,7 @@ module Aptible
           'Tls' => 'TLS',
           'Dns' => 'DNS',
           'Ip' => 'IP',
-          'Ssl' => 'SSL'
+          'Ssl' => 'SSL',
           'Elb' => 'ELB'
         }.freeze
 
