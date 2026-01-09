@@ -209,6 +209,10 @@ module Aptible
 
           node.value('internal', vhost.internal)
 
+          vhost.current_setting.settings.each do |k, v|
+            node.value(k.downcase, v)
+          end
+
           ip_whitelist = if vhost.ip_whitelist.any?
                            vhost.ip_whitelist.join(' ')
                          else

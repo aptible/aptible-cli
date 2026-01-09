@@ -7,7 +7,9 @@ module Aptible
         POST_PROCESSED_KEYS = {
           'Tls' => 'TLS',
           'Dns' => 'DNS',
-          'Ip' => 'IP'
+          'Ip' => 'IP',
+          'Ssl' => 'SSL'
+          'Elb' => 'ELB'
         }.freeze
 
         def visit(node, io)

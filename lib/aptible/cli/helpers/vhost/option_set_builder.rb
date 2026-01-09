@@ -295,6 +295,7 @@ module Aptible
               nginx_error_log_level
               release_healthcheck_timeout
               ssl_protocols_override
+              ssl_ciphers_override
             )
 
             vhost_settings.each do |key|
