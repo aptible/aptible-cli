@@ -8,7 +8,8 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'rebuild [--app APP]', 'Rebuild an app, and restart its services'
+            desc 'rebuild [--app APP]',
+                 'Rebuild an app, and restart its services'
             app_options
             def rebuild
               telemetry(__method__, options)
