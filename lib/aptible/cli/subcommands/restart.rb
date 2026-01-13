@@ -8,7 +8,7 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'restart', 'Restart all services associated with an app'
+            desc 'restart [--app APP]', 'Restart all services associated with an app'
             option :simulate_oom,
                    type: :boolean,
                    desc: 'Add this flag to simulate an OOM restart and test ' \

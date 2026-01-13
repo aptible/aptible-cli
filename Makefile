@@ -46,6 +46,9 @@ clean:
 ## Alias for clean
 down: clean
 
+sync-readme: build
+	docker compose run cli bundle exec script/sync-readme-usage
+
 ## Show this help message
 help:
 	@echo "\n\033[1;34mAvailable targets:\033[0m\n"
