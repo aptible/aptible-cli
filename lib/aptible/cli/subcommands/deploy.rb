@@ -19,7 +19,7 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'deploy [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]',
+            desc 'deploy [--app APP] [OPTIONS] [VAR1=VAL1] [VAR2=VAL2] [...]',
                  'Deploy an app'
             option :git_commitish,
                    desc: 'Deploy a specific git commit or branch: the ' \

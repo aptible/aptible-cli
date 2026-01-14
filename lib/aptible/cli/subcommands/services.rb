@@ -7,7 +7,7 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'services', 'List Services for an App'
+            desc 'services [--app APP]', 'List Services for an App'
             app_options
             def services
               telemetry(__method__, options)
@@ -25,7 +25,7 @@ module Aptible
               end
             end
 
-            desc 'services:settings SERVICE'\
+            desc 'services:settings [--app APP] SERVICE'\
                    ' [--force-zero-downtime|--no-force-zero-downtime]'\
                    ' [--simple-health-check|--no-simple-health-check]'\
                    ' [--restart-free-scaling|--no-restart-free-scaling]'\
@@ -69,7 +69,7 @@ module Aptible
               service.update!(**updates) if updates.any?
             end
 
-            desc 'services:autoscaling_policy SERVICE',
+            desc 'services:autoscaling_policy [--app APP] SERVICE',
                  'Returns the associated sizing policy, if any'
             app_options
             define_method 'services:autoscaling_policy' do |service|
@@ -99,7 +99,7 @@ module Aptible
 
             map 'services:sizing_policy' => 'services:autoscaling_policy'
 
-            desc 'services:autoscaling_policy:set SERVICE '\
+            desc 'services:autoscaling_policy:set [--app APP] SERVICE '\
                    '--autoscaling-type (horizontal|vertical) '\
                    '[--metric-lookback-seconds SECONDS] '\
                    '[--percentile PERCENTILE] '\
