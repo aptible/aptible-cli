@@ -312,7 +312,6 @@ module Aptible
 
             boolean_vhost_settings = %i(
               force_ssl
-              ignore_invalid_headers
               show_elb_healthchecks
               strict_health_checks
             )
@@ -326,6 +325,16 @@ module Aptible
 
               settings[key.to_s.upcase] = value.to_s
             end
+
+            # this one we pass through to nginx, and "on" and "off" are the exected values
+            ignore_invalid_headers = options.delete(:ignore_invalid_headers)
+            unless ignore_invalid_headers.nil?
+              settings['IGNORE_INVALID_HEADERS'] = case ignore_invalid_headers
+                                                   when true
+                                                     'on'
+                                                   when false
+                                                     'off'
+                                                   end
 
             options.delete(:client_body_timeout)
 
