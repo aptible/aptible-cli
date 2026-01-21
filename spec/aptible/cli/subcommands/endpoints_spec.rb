@@ -169,7 +169,13 @@ describe Aptible::CLI::Agent do
       it 'lists Endpoints' do
         s = Fabricate(:service, database: db)
         v1 = Fabricate(:vhost, service: s)
+        v1.current_setting = Fabricate(:setting,
+                                       settings: { 'IDLE_TIMEOUT' => '123' },
+                                       vhost: v1)
         v2 = Fabricate(:vhost, service: s)
+        v2.current_setting = Fabricate(:setting,
+                                       settings: { 'FORCE_SSL' => 'true' },
+                                       vhost: v2)
 
         stub_options(database: db.handle)
         subject.send('endpoints:list')
@@ -178,6 +184,8 @@ describe Aptible::CLI::Agent do
 
         expect(lines).to include("Hostname: #{v1.external_host}")
         expect(lines).to include("Hostname: #{v2.external_host}")
+        expect(lines).to include('Idle Timeout: 123')
+        expect(lines).to include('Force SSL: true')
 
         expect(lines[0]).not_to eq("\n")
         expect(lines[-1]).not_to eq("\n")
@@ -284,7 +292,6 @@ describe Aptible::CLI::Agent do
       context 'App Vhost Settings (boolean)' do
         boolean_options = %i(
           force_ssl
-          ignore_invalid_headers
           show_elb_healthchecks
           strict_health_checks
         )
@@ -298,6 +305,19 @@ describe Aptible::CLI::Agent do
                 stub_options(option => value)
                 subject.send(method, 'web')
               end
+            end
+          end
+        end
+      end
+
+      context 'Strange Vhost settings' do
+        { true => 'on', false => 'off' }.each do |bool, value|
+          context "--#{bool ? '' : 'no-'}ignore_invalid_headers" do
+            it "sets the value to the string '#{value}'" do
+              wanted = { 'IGNORE_INVALID_HEADERS' => value }
+              expect_create_vhost(service, {}, { settings: wanted })
+              stub_options(ignore_invalid_headers: bool)
+              subject.send(method, 'web')
             end
           end
         end

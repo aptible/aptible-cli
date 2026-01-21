@@ -8,6 +8,8 @@ Fabricator(:vhost, from: :stub_vhost) do
   ip_whitelist { [] }
   container_ports { [] }
   created_at { Time.now }
+  settings { [] }
+  current_setting { nil }
 
   after_create { |vhost| vhost.service.vhosts << vhost }
 end

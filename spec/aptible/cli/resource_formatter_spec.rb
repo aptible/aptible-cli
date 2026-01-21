@@ -25,6 +25,9 @@ describe Aptible::CLI::ResourceFormatter do
         shared: false
       )
 
+      vhost.current_configuration = Fabricate(:setting, settings: {},
+                                                        vhost: vhost)
+
       expected = [
         'Id: 12',
         'Hostname: foo.io',

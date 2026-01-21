@@ -1,5 +1,3 @@
-require 'pry'
-
 module Aptible
   module CLI
     module Helpers
@@ -316,9 +314,6 @@ module Aptible
               strict_health_checks
             )
 
-            # TODO: there seems to be no Thor way to let the user unset/revert
-            # to the default sweetness behavior?
-
             boolean_vhost_settings.each do |key|
               value = options.delete(key)
               next if value.nil?
@@ -326,7 +321,8 @@ module Aptible
               settings[key.to_s.upcase] = value.to_s
             end
 
-            # this one we pass through to nginx, and "on" and "off" are the exected values
+            # This one we pass through to nginx for whatever rason, so
+            # "on" and "off" are the exected values
             ignore_invalid_headers = options.delete(:ignore_invalid_headers)
             unless ignore_invalid_headers.nil?
               settings['IGNORE_INVALID_HEADERS'] = case ignore_invalid_headers
@@ -335,8 +331,7 @@ module Aptible
                                                    when false
                                                      'off'
                                                    end
-
-            options.delete(:client_body_timeout)
+            end
 
             options.delete(:environment)
 
@@ -444,8 +439,6 @@ module Aptible
                 %i(no-ip_whitelist),
                 %i(ip_whitelist)
               ]
-
-              # TODO: are there new conflicts?
             ]
 
             conflict_groups.each do |group|
