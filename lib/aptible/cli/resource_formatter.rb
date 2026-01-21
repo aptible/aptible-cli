@@ -203,8 +203,8 @@ module Aptible
             node.value('type', 'https')
             node.value('port', port)
             node.value('load_balancing_algorithm_type', vhost
-                        .load_balancing_algorithm_type)
-            node.value('shared', vhost.shared)
+                        .load_balancing_algorithm_type || 'round_robin')
+            node.value('shared', vhost.shared || 'false')
           end
 
           node.value('internal', vhost.internal)
