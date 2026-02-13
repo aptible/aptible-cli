@@ -428,6 +428,76 @@ describe Aptible::CLI::Agent do
         end
       end
 
+      context 'failed_login_attempt_id handling' do
+        before do
+          allow(subject).to receive(:options)
+            .and_return(email: email, password: password)
+          expect(subject).to receive(:ask).with('2FA Token: ')
+            .once
+            .and_return(token)
+        end
+
+        it 'should extract failed_login_attempt_id when present' do
+          e = make_oauth2_error(
+            'otp_token_required',
+            'failed_login_attempt_id' => 'attempt-123'
+          )
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, expires_in: 1.week.seconds)
+            .once
+            .and_raise(e)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, otp_token: token,
+                  previous_login_attempt_id: 'attempt-123',
+                  expires_in: 12.hours.seconds)
+            .once
+            .and_return(token)
+
+          subject.login
+        end
+
+        it 'should handle nil exception_context gracefully' do
+          parsed = { 'error' => 'otp_token_required' }
+          response = double('response',
+                            parsed: parsed,
+                            body: 'error otp_token_required')
+          allow(response).to receive(:error=)
+          e = OAuth2::Error.new(response)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, expires_in: 1.week.seconds)
+            .once
+            .and_raise(e)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, otp_token: token,
+                  expires_in: 12.hours.seconds)
+            .once
+            .and_return(token)
+
+          subject.login
+        end
+
+        it 'should handle missing failed_login_attempt_id gracefully' do
+          e = make_oauth2_error('otp_token_required', {})
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, expires_in: 1.week.seconds)
+            .once
+            .and_raise(e)
+
+          expect(Aptible::Auth::Token).to receive(:create)
+            .with(email: email, password: password, otp_token: token,
+                  expires_in: 12.hours.seconds)
+            .once
+            .and_return(token)
+
+          subject.login
+        end
+      end
+
       context 'SSO logins' do
         let(:token) { 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJpZCI6I' }
 

@@ -165,6 +165,13 @@ module Aptible
 
           u2f = (e.response.parsed['exception_context'] || {})['u2f']
 
+          failed_login_attempt_id = e.response.parsed.dig(
+            'exception_context', 'failed_login_attempt_id'
+          )
+          if failed_login_attempt_id
+            token_options[:previous_login_attempt_id] = failed_login_attempt_id
+          end
+
           q = Queue.new
           mfa_threads = []
 
