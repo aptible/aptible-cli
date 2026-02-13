@@ -18,3 +18,4 @@ tmp
 /.idea
 /.vscode
 Makefile
+.ruby-version
