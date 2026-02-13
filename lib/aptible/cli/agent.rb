@@ -26,6 +26,7 @@ require_relative 'helpers/metric_drain'
 require_relative 'helpers/date_helpers'
 require_relative 'helpers/s3_log_helpers'
 require_relative 'helpers/maintenance'
+require_relative 'helpers/ai_token'
 require_relative 'helpers/aws_account'
 
 require_relative 'subcommands/apps'
@@ -46,6 +47,7 @@ require_relative 'subcommands/log_drain'
 require_relative 'subcommands/metric_drain'
 require_relative 'subcommands/maintenance'
 require_relative 'subcommands/backup_retention_policy'
+require_relative 'subcommands/ai_tokens'
 require_relative 'subcommands/aws_accounts'
 require_relative 'subcommands/organizations'
 
@@ -77,6 +79,7 @@ module Aptible
       include Subcommands::MetricDrain
       include Subcommands::Maintenance
       include Subcommands::BackupRetentionPolicy
+      include Subcommands::AiTokens
       include Subcommands::AwsAccounts
       include Subcommands::Organizations
 
