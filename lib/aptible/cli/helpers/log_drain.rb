@@ -65,7 +65,7 @@ module Aptible
         end
 
         def ensure_log_drain(account, handle)
-          drains = account.log_drains.select { |d| d.handle == handle }
+          drains = account.reload.log_drains.select { |d| d.handle == handle }
 
           if drains.empty?
             raise Thor::Error, "No drain found with handle #{handle}"
