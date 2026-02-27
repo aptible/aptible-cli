@@ -17,6 +17,8 @@ describe Aptible::CLI::Agent do
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
+
+    allow(account).to receive(:reload).and_return(account)
   end
 
   describe '#log_drain:list' do
