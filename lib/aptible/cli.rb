@@ -7,6 +7,11 @@ require 'aptible/cli/formatter'
 require 'aptible/cli/renderer'
 require 'aptible/cli/resource_formatter'
 
+# Set no_sensitive_extras=true as the default for all API resources.
+# This avoids returning sensitive embedded data unless explicitly requested.
+Aptible::Api::Resource.headers =
+  { 'Prefer' => 'no_sensitive_extras=true' }
+
 module Aptible
   module CLI
     class TtyLogFormatter
