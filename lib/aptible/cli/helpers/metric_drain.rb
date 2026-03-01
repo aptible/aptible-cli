@@ -19,6 +19,7 @@ module Aptible
         end
 
         def ensure_metric_drain(account, handle)
+          account = with_sensitive(account)
           drains = account.metric_drains.select { |d| d.handle == handle }
 
           if drains.empty?
