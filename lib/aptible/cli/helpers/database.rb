@@ -314,6 +314,9 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
+          # Reload with senstive data
+          database = with_sensitive(database)
+
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
           credential = database.database_credentials.find(&finder)

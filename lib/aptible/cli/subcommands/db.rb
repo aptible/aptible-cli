@@ -335,7 +335,6 @@ module Aptible
               return use_rds_tunnel(handle, desired_port) if aws_rds_db?(handle)
 
               database = ensure_database(options.merge(db: handle))
-              database = with_sensitive(database)
               credential = find_credential(database, options[:type])
 
               m = "Creating #{credential.type} tunnel to #{database.handle}..."
@@ -482,7 +481,6 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               database = ensure_database(options.merge(db: handle))
-              database = with_sensitive(database)
 
               credential = find_credential(database, options[:type])
 
