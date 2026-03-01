@@ -314,8 +314,8 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
-          # Reload with senstive data
-          database = with_sensitive(database)
+          # Maybe reload with senstive data
+          database = with_sensitive(database) if database.objects[:database_credentials].nil?
 
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
@@ -360,7 +360,8 @@ module Aptible
         end
 
         def render_database(database, account)
-          database = with_sensitive(database)
+          # Maybe reload with senstive data
+          database = with_sensitive(database) if database.connection_url.nil?
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
               ResourceFormatter.inject_database(node, database, account)
