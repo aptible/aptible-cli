@@ -314,6 +314,9 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
+          # Reload with senstive data
+          database = with_sensitive(database)
+
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
           credential = database.database_credentials.find(&finder)
@@ -321,14 +324,6 @@ module Aptible
           return credential if credential
 
           types = database.database_credentials.map(&:type)
-
-          # On v1, we fallback to the DB. We make sure to make --type work, to
-          # avoid a confusing experience for customers.
-          if database.account.stack.version == 'v1'
-            types << database.type
-            types.uniq!
-            return database if type.nil? || type == database.type
-          end
 
           valid = types.join(', ')
 
@@ -365,6 +360,7 @@ module Aptible
         end
 
         def render_database(database, account)
+          database = with_sensitive(database)
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
               ResourceFormatter.inject_database(node, database, account)

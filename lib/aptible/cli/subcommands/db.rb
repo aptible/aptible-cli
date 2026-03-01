@@ -481,6 +481,7 @@ module Aptible
               telemetry(__method__, options.merge(handle: handle))
 
               database = ensure_database(options.merge(db: handle))
+
               credential = find_credential(database, options[:type])
 
               Formatter.render(Renderer.current) do |root|
