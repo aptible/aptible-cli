@@ -92,10 +92,13 @@ module Aptible
           level = Logger::WARN
           debug_level = ENV['APTIBLE_DEBUG']
           level = debug_level if debug_level
-          require 'httplog' if ENV['BUNDLER_VERSION'] && \
-                               ENV['APTIBLE_LOG_HTTP_REQUEST_RESPONSE'] && \
-                               !ENV['APTIBLE_LOG_HTTP_REQUEST_RESPONSE'] \
-                               .downcase.start_with?('f')
+          if ENV['BUNDLER_VERSION'] && \
+             ENV['APTIBLE_LOG_HTTP_REQUEST_RESPONSE'] && \
+             !ENV['APTIBLE_LOG_HTTP_REQUEST_RESPONSE'] \
+             .downcase.start_with?('f')
+            require 'httplog'
+            HttpLog.configure { |c| c.log_headers = true }
+          end
           conf.logger.tap { |l| l.level = level }
         end
         warn_sso_enforcement

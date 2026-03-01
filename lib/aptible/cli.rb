@@ -12,6 +12,11 @@ require 'aptible/cli/resource_formatter'
 Aptible::Api::Resource.headers =
   { 'Prefer' => 'no_sensitive_extras=true' }
 
+def with_sensitive(resource)
+  resource.headers['Prefer'] = 'no_sensitive_extras=false'
+  resource.find_by_url(resource.href)
+end
+
 module Aptible
   module CLI
     class TtyLogFormatter
