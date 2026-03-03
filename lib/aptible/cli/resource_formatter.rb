@@ -128,6 +128,8 @@ module Aptible
         end
 
         def inject_database(node, database, account)
+          database = with_sensitive(database) if database.objects[:database_credentials].nil?
+
           node.value('id', database.id)
           node.value('handle', database.handle)
           node.value('created_at', database.created_at)
