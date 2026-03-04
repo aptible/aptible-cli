@@ -44,6 +44,8 @@ module Aptible
                     account = acc_map[drain.links.account.href]
                     next if account.nil?
 
+                    # JSON output format we potentially show sensitive attributes
+                    drain = with_sensitive(drain) if Renderer.format == 'json'
                     node.object do |n|
                       ResourceFormatter.inject_log_drain(n, drain, account)
                     end
