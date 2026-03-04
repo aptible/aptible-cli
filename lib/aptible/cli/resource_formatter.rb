@@ -245,6 +245,9 @@ module Aptible
                      log_drain.drain_ephemeral_sessions)
           node.value('drain_proxies', log_drain.drain_proxies)
 
+          # These can be either optional for the drain type,
+          # or sensitive attributes we don't need to worry about
+          # in text output
           optional_attrs = %w(drain_username drain_host drain_port url)
           optional_attrs.each do |attr|
             value = log_drain.attributes[attr]
@@ -259,7 +262,13 @@ module Aptible
           node.value('handle', metric_drain.handle)
           node.value('drain_type', metric_drain.drain_type)
           node.value('created_at', metric_drain.created_at)
-          node.value('drain_configuration', metric_drain.drain_configuration)
+
+          # Sensitive attributes we don't need to worry about being missing in text output
+          optional_attrs = %w(drain_configuration)
+          optional_attrs.each do |attr|
+            value = metric_drain.attributes[attr]
+            node.value(attr, value) unless value.nil?
+          end
 
           attach_account(node, account)
         end
