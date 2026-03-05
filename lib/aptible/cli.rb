@@ -17,6 +17,11 @@ def with_sensitive(resource)
   resource.find_by_url(resource.href)
 end
 
+def without_sensitive(resource)
+  resource.headers['Prefer'] = 'no_sensitive_extras=true'
+  resource.find_by_url(resource.href)
+end
+
 module Aptible
   module CLI
     class TtyLogFormatter
