@@ -1,4 +1,4 @@
-class StubBackupRetentionPolicy < OpenStruct
+class StubBackupRetentionPolicy < StubAptibleResource
   def reload
     self
   end

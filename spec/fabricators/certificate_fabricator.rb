@@ -1,4 +1,4 @@
-class StubCertificate < OpenStruct; end
+class StubCertificate < StubAptibleResource; end
 
 Fabricator(:certificate, from: :stub_certificate) do
   account

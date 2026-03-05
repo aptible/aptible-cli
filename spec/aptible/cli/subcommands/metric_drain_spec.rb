@@ -14,6 +14,10 @@ describe Aptible::CLI::Agent do
       .with(token: token, href: '/metric_drains?per_page=5000')
       .and_return([metric_drain])
 
+    allow(Aptible::Api::MetricDrain).to receive(:all)
+      .with(token: token, href: "/accounts/#{account.id}/metric_drains")
+      .and_return([metric_drain])
+
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])

@@ -1,4 +1,4 @@
-class StubApp < OpenStruct
+class StubApp < StubAptibleResource
   def vhosts
     services.map(&:vhosts).flatten
   end

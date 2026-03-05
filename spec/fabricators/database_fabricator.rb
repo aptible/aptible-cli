@@ -1,6 +1,12 @@
-class StubDatabase < OpenStruct
+class StubDatabase < StubAptibleResource
   def provisioned?
     status == 'provisioned'
+  end
+
+  def objects
+    {
+      'database_credentials' => database_credentials
+    }
   end
 end
 

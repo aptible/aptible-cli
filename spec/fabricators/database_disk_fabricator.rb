@@ -1,4 +1,4 @@
-class StubDatabaseDisk < OpenStruct
+class StubDatabaseDisk < StubAptibleResource
 end
 
 Fabricator(:database_disk, from: :stub_database_disk) do

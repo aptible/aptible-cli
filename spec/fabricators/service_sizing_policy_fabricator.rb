@@ -1,4 +1,4 @@
-class StubServiceSizingPolicy < OpenStruct; end
+class StubServiceSizingPolicy < StubAptibleResource; end
 
 Fabricator(:service_sizing_policy, from: :stub_service_sizing_policy) do
   autoscaling 'vertical'

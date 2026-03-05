@@ -226,41 +226,6 @@ describe Aptible::CLI::Agent do
         expect { subject.send('db:tunnel', handle) }
           .to raise_error(/foobar is not provisioned/im)
       end
-
-      context 'v1 stack' do
-        before do
-          allow(database.account.stack).to receive(:version) { 'v1' }
-        end
-
-        it 'falls back to the database itself if no type is given' do
-          expect(subject).to receive(:with_local_tunnel).with(database, 0)
-          subject.send('db:tunnel', handle)
-        end
-
-        it 'falls back to the database itself if type matches' do
-          subject.options = { type: 'bar' }
-          allow(database).to receive(:type) { 'bar' }
-
-          expect(subject).to receive(:with_local_tunnel).with(database, 0)
-          subject.send('db:tunnel', handle)
-        end
-
-        it 'does not fall back to the database itself if type mismatches' do
-          subject.options = { type: 'bar' }
-          allow(database).to receive(:type) { 'foo' }
-
-          expect { subject.send('db:tunnel', handle) }
-            .to raise_error(/no credential with type bar/im)
-        end
-
-        it 'does not suggest other types that do not exist' do
-          expect(subject).to receive(:with_local_tunnel).with(database, 0)
-
-          subject.send('db:tunnel', handle)
-
-          expect(captured_logs).not_to match(/use --type type/i)
-        end
-      end
     end
   end
 
@@ -844,22 +809,6 @@ describe Aptible::CLI::Agent do
 
         expect { subject.send('db:url', handle) }
           .to raise_error(/Multiple databases/)
-      end
-
-      context 'v1 stack' do
-        before do
-          allow(database.account.stack).to receive(:version) { 'v1' }
-        end
-
-        it 'returns the URL of a specified DB' do
-          connection_url = 'postgresql://aptible-v1:password@lega.cy:4242/db'
-          expect(database).to receive(:connection_url)
-            .and_return(connection_url)
-
-          subject.send('db:url', handle)
-
-          expect(captured_output_text.chomp).to eq(connection_url)
-        end
       end
     end
   end

@@ -1,4 +1,4 @@
-class StubExternalAwsResource < OpenStruct
+class StubExternalAwsResource < StubAptibleResource
   def attributes
     {
       'id' => id,

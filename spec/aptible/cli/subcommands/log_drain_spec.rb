@@ -14,6 +14,10 @@ describe Aptible::CLI::Agent do
       .with(token: token, href: '/log_drains?per_page=5000')
       .and_return([log_drain])
 
+    allow(Aptible::Api::LogDrain).to receive(:all)
+      .with(token: token, href: "/accounts/#{account.id}/log_drains")
+      .and_return([log_drain])
+
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
