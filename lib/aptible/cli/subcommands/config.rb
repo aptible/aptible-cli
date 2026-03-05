@@ -15,6 +15,7 @@ module Aptible
               telemetry(__method__, options)
 
               app = ensure_app(options)
+              app = with_sensitive(app)
               config = app.current_configuration
               env = config ? config.env : {}
 
@@ -38,6 +39,7 @@ module Aptible
               telemetry(__method__, options)
 
               app = ensure_app(options)
+              app = with_sensitive(app)
               config = app.current_configuration
               env = config ? config.env : {}
 
