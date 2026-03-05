@@ -361,6 +361,8 @@ module Aptible
 
         def render_database(database, account)
           # Maybe reload with senstive data
+          # Definately don't load the embedded last_operation
+          database.href = database.href + '?no_embed=true'
           database = with_sensitive(database) if database.connection_url.nil?
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
