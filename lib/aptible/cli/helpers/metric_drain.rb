@@ -19,8 +19,9 @@ module Aptible
         end
 
         def ensure_metric_drain(account, handle)
-          account = with_sensitive(account)
-          drains = account.metric_drains.select { |d| d.handle == handle }
+          link = account.links['metric_drains'].base_href
+          account_drains = Aptible::Api::MetricDrain.all(href: link, token: fetch_token)
+          drains = account_drains.select { |d| d.handle == handle }
 
           if drains.empty?
             raise Thor::Error, "No drain found with handle #{handle}"
