@@ -14,9 +14,9 @@ module Aptible
             def config
               telemetry(__method__, options)
 
+              require 'pry'; binding.pry
               app = ensure_app(options)
-              app = with_sensitive(app)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|
@@ -39,8 +39,7 @@ module Aptible
               telemetry(__method__, options)
 
               app = ensure_app(options)
-              app = with_sensitive(app)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|

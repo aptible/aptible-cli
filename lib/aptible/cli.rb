@@ -9,8 +9,7 @@ require 'aptible/cli/resource_formatter'
 
 # Set no_sensitive_extras=true as the default for all API resources.
 # This avoids returning sensitive embedded data unless explicitly requested.
-Aptible::Api::Resource.headers =
-  { 'Prefer' => 'no_sensitive_extras=true' }
+Aptible::Api::Resource.headers = { 'Prefer' => 'no_sensitive_extras=true' }
 
 def with_sensitive(resource)
   resource.headers['Prefer'] = 'no_sensitive_extras=false'
