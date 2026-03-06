@@ -185,6 +185,13 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(credential, port = 0, target_account = nil)
+          # Credential has the senstive header set, and for some reason
+          # credential.create_operation! _lists all operations_. This would
+          # generate a show activity for every previous tunnel operation.
+          # So, we strip the sensitive header first to prevent that from happening
+          # This will also strip the connection_url, but we don't need it from
+          # this point on.
+          credential = without_sensitive(credential)
           op = if target_account.nil?
                  credential.create_operation!(
                    type: 'tunnel',
@@ -314,12 +321,18 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
-          # Maybe reload with senstive data
-          database = with_sensitive(database) if database.objects[:database_credentials].nil?
+          # Get the database credentials, without going using `with_senstive(database)`, as that
+          # would get the embedded last_operation, and generate an extra show activity
+          creds_link = database.links['database_credentials']
+          database_credentials = Aptible::Api::DatabaseCredential.all(
+            href: creds_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
 
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
-          credential = database.database_credentials.find(&finder)
+          credential = database_credentials.find(&finder)
 
           return credential if credential
 

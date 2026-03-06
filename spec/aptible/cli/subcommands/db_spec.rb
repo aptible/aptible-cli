@@ -10,6 +10,9 @@ describe Aptible::CLI::Agent do
     allow(subject).to receive(:ask)
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:fetch_token) { token }
+    allow(Aptible::Api::DatabaseCredential).to receive(:all) do
+      database.database_credentials
+    end
   end
 
   let(:handle) { 'foobar' }
