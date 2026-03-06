@@ -14,7 +14,6 @@ module Aptible
             def config
               telemetry(__method__, options)
 
-              require 'pry'; binding.pry
               app = ensure_app(options)
               config = current_configuration(app)
               env = config ? config.env : {}

@@ -197,12 +197,14 @@ module Aptible
         end
 
         def current_configuration(app)
-          link = app.links['current_configuration'].base_href
-          configuration = Aptible::Api::Configuration.find_by_url(
-              link,
-              token: fetch_token,
-              headers: { 'Prefer' => 'no_sensitive_extras=false' }
-            )
+          conf_link = app.links['current_configuration']
+          return unless conf_link
+
+          Aptible::Api::Configuration.find_by_url(
+            conf_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
         end
 
         private
