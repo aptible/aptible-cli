@@ -192,6 +192,7 @@ module Aptible
           # This will also strip the connection_url, but we don't need it from
           # this point on.
           credential = without_sensitive(credential)
+          # Twice by here??
           op = if target_account.nil?
                  credential.create_operation!(
                    type: 'tunnel',
@@ -291,7 +292,7 @@ module Aptible
             raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
-          credential = find_credential(database)
+          credential, _credentials = find_credential(database)
 
           with_local_tunnel(credential) do |tunnel_helper|
             yield local_url(credential, tunnel_helper.port)
@@ -334,9 +335,12 @@ module Aptible
           finder = proc { |c| c.type == type } if type
           credential = database_credentials.find(&finder)
 
-          return credential if credential
+          # It may be weird to return the credential and all the credentials, but the db:tunnel
+          # command lists all the credential types if you do not provide one, and we want to avoid
+          # generating more show activity than needed
+          return credential, database_credentials if credential
 
-          types = database.database_credentials.map(&:type)
+          types = database_credentials.map(&:type)
 
           valid = types.join(', ')
 

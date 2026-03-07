@@ -335,15 +335,13 @@ module Aptible
               return use_rds_tunnel(handle, desired_port) if aws_rds_db?(handle)
 
               database = ensure_database(options.merge(db: handle))
-              # Maybe reload with senstive data
-              database = with_sensitive(database) if database.objects[:database_credentials].nil?
-              credential = find_credential(database, options[:type])
+              credential, credentials = find_credential(database, options[:type])
 
               m = "Creating #{credential.type} tunnel to #{database.handle}..."
               CLI.logger.info m
 
               if options[:type].nil?
-                types = database.database_credentials.map(&:type)
+                types = credentials.map(&:type)
                 unless types.empty?
                   valid = types.join(', ')
                   CLI.logger.info 'Use --type TYPE to specify a tunnel type'
@@ -484,7 +482,7 @@ module Aptible
 
               database = ensure_database(options.merge(db: handle))
 
-              credential = find_credential(database, options[:type])
+              credential, _credentials = find_credential(database, options[:type])
 
               Formatter.render(Renderer.current) do |root|
                 root.keyed_object('connection_url') do |node|
