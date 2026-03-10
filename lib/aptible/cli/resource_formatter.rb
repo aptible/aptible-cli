@@ -128,6 +128,10 @@ module Aptible
         end
 
         def inject_database(node, database, account)
+          # Some callers pass a database object with sensitive attributes already, others do not.
+          # Avoid creating extra 'show' activity if we already have the needed info
+          database = with_sensitive(database) if database.objects[:database_credentials].nil?
+
           node.value('id', database.id)
           node.value('handle', database.handle)
           node.value('created_at', database.created_at)
@@ -243,6 +247,9 @@ module Aptible
                      log_drain.drain_ephemeral_sessions)
           node.value('drain_proxies', log_drain.drain_proxies)
 
+          # These can be either optional for the drain type,
+          # or sensitive attributes we don't need to worry about
+          # in text output
           optional_attrs = %w(drain_username drain_host drain_port url)
           optional_attrs.each do |attr|
             value = log_drain.attributes[attr]
@@ -257,7 +264,13 @@ module Aptible
           node.value('handle', metric_drain.handle)
           node.value('drain_type', metric_drain.drain_type)
           node.value('created_at', metric_drain.created_at)
-          node.value('drain_configuration', metric_drain.drain_configuration)
+
+          # Sensitive attributes we don't need to worry about being missing in text output
+          optional_attrs = %w(drain_configuration)
+          optional_attrs.each do |attr|
+            value = metric_drain.attributes[attr]
+            node.value(attr, value) unless value.nil?
+          end
 
           attach_account(node, account)
         end

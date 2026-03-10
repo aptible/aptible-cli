@@ -1,4 +1,4 @@
-class StubDatabaseCredential < OpenStruct; end
+class StubDatabaseCredential < StubAptibleResource; end
 
 Fabricator(:database_credential, from: :stub_database_credential) do
   database

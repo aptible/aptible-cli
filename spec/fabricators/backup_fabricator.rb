@@ -1,4 +1,4 @@
-class StubBackup < OpenStruct; end
+class StubBackup < StubAptibleResource; end
 
 Fabricator(:backup, from: :stub_backup) do
   id { sequence(:backup_id) }

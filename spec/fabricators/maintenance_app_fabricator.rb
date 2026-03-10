@@ -1,4 +1,4 @@
-class StubMaintenanceApp < OpenStruct; end
+class StubMaintenanceApp < StubAptibleResource; end
 
 Fabricator(:maintenance_app, from: :stub_maintenance_app) do
   id { Fabricate.sequence(:app_id) { |i| i } }

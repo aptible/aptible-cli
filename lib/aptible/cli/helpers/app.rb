@@ -196,6 +196,17 @@ module Aptible
           raise Thor::Error, "Invalid argument: #{k}" if v.nil?
         end
 
+        def current_configuration(app)
+          conf_link = app.links['current_configuration']
+          return unless conf_link
+
+          Aptible::Api::Configuration.find_by_url(
+            conf_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
+        end
+
         private
 
         def handle_strategies

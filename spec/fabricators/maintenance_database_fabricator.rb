@@ -1,4 +1,4 @@
-class StubMaintenanceDatabase < OpenStruct; end
+class StubMaintenanceDatabase < StubAptibleResource; end
 
 Fabricator(:maintenance_database, from: :stub_maintenance_database) do
   id { Fabricate.sequence(:database_id) { |i| i } }

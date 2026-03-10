@@ -1,4 +1,4 @@
-class StubOperation < OpenStruct; end
+class StubOperation < StubAptibleResource; end
 
 def mock_logs_url(id)
   "https://api.aptible.com/operations/#{id}/logs"

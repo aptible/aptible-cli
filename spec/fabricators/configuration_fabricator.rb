@@ -1,4 +1,4 @@
-class StubConfiguration < OpenStruct
+class StubConfiguration < StubAptibleResource
 end
 
 Fabricator(:configuration, from: :stub_configuration) do

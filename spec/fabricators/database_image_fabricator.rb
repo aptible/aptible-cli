@@ -1,4 +1,4 @@
-class StubDatabaseImage < OpenStruct
+class StubDatabaseImage < StubAptibleResource
 end
 
 Fabricator(:database_image, from: :stub_database_image) do

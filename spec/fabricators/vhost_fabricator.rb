@@ -1,4 +1,4 @@
-class StubVhost < OpenStruct; end
+class StubVhost < StubAptibleResource; end
 
 Fabricator(:vhost, from: :stub_vhost) do
   service

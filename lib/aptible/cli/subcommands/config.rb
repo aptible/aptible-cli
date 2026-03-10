@@ -15,7 +15,7 @@ module Aptible
               telemetry(__method__, options)
 
               app = ensure_app(options)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|
@@ -38,7 +38,7 @@ module Aptible
               telemetry(__method__, options)
 
               app = ensure_app(options)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|

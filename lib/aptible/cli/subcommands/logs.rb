@@ -134,11 +134,11 @@ module Aptible
                   options[:string_matches]
                 )
               elsif id_options.any?
-                if options[:container_id]
-                  search_attrs = { container_id: options[:container_id] }
-                else
-                  search_attrs = { type: r_type, id: id_options.compact.first }
-                end
+                search_attrs = if options[:container_id]
+                                 { container_id: options[:container_id] }
+                               else
+                                 { type: r_type, id: id_options.compact.first }
+                               end
                 files = find_s3_files_by_attrs(
                   options[:region],
                   options[:bucket],

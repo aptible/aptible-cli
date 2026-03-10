@@ -1,4 +1,4 @@
-class StubStack < OpenStruct; end
+class StubStack < StubAptibleResource; end
 
 Fabricator(:stack, from: :stub_stack) do
   name 'foo'

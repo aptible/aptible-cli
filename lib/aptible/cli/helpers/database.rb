@@ -185,6 +185,14 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(credential, port = 0, target_account = nil)
+          # Credential has the senstive header set, and for some reason
+          # credential.create_operation! _lists all operations_. This would
+          # generate a show activity for every previous tunnel operation.
+          # So, we strip the sensitive header first to prevent that from happening
+          # This will also strip the connection_url, but we don't need it from
+          # this point on.
+          credential = without_sensitive(credential)
+          # Twice by here??
           op = if target_account.nil?
                  credential.create_operation!(
                    type: 'tunnel',
@@ -284,7 +292,7 @@ module Aptible
             raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
-          credential = find_credential(database)
+          credential, _credentials = find_credential(database)
 
           with_local_tunnel(credential) do |tunnel_helper|
             yield local_url(credential, tunnel_helper.port)
@@ -304,7 +312,7 @@ module Aptible
           remote_url = credential.connection_url
 
           uri = URI.parse(remote_url)
-          domain = credential.database.account.stack.internal_domain
+          domain = without_sensitive(credential).database.account.stack.internal_domain
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end
@@ -314,21 +322,25 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
+          # Get the database credentials, without going using `with_senstive(database)`, as that
+          # would get the embedded last_operation, and generate an extra show activity
+          creds_link = database.links['database_credentials']
+          database_credentials = Aptible::Api::DatabaseCredential.all(
+            href: creds_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
+
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
-          credential = database.database_credentials.find(&finder)
+          credential = database_credentials.find(&finder)
 
-          return credential if credential
+          # It may be weird to return the credential and all the credentials, but the db:tunnel
+          # command lists all the credential types if you do not provide one, and we want to avoid
+          # generating more show activity than needed
+          return credential, database_credentials if credential
 
-          types = database.database_credentials.map(&:type)
-
-          # On v1, we fallback to the DB. We make sure to make --type work, to
-          # avoid a confusing experience for customers.
-          if database.account.stack.version == 'v1'
-            types << database.type
-            types.uniq!
-            return database if type.nil? || type == database.type
-          end
+          types = database_credentials.map(&:type)
 
           valid = types.join(', ')
 
@@ -365,6 +377,10 @@ module Aptible
         end
 
         def render_database(database, account)
+          # Maybe reload with senstive data
+          # Definately don't load the embedded last_operation
+          database.href = database.href + '?no_embed=true'
+          database = with_sensitive(database) if database.connection_url.nil?
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
               ResourceFormatter.inject_database(node, database, account)
