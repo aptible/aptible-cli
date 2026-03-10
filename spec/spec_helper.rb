@@ -8,6 +8,11 @@ Dir["#{File.dirname(__FILE__)}/shared/**/*.rb"].each do |file|
   require file
 end
 
+# Load support files (shared classes used by fabricators, etc.)
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each do |file|
+  require file
+end
+
 # Require library up front
 require 'aptible/cli'
 

@@ -128,6 +128,8 @@ module Aptible
         end
 
         def inject_database(node, database, account)
+          # Some callers pass a database object with sensitive attributes already, others do not.
+          # Avoid creating extra 'show' activity if we already have the needed info
           database = with_sensitive(database) if database.objects[:database_credentials].nil?
 
           node.value('id', database.id)
