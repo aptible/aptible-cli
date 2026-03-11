@@ -13,11 +13,17 @@ describe Aptible::CLI::Agent do
     allow(Aptible::Api::DatabaseCredential).to receive(:all) do
       database.database_credentials
     end
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/search/database?handle=#{handle}", token: token)
+      .and_return(database)
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/search/database?handle=#{handle}&environment=#{account.handle}", token: token)
+      .and_return(database)
   end
 
   let(:handle) { 'foobar' }
   let(:stack) { Fabricate(:stack, internal_domain: 'aptible.in') }
-  let(:account) { Fabricate(:account, stack: stack) }
+  let(:account) { Fabricate(:account, stack: stack, handle: 'aptible') }
   let(:database) { Fabricate(:database, handle: handle, account: account) }
   let(:socat_helper) { SocatHelperMock.new(port: 4242) }
 
@@ -151,15 +157,15 @@ describe Aptible::CLI::Agent do
 
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
-      allow(Aptible::Api::Database).to receive(:all) { [] }
+      allow(Aptible::Api::Database).to receive(:find_by_url)
+        .with("/search/database?handle=#{handle}", token: token)
+        .and_return(nil)
       expect do
         subject.send('db:tunnel', handle)
       end.to raise_error("Could not find database #{handle}")
     end
 
     context 'valid database' do
-      before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
-
       it 'prints a message explaining how to connect' do
         cred = Fabricate(:database_credential, default: true, type: 'foo',
                                                database: database)
@@ -627,7 +633,6 @@ describe Aptible::CLI::Agent do
 
   describe '#db:backup' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
-    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
     let(:op) { Fabricate(:operation) }
 
@@ -642,6 +647,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:backup', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
@@ -649,7 +655,6 @@ describe Aptible::CLI::Agent do
 
   describe '#db:reload' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
-    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
     let(:op) { Fabricate(:operation) }
 
@@ -664,6 +669,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:reload', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
@@ -671,7 +677,6 @@ describe Aptible::CLI::Agent do
 
   describe '#db:restart' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
-    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
     let(:op) { Fabricate(:operation) }
 
@@ -736,6 +741,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:restart', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
@@ -743,7 +749,6 @@ describe Aptible::CLI::Agent do
 
   describe '#db:modify' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
-    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
     let(:op) { Fabricate(:operation) }
 
@@ -783,16 +788,15 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:modify', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
   end
 
   describe '#db:url' do
-    let(:databases) { [database] }
-    before { expect(Aptible::Api::Database).to receive(:all) { databases } }
-
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:url', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
@@ -808,7 +812,12 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails if multiple DBs are found' do
-        databases << database
+        error = StandardError.new('multiple resources found')
+        allow(error).to receive(:body)
+          .and_return('error' => 'multiple_resources_found')
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/search/database?handle=#{handle}", token: token)
+          .and_raise(error)
 
         expect { subject.send('db:url', handle) }
           .to raise_error(/Multiple databases/)
@@ -817,16 +826,18 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#db:replicate' do
-    let(:databases) { [] }
-    before { allow(Aptible::Api::Database).to receive(:all) { databases } }
+    let(:master) { Fabricate(:database, handle: 'master') }
+    let(:replica) { Fabricate(:database, account: master.account, handle: 'replica') }
+    before do
+      allow(Aptible::Api::Database).to receive(:find_by_url)
+        .with("/search/database?handle=#{master.handle}", token: token)
+        .and_return(master)
+      allow(Aptible::Api::Database).to receive(:find_by_url)
+        .with("/search/database?handle=#{replica.handle}&environment=#{account.handle}", token: token)
+        .and_return(replica)
+    end
 
     def expect_replicate_database(opts = {})
-      master = Fabricate(:database, handle: 'master')
-      databases << master
-      replica = Fabricate(:database,
-                          account: master.account,
-                          handle: 'replica')
-
       op = Fabricate(:operation)
 
       params = { type: 'replicate', handle: 'replica' }.merge(opts)
@@ -835,7 +846,6 @@ describe Aptible::CLI::Agent do
         .with(**params).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op) do
-        databases << replica
         replica
       end
 
@@ -867,17 +877,12 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('db:replicate', 'nope', 'replica') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end
 
     it 'allows logical replication of a database with --version set' do
-      master = Fabricate(:database, handle: 'master')
-      databases << master
-      replica = Fabricate(:database,
-                          account: master.account,
-                          handle: 'replica')
-
       dbimg = Fabricate(:database_image,
                         type: 'postgresql',
                         version: 10,
@@ -894,7 +899,6 @@ describe Aptible::CLI::Agent do
         .with(**params).and_return(op)
 
       expect(subject).to receive(:attach_to_operation_logs).with(op) do
-        databases << replica
         replica
       end
 
@@ -914,9 +918,6 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if logical replication requested without --version' do
-      master = Fabricate(:database, handle: 'master', type: 'postgresql')
-      databases << master
-
       subject.options = { type: 'replicate', handle: 'replica', logical: true }
       expect { subject.send('db:replicate', 'master', 'replica') }
         .to raise_error(Thor::Error, '--version is required for logical ' \
@@ -924,9 +925,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if logical replication requested for non-postgres db' do
-      master = Fabricate(:database, handle: 'master', type: 'mysql')
-      databases << master
-
+      master.type = 'mysql'
       subject.options = { type: 'replicate', handle: 'replica',
                           logical: true, version: 10 }
       expect { subject.send('db:replicate', 'master', 'replica') }
@@ -937,17 +936,13 @@ describe Aptible::CLI::Agent do
 
   describe '#db:dump' do
     it 'should fail if database is non-existent' do
-      allow(Aptible::Api::Database).to receive(:all) { [] }
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect do
         subject.send('db:dump', handle)
       end.to raise_error("Could not find database #{handle}")
     end
 
     context 'valid database' do
-      before do
-        allow(Aptible::Api::Database).to receive(:all) { [database] }
-      end
-
       it 'exits with the same code as pg_dump' do
         exit_status = 123
         cred = Fabricate(:database_credential, default: true, type: 'foo',
@@ -1132,7 +1127,7 @@ describe Aptible::CLI::Agent do
   describe '#db:execute' do
     sql_path = 'file.sql'
     it 'should fail if database is non-existent' do
-      allow(Aptible::Api::Database).to receive(:all) { [] }
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect do
         subject.send('db:execute', handle, sql_path)
       end.to raise_error("Could not find database #{handle}")
@@ -1140,7 +1135,6 @@ describe Aptible::CLI::Agent do
 
     context 'valid database' do
       before do
-        allow(Aptible::Api::Database).to receive(:all) { [database] }
         allow(subject).to receive(:`).with(/psql .*/) { `exit 0` }
       end
 
@@ -1338,8 +1332,6 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#db:deprovision' do
-    before { expect(Aptible::Api::Database).to receive(:all) { [database] } }
-
     let(:operation) { Fabricate(:operation, resource: database) }
 
     it 'deprovisions a database' do
@@ -1422,6 +1414,7 @@ describe Aptible::CLI::Agent do
         )
       end
       it 'should fail if db does not exist' do
+        allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
         expect { subject.send('db:rename', 'foo2', 'foo3') }
           .to raise_error(/Could not find database foo2/)
       end

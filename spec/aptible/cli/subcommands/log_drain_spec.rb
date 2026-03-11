@@ -87,6 +87,11 @@ describe Aptible::CLI::Agent do
 
     context 'elasticsearch' do
       let(:db) { Fabricate(:database, account: account, id: 5) }
+      before do
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/search/database?handle=#{db.handle}&environment=#{db.account.handle}", token: token)
+          .and_return(db)
+      end
 
       it 'creates a new Elasticsearch log drain' do
         opts = {

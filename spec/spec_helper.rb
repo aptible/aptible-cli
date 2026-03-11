@@ -81,6 +81,8 @@ module SpecHarness
 end
 
 RSpec.configure do |config|
+  config.example_status_persistence_file_path = 'spec/reports/examples.txt'
+
   config.before(:each) do
     reset_spec_harness
     begin

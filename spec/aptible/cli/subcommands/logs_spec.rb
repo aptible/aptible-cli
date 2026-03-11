@@ -4,9 +4,10 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:ask)
     allow(subject).to receive(:save_token)
-    allow(subject).to receive(:fetch_token) { 'some token' }
+    allow(subject).to receive(:fetch_token) { token }
   end
 
+  let(:token) { 'some token' }
   let(:app) { Fabricate(:app, handle: 'foo') }
   let(:database) { Fabricate(:database, handle: 'bar', status: 'provisioned') }
   let(:service) { Fabricate(:service, app: app) }
@@ -39,7 +40,14 @@ describe Aptible::CLI::Agent do
     end
 
     context 'Database resource' do
-      before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
+      before do
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/search/database?handle=#{database.handle}&environment=#{database.account.handle}", token: token)
+          .and_return(database)
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/search/database?handle=#{database.handle}", token: token)
+          .and_return(database)
+      end
       before { subject.options = { database: database.handle } }
 
       it 'should fail if the database is unprovisioned' do

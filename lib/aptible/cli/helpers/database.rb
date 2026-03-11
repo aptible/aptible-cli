@@ -141,12 +141,23 @@ module Aptible
         end
 
         def databases_from_handle(handle, environment)
-          databases = if environment
-                        environment.databases
-                      else
-                        databases_all
-                      end
-          databases.select { |a| a.handle == handle }
+          url = "/search/database?handle=#{handle}"
+          url += "&environment=#{environment.handle}" unless environment.nil?
+
+          begin
+            db = Aptible::Api::Database.find_by_url(
+              url,
+              token: fetch_token
+            )
+
+            return [] if db.nil?
+
+            return [db]
+          rescue => e
+            return [nil, nil] if e.body['error'] == 'multiple_resources_found'
+          end
+
+          []
         end
 
         def clone_database(source, dest_handle)
