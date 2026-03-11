@@ -14,10 +14,10 @@ describe Aptible::CLI::Agent do
       database.database_credentials
     end
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{handle}", token: token)
+      .with("/find/database?handle=#{handle}", token: token)
       .and_return(database)
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{handle}&environment=#{account.handle}", token: token)
+      .with("/find/database?handle=#{handle}&environment=#{account.handle}", token: token)
       .and_return(database)
   end
 
@@ -158,7 +158,7 @@ describe Aptible::CLI::Agent do
   describe '#db:tunnel' do
     it 'should fail if database is non-existent' do
       allow(Aptible::Api::Database).to receive(:find_by_url)
-        .with("/search/database?handle=#{handle}", token: token)
+        .with("/find/database?handle=#{handle}", token: token)
         .and_return(nil)
       expect do
         subject.send('db:tunnel', handle)
@@ -378,7 +378,7 @@ describe Aptible::CLI::Agent do
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::Account).to receive(:find_by_url)
-        .with("/search/account?handle=#{staging.handle}", token: token)
+        .with("/find/account?handle=#{staging.handle}", token: token)
         .and_return(staging)
       allow(Aptible::Api::ExternalAwsResource).to receive(:all)
         .with(token: token)
@@ -555,7 +555,7 @@ describe Aptible::CLI::Agent do
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
       allow(Aptible::Api::Account).to receive(:find_by_url)
-        .with("/search/account?handle=#{staging.handle}", token: token)
+        .with("/find/account?handle=#{staging.handle}", token: token)
         .and_return(staging)
       allow(Aptible::Api::ExternalAwsResource).to receive(:all)
         .with(token: token)
@@ -823,7 +823,7 @@ describe Aptible::CLI::Agent do
         allow(error).to receive(:body)
           .and_return('error' => 'multiple_resources_found')
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{handle}", token: token)
+          .with("/find/database?handle=#{handle}", token: token)
           .and_raise(error)
 
         expect { subject.send('db:url', handle) }
@@ -837,10 +837,10 @@ describe Aptible::CLI::Agent do
     let(:replica) { Fabricate(:database, account: master.account, handle: 'replica') }
     before do
       allow(Aptible::Api::Database).to receive(:find_by_url)
-        .with("/search/database?handle=#{master.handle}", token: token)
+        .with("/find/database?handle=#{master.handle}", token: token)
         .and_return(master)
       allow(Aptible::Api::Database).to receive(:find_by_url)
-        .with("/search/database?handle=#{replica.handle}&environment=#{account.handle}", token: token)
+        .with("/find/database?handle=#{replica.handle}&environment=#{account.handle}", token: token)
         .and_return(replica)
     end
 
@@ -1409,7 +1409,7 @@ describe Aptible::CLI::Agent do
       allow(subject).to receive(:options)
         .and_return(environment: account.handle)
       allow(Aptible::Api::Account).to receive(:find_by_url)
-        .with("/search/account?handle=#{account.handle}", token: token)
+        .with("/find/account?handle=#{account.handle}", token: token)
         .and_return(account)
     end
     context 'with environment and db' do

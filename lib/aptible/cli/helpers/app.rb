@@ -162,7 +162,7 @@ module Aptible
         end
 
         def app_from_handle(handle, environment)
-          url = "/search/app?handle=#{handle}"
+          url = "/find/app?handle=#{handle}"
           url += "&environment=#{environment.handle}" unless environment.nil?
 
           Aptible::Api::App.find_by_url(

@@ -44,7 +44,7 @@ module Aptible
           return nil unless handle
 
           Aptible::Api::Account.find_by_url(
-            "/search/account?handle=#{handle}",
+            "/find/account?handle=#{handle}",
             token: fetch_token
           )
         end

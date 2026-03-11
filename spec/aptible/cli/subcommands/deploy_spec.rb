@@ -9,11 +9,11 @@ describe Aptible::CLI::Agent do
   describe '#deploy' do
     before do
       allow(Aptible::Api::App).to receive(:find_by_url)
-        .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+        .with("/find/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
         .and_return(app)
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:find_by_url)
-        .with("/search/account?handle=#{account.handle}", token: token)
+        .with("/find/account?handle=#{account.handle}", token: token)
         .and_return(account)
     end
 

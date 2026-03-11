@@ -16,7 +16,7 @@ describe Aptible::CLI::Agent do
     before do
       allow(Aptible::Api::Account).to receive(:all) { [app.account] }
       allow(Aptible::Api::App).to receive(:find_by_url)
-        .with("/search/app?handle=#{app.handle}", token: 'some token')
+        .with("/find/app?handle=#{app.handle}", token: 'some token')
         .and_return(app)
     end
 
@@ -42,10 +42,10 @@ describe Aptible::CLI::Agent do
     context 'Database resource' do
       before do
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{database.handle}&environment=#{database.account.handle}", token: token)
+          .with("/find/database?handle=#{database.handle}&environment=#{database.account.handle}", token: token)
           .and_return(database)
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{database.handle}", token: token)
+          .with("/find/database?handle=#{database.handle}", token: token)
           .and_return(database)
       end
       before { subject.options = { database: database.handle } }

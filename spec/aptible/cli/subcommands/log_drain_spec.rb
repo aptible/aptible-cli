@@ -23,7 +23,7 @@ describe Aptible::CLI::Agent do
       .and_return([account])
 
     allow(Aptible::Api::Account).to receive(:find_by_url)
-      .with("/search/account?handle=#{account.handle}", token: token)
+      .with("/find/account?handle=#{account.handle}", token: token)
       .and_return(account)
 
     allow(account).to receive(:reload).and_return(account)
@@ -93,7 +93,7 @@ describe Aptible::CLI::Agent do
       let(:db) { Fabricate(:database, account: account, id: 5) }
       before do
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{db.handle}&environment=#{db.account.handle}", token: token)
+          .with("/find/database?handle=#{db.handle}&environment=#{db.account.handle}", token: token)
           .and_return(db)
       end
 

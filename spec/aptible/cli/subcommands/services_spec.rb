@@ -7,7 +7,7 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:fetch_token) { token }
     allow(Aptible::Api::App).to receive(:find_by_url)
-      .with("/search/app?handle=#{app.handle}", token: token)
+      .with("/find/app?handle=#{app.handle}", token: token)
       .and_return(app)
   end
 

@@ -135,7 +135,7 @@ module Aptible
         end
 
         def database_from_handle(handle, environment)
-          url = "/search/database?handle=#{handle}"
+          url = "/find/database?handle=#{handle}"
           url += "&environment=#{environment.handle}" unless environment.nil?
 
           Aptible::Api::Database.find_by_url(

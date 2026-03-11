@@ -22,7 +22,7 @@ describe Aptible::CLI::Agent do
     allow(subject).to receive(:attach_to_operation_logs)
     allow(subject).to receive(:fetch_token) { token }
     allow(Aptible::Api::Account).to receive(:find_by_url)
-      .with("/search/account?handle=#{account.handle}", token: token)
+      .with("/find/account?handle=#{account.handle}", token: token)
       .and_return(account)
   end
 
@@ -88,7 +88,7 @@ describe Aptible::CLI::Agent do
     it 'lists filters down to one account' do
       account2 = Fabricate(:account, handle: 'account2')
       allow(Aptible::Api::Account).to receive(:find_by_url)
-        .with("/search/account?handle=#{account2.handle}", token: token)
+        .with("/find/account?handle=#{account2.handle}", token: token)
         .and_return(account2)
       app2 = Fabricate(:app, account: account2, handle: 'app2')
       allow(subject).to receive(:options)
@@ -223,7 +223,7 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::App).to receive(:find_by_url)
         .and_return(nil)
       allow(Aptible::Api::App).to receive(:find_by_url)
-        .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+        .with("/find/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
         .and_return(app)
     end
 
@@ -404,10 +404,10 @@ describe Aptible::CLI::Agent do
         allow(Aptible::Api::App).to receive(:find_by_url)
           .and_return(nil)
         allow(Aptible::Api::App).to receive(:find_by_url)
-          .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+          .with("/find/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
           .and_return(app)
         allow(Aptible::Api::App).to receive(:find_by_url)
-          .with("/search/app?handle=#{app.handle}", token: token)
+          .with("/find/app?handle=#{app.handle}", token: token)
           .and_return(app)
       end
 
@@ -457,7 +457,7 @@ describe Aptible::CLI::Agent do
         allow(error).to receive(:body)
           .and_return('error' => 'multiple_resources_found')
         allow(Aptible::Api::App).to receive(:find_by_url)
-          .with('/search/app?handle=hello', token: token)
+          .with('/find/app?handle=hello', token: token)
           .and_raise(error)
 
         strategies = [dummy_strategy_factory('hello', nil, true)]

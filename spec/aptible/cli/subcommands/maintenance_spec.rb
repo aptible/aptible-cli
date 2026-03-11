@@ -10,7 +10,7 @@ describe Aptible::CLI::Agent do
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:fetch_token) { token }
     allow(Aptible::Api::Account).to receive(:find_by_url)
-      .with("/search/account?handle=#{staging.handle}", token: token)
+      .with("/find/account?handle=#{staging.handle}", token: token)
       .and_return(staging)
   end
 

@@ -21,22 +21,22 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
     allow(Aptible::Api::Account).to receive(:find_by_url)
-      .with("/search/account?handle=#{account.handle}", token: token)
+      .with("/find/account?handle=#{account.handle}", token: token)
       .and_return(account)
     allow(Aptible::Api::Account).to receive(:find_by_url)
-      .with("/search/account?handle=#{alt_account.handle}", token: token)
+      .with("/find/account?handle=#{alt_account.handle}", token: token)
       .and_return(alt_account)
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{default_handle}", token: token)
+      .with("/find/database?handle=#{default_handle}", token: token)
       .and_return(database)
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{default_handle}&environment=#{account.handle}", token: token)
+      .with("/find/database?handle=#{default_handle}&environment=#{account.handle}", token: token)
       .and_return(database)
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{database.handle}", token: token)
+      .with("/find/database?handle=#{database.handle}", token: token)
       .and_return(database)
     allow(Aptible::Api::Database).to receive(:find_by_url)
-      .with("/search/database?handle=#{database.handle}&environment=#{account.handle}", token: token)
+      .with("/find/database?handle=#{database.handle}&environment=#{account.handle}", token: token)
       .and_return(database)
   end
 
@@ -80,7 +80,7 @@ describe Aptible::CLI::Agent do
         restored = Fabricate(:database, account: account, handle: h)
 
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{h}&environment=#{account.handle}", token: token)
+          .with("/find/database?handle=#{h}&environment=#{account.handle}", token: token)
           .and_return(database)
 
         expect(backup).to receive(:create_operation!) do |options|
@@ -166,7 +166,7 @@ describe Aptible::CLI::Agent do
 
         subject.options = { environment: 'alt' }
         allow(Aptible::Api::Database).to receive(:find_by_url)
-          .with("/search/database?handle=#{default_handle}&environment=alt", token: token)
+          .with("/find/database?handle=#{default_handle}&environment=alt", token: token)
           .and_return(database)
         subject.send('backup:restore', 1)
       end
