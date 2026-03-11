@@ -142,9 +142,8 @@ module Aptible
             url,
             token: fetch_token
           )
-        rescue StandardError => e
-          raise unless e.respond_to?(:body) &&
-                       e.body.is_a?(Hash) &&
+        rescue HyperResource::ClientError => e
+          raise unless e.body.is_a?(Hash) &&
                        e.body['error'] == 'multiple_resources_found'
           raise Thor::Error,
                 'Multiple databases exist, please specify ' \

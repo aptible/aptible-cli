@@ -186,7 +186,6 @@ describe Aptible::CLI::Agent do
       before { allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil) }
 
       it 'prints out an error' do
-        allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil)
         subject.options = { environment: 'foo' }
         expect { subject.send('maintenance:apps') }
           .to raise_error('Specified account does not exist')

@@ -4,7 +4,7 @@ describe Aptible::CLI::Agent do
   let!(:account) { Fabricate(:account, handle: 'foobar') }
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
   let(:operation) { Fabricate(:operation) }
-  let(:token) { double'token' }
+  let(:token) { double 'token' }
 
   describe '#deploy' do
     before do

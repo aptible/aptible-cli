@@ -819,7 +819,7 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails if multiple DBs are found' do
-        error = StandardError.new('multiple resources found')
+        error = HyperResource::ClientError.new('multiple resources found')
         allow(error).to receive(:body)
           .and_return('error' => 'multiple_resources_found')
         allow(Aptible::Api::Database).to receive(:find_by_url)

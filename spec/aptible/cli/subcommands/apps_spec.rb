@@ -453,7 +453,7 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails if multiple apps are found' do
-        error = StandardError.new('multiple resources found')
+        error = HyperResource::ClientError.new('multiple resources found')
         allow(error).to receive(:body)
           .and_return('error' => 'multiple_resources_found')
         allow(Aptible::Api::App).to receive(:find_by_url)
