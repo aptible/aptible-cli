@@ -12,6 +12,9 @@ describe Aptible::CLI::Agent do
       .to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{a2.handle}", token: token)
+      .and_return(a2)
   end
 
   def expect_create_certificate(account, options)

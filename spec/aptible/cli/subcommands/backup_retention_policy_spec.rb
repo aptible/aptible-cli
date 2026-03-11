@@ -13,7 +13,9 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(Aptible::Api::Account).to receive(:all) { [account] }
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{account.handle}", token: token)
+      .and_return(account)
   end
 
   describe '#backup_retention_policy' do

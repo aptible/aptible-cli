@@ -9,6 +9,9 @@ describe Aptible::CLI::Agent do
     allow(subject).to receive(:ask)
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:fetch_token) { token }
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{staging.handle}", token: token)
+      .and_return(staging)
   end
 
   let(:handle) { 'foobar' }
@@ -52,7 +55,6 @@ describe Aptible::CLI::Agent do
 
   describe '#maintenance:dbs' do
     before do
-      token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
@@ -112,6 +114,8 @@ describe Aptible::CLI::Agent do
     end
 
     context 'when an invalid account is specified' do
+      before { allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil) }
+
       it 'prints out an error' do
         subject.options = { environment: 'foo' }
         expect { subject.send('maintenance:dbs') }
@@ -121,7 +125,6 @@ describe Aptible::CLI::Agent do
   end
   describe '#maintenance:apps' do
     before do
-      token = 'the-token'
       allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
@@ -180,7 +183,10 @@ describe Aptible::CLI::Agent do
     end
 
     context 'when an invalid account is specified' do
+      before { allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil) }
+
       it 'prints out an error' do
+        allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil)
         subject.options = { environment: 'foo' }
         expect { subject.send('maintenance:apps') }
           .to raise_error('Specified account does not exist')

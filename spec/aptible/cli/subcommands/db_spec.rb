@@ -377,6 +377,9 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
+      allow(Aptible::Api::Account).to receive(:find_by_url)
+        .with("/search/account?handle=#{staging.handle}", token: token)
+        .and_return(staging)
       allow(Aptible::Api::ExternalAwsResource).to receive(:all)
         .with(token: token)
         .and_return([])
@@ -412,6 +415,7 @@ describe Aptible::CLI::Agent do
     end
 
     context 'when an invalid account is specified' do
+      before { allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil) }
       it 'prints out an error' do
         subject.options = { environment: 'foo' }
         expect { subject.send('db:list') }
@@ -550,6 +554,9 @@ describe Aptible::CLI::Agent do
       allow(Aptible::Api::Account).to receive(:all)
         .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
         .and_return([staging, prod])
+      allow(Aptible::Api::Account).to receive(:find_by_url)
+        .with("/search/account?handle=#{staging.handle}", token: token)
+        .and_return(staging)
       allow(Aptible::Api::ExternalAwsResource).to receive(:all)
         .with(token: token)
         .and_return([staging_rds, prod_rds, unattached_rds])
@@ -1401,7 +1408,9 @@ describe Aptible::CLI::Agent do
     before do
       allow(subject).to receive(:options)
         .and_return(environment: account.handle)
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(Aptible::Api::Account).to receive(:find_by_url)
+        .with("/search/account?handle=#{account.handle}", token: token)
+        .and_return(account)
     end
     context 'with environment and db' do
       it 'should rename properly' do

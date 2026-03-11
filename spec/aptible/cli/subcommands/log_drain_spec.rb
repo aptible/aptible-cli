@@ -22,6 +22,10 @@ describe Aptible::CLI::Agent do
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
 
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{account.handle}", token: token)
+      .and_return(account)
+
     allow(account).to receive(:reload).and_return(account)
   end
 

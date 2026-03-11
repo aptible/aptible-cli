@@ -21,6 +21,10 @@ describe Aptible::CLI::Agent do
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
+
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{account.handle}", token: token)
+      .and_return(account)
   end
 
   describe '#metric_drain:list' do
@@ -57,8 +61,6 @@ describe Aptible::CLI::Agent do
     it 'lists metric drains for a single account with --environment' do
       other_account = Fabricate(:account)
       Fabricate(:metric_drain, handle: 'test2', account: other_account)
-      accounts = [account, other_account]
-      allow(Aptible::Api::Account).to receive(:all).and_return(accounts)
 
       subject.options = { environment: account.handle }
       subject.send('metric_drain:list')

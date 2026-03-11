@@ -20,7 +20,12 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(Aptible::Api::Account).to receive(:all) { [account, alt_account] }
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{account.handle}", token: token)
+      .and_return(account)
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{alt_account.handle}", token: token)
+      .and_return(alt_account)
     allow(Aptible::Api::Database).to receive(:find_by_url)
       .with("/search/database?handle=#{default_handle}", token: token)
       .and_return(database)

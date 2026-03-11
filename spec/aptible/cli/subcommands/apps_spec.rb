@@ -21,6 +21,9 @@ describe Aptible::CLI::Agent do
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:attach_to_operation_logs)
     allow(subject).to receive(:fetch_token) { token }
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/search/account?handle=#{account.handle}", token: token)
+      .and_return(account)
   end
 
   let!(:account) { Fabricate(:account) }
@@ -84,13 +87,14 @@ describe Aptible::CLI::Agent do
 
     it 'lists filters down to one account' do
       account2 = Fabricate(:account, handle: 'account2')
+      allow(Aptible::Api::Account).to receive(:find_by_url)
+        .with("/search/account?handle=#{account2.handle}", token: token)
+        .and_return(account2)
       app2 = Fabricate(:app, account: account2, handle: 'app2')
       allow(subject).to receive(:options)
         .and_return(environment: account2.handle)
       allow(Aptible::Api::App).to receive(:all).and_return([app2])
 
-      allow(Aptible::Api::Account).to receive(:all)
-        .and_return([account, account2])
       subject.send('apps')
 
       expect(captured_output_text)
@@ -216,7 +220,6 @@ describe Aptible::CLI::Agent do
 
   describe '#apps:rename' do
     before do
-      allow(Aptible::Api::Account).to receive(:all) { [account] }
       allow(Aptible::Api::App).to receive(:find_by_url)
         .and_return(nil)
       allow(Aptible::Api::App).to receive(:find_by_url)
@@ -334,7 +337,7 @@ describe Aptible::CLI::Agent do
       allow(subject).to receive(:options) do
         { environment: 'foo', app: 'web', container_count: 2 }
       end
-      allow(Aptible::Api::Account).to receive(:all) { [] }
+      allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil)
       allow(service).to receive(:create_operation!) { op }
 
       expect do
