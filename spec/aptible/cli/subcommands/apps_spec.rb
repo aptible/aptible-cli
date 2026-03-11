@@ -272,9 +272,9 @@ describe Aptible::CLI::Agent do
           .with('foobar')
           .and_return(account)
 
-        expect(subject).to receive(:apps_from_handle)
+        expect(subject).to receive(:app_from_handle)
           .with('hello', account)
-          .and_return([app])
+          .and_return(app)
       end
 
       def stub_options(**opts)
