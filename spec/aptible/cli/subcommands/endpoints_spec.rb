@@ -223,6 +223,13 @@ describe Aptible::CLI::Agent do
         .to receive(:all)
         .with(token: token, href: '/apps?per_page=5000&no_embed=true')
         .and_return([app])
+
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .and_return(nil)
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .with("/search/app?handle=#{app.handle}", token: token)
+        .and_return(app)
+
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options
     end

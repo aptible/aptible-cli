@@ -12,10 +12,14 @@ describe Aptible::CLI::Agent do
   let(:service) { Fabricate(:service, app: app) }
 
   describe '#logs' do
-    before { allow(Aptible::Api::Account).to receive(:all) { [app.account] } }
+    before do
+      allow(Aptible::Api::Account).to receive(:all) { [app.account] }
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .with("/search/app?handle=#{app.handle}", token: 'some token')
+        .and_return(app)
+    end
 
     context 'App resource' do
-      before { allow(Aptible::Api::App).to receive(:all) { [app] } }
       before { subject.options = { app: app.handle } }
 
       it 'should fail if the app is unprovisioned' do

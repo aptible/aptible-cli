@@ -20,13 +20,14 @@ describe Aptible::CLI::Agent do
   before do
     allow(subject).to receive(:save_token)
     allow(subject).to receive(:attach_to_operation_logs)
-    allow(subject).to receive(:fetch_token) { double 'token' }
+    allow(subject).to receive(:fetch_token) { token }
   end
 
   let!(:account) { Fabricate(:account) }
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
   let!(:service) { Fabricate(:service, app: app, process_type: 'web') }
   let(:op) { Fabricate(:operation, status: 'succeeded', resource: app) }
+  let(:token) { double 'token' }
 
   describe '#apps' do
     it 'lists an app in an account' do
@@ -215,8 +216,12 @@ describe Aptible::CLI::Agent do
 
   describe '#apps:rename' do
     before do
-      allow(Aptible::Api::App).to receive(:all) { [app] }
       allow(Aptible::Api::Account).to receive(:all) { [account] }
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .and_return(nil)
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+        .and_return(app)
     end
 
     before(:each) do
@@ -256,7 +261,6 @@ describe Aptible::CLI::Agent do
 
   describe '#apps:scale' do
     before do
-      allow(Aptible::Api::App).to receive(:all) { [app] }
       allow(Aptible::Api::Account).to receive(:all) { [account] }
     end
 
@@ -394,7 +398,14 @@ describe Aptible::CLI::Agent do
 
       before do
         account.apps = apps
-        allow(Aptible::Api::App).to receive(:all).and_return(apps)
+        allow(Aptible::Api::App).to receive(:find_by_url)
+          .and_return(nil)
+        allow(Aptible::Api::App).to receive(:find_by_url)
+          .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+          .and_return(app)
+        allow(Aptible::Api::App).to receive(:find_by_url)
+          .with("/search/app?handle=#{app.handle}", token: token)
+          .and_return(app)
       end
 
       it 'scopes the app search to an environment if provided' do
@@ -415,27 +426,21 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails if no app is found' do
-        apps.pop
-
-        strategies = [dummy_strategy_factory('hello', nil, true)]
+        strategies = [dummy_strategy_factory('goodbye', nil, true)]
         allow(subject).to receive(:handle_strategies) { strategies }
 
-        expect { subject.ensure_app }.to raise_error(/not find app hello/)
+        expect { subject.ensure_app }.to raise_error(/not find app goodbye/)
       end
 
       it 'explains the strategy when it fails' do
-        apps.pop
-
-        strategies = [dummy_strategy_factory('hello', nil, true)]
+        strategies = [dummy_strategy_factory('goodbye', nil, true)]
         allow(subject).to receive(:handle_strategies) { strategies }
 
         expect { subject.ensure_app }.to raise_error(/from dummy/)
       end
 
       it 'indicates the environment when the app search was scoped' do
-        apps.pop
-
-        strategies = [dummy_strategy_factory('hello', 'aptible', true)]
+        strategies = [dummy_strategy_factory('goodbye', 'aptible', true)]
         allow(subject).to receive(:handle_strategies) { strategies }
 
         expect(subject).to receive(:environment_from_handle).with('aptible')
@@ -445,7 +450,12 @@ describe Aptible::CLI::Agent do
       end
 
       it 'fails if multiple apps are found' do
-        apps << Fabricate(:app, handle: 'hello')
+        error = StandardError.new('multiple resources found')
+        allow(error).to receive(:body)
+          .and_return('error' => 'multiple_resources_found')
+        allow(Aptible::Api::App).to receive(:find_by_url)
+          .with('/search/app?handle=hello', token: token)
+          .and_raise(error)
 
         strategies = [dummy_strategy_factory('hello', nil, true)]
         allow(subject).to receive(:handle_strategies) { strategies }

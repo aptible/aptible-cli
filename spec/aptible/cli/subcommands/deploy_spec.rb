@@ -4,12 +4,15 @@ describe Aptible::CLI::Agent do
   let!(:account) { Fabricate(:account, handle: 'foobar') }
   let!(:app) { Fabricate(:app, handle: 'hello', account: account) }
   let(:operation) { Fabricate(:operation) }
+  let(:token) { double'token' }
 
   describe '#deploy' do
     before do
-      allow(Aptible::Api::App).to receive(:all) { [app] }
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .with("/search/app?handle=#{app.handle}&environment=#{account.handle}", token: token)
+        .and_return(app)
+      allow(subject).to receive(:fetch_token) { token }
       allow(Aptible::Api::Account).to receive(:all) { [account] }
-      allow(subject).to receive(:fetch_token) { double'token' }
     end
 
     context 'with app' do
