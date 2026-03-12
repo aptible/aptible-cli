@@ -36,16 +36,10 @@ module Aptible
             raise Thor::Error,
                   "Could not find environment #{environment_handle}"
           end
-          databases = databases_from_handle(db_handle, environment)
-          case databases.count
-          when 1
-            return databases.first
-          when 0
-            raise Thor::Error, "Could not find database #{db_handle}"
-          else
-            err = 'Multiple databases exist, please specify with --environment'
-            raise Thor::Error, err
-          end
+          db = database_from_handle(db_handle, environment)
+          raise Thor::Error, "Could not find database #{db_handle}" if db.nil?
+
+          db
         end
 
         def databases_href
@@ -140,20 +134,27 @@ module Aptible
           external_rds_databases_all.find { |a| a.handle == handle }
         end
 
-        def databases_from_handle(handle, environment)
-          databases = if environment
-                        environment.databases
-                      else
-                        databases_all
-                      end
-          databases.select { |a| a.handle == handle }
+        def database_from_handle(handle, environment)
+          url = "/find/database?handle=#{handle}"
+          url += "&environment=#{environment.handle}" unless environment.nil?
+
+          Aptible::Api::Database.find_by_url(
+            url,
+            token: fetch_token
+          )
+        rescue HyperResource::ClientError => e
+          raise unless e.body.is_a?(Hash) &&
+                       e.body['error'] == 'multiple_resources_found'
+          raise Thor::Error,
+                'Multiple databases exist, please specify ' \
+                'with --environment'
         end
 
         def clone_database(source, dest_handle)
           op = source.create_operation!(type: 'clone', handle: dest_handle)
           attach_to_operation_logs(op)
 
-          databases_from_handle(dest_handle, source.account).first
+          database_from_handle(dest_handle, source.account)
         end
 
         def replicate_database(source, dest_handle, options)
@@ -177,7 +178,7 @@ module Aptible
           op = source.create_operation!(replication_params)
           attach_to_operation_logs(op)
 
-          replica = databases_from_handle(dest_handle, source.account).first
+          replica = database_from_handle(dest_handle, source.account)
           attach_to_operation_logs(replica.operations.last)
           replica
         end

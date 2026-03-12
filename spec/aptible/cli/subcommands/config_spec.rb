@@ -8,9 +8,9 @@ describe Aptible::CLI::Agent do
   before { allow(subject).to receive(:fetch_token).and_return(token) }
 
   before do
-    allow(Aptible::Api::App).to receive(:all)
-      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
-      .and_return([app])
+    allow(Aptible::Api::App).to receive(:find_by_url)
+      .with("/find/app?handle=#{app.handle}", token: token)
+      .and_return(app)
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/apps?per_page=5000&no_embed=true')
       .and_return([account])

@@ -20,7 +20,24 @@ describe Aptible::CLI::Agent do
 
   before do
     allow(subject).to receive(:fetch_token).and_return(token)
-    allow(Aptible::Api::Account).to receive(:all) { [account, alt_account] }
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/find/account?handle=#{account.handle}", token: token)
+      .and_return(account)
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/find/account?handle=#{alt_account.handle}", token: token)
+      .and_return(alt_account)
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/find/database?handle=#{default_handle}", token: token)
+      .and_return(database)
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/find/database?handle=#{default_handle}&environment=#{account.handle}", token: token)
+      .and_return(database)
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/find/database?handle=#{database.handle}", token: token)
+      .and_return(database)
+    allow(Aptible::Api::Database).to receive(:find_by_url)
+      .with("/find/database?handle=#{database.handle}&environment=#{account.handle}", token: token)
+      .and_return(database)
   end
 
   describe '#backup:restore' do
@@ -60,6 +77,11 @@ describe Aptible::CLI::Agent do
 
       it 'accepts a handle' do
         h = 'some-handle'
+        restored = Fabricate(:database, account: account, handle: h)
+
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/find/database?handle=#{h}&environment=#{account.handle}", token: token)
+          .and_return(database)
 
         expect(backup).to receive(:create_operation!) do |options|
           expect(options[:handle]).to eq(h)
@@ -70,7 +92,7 @@ describe Aptible::CLI::Agent do
         end
 
         expect(subject).to receive(:attach_to_operation_logs).with(op) do
-          Fabricate(:database, account: account, handle: h)
+          restored
         end
 
         subject.options = { handle: h }
@@ -143,6 +165,9 @@ describe Aptible::CLI::Agent do
         end
 
         subject.options = { environment: 'alt' }
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/find/database?handle=#{default_handle}&environment=alt", token: token)
+          .and_return(database)
         subject.send('backup:restore', 1)
       end
     end
@@ -150,7 +175,6 @@ describe Aptible::CLI::Agent do
 
   describe '#backup:list' do
     before { allow(Aptible::Api::Account).to receive(:all) { [account] } }
-    before { allow(Aptible::Api::Database).to receive(:all) { [database] } }
 
     before do
       m = allow(database).to receive(:each_backup)
@@ -192,6 +216,7 @@ describe Aptible::CLI::Agent do
     end
 
     it 'fails if the DB is not found' do
+      allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
       expect { subject.send('backup:list', 'nope') }
         .to raise_error(Thor::Error, 'Could not find database nope')
     end

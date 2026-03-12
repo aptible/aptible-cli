@@ -12,6 +12,9 @@ describe Aptible::CLI::Agent do
       .to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/find/account?handle=#{a2.handle}", token: token)
+      .and_return(a2)
   end
 
   def expect_create_certificate(account, options)
@@ -67,10 +70,12 @@ describe Aptible::CLI::Agent do
     end
 
     before do
-      allow(Aptible::Api::Database)
-        .to receive(:all)
-        .with(token: token, href: '/databases?per_page=5000&no_embed=true')
-        .and_return([db, incomplete])
+      allow(Aptible::Api::Database).to receive(:find_by_url)
+        .with("/find/database?handle=#{incomplete.handle}", token: token)
+        .and_return(incomplete)
+      allow(Aptible::Api::Database).to receive(:find_by_url)
+        .with("/find/database?handle=#{db.handle}", token: token)
+        .and_return(db)
       allow(db).to receive(:class).and_return(Aptible::Api::Database)
       allow(incomplete).to receive(:class).and_return(Aptible::Api::Database)
       stub_options
@@ -78,6 +83,7 @@ describe Aptible::CLI::Agent do
 
     describe 'endpoints:database:create' do
       it 'fails if the DB does not exist' do
+        allow(Aptible::Api::Database).to receive(:find_by_url).and_return(nil)
         expect { subject.send('endpoints:database:create', 'some') }
           .to raise_error(/could not find database some/im)
       end
@@ -90,6 +96,9 @@ describe Aptible::CLI::Agent do
 
       it 'fails if the DB is not in the account' do
         stub_options(environment: 'bar')
+        expect(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/find/database?handle=#{db.handle}&environment=bar", token: token)
+          .and_return(nil)
         expect { subject.send('endpoints:database:create', 'mydb') }
           .to raise_error(/could not find database mydb/im)
       end
@@ -223,6 +232,13 @@ describe Aptible::CLI::Agent do
         .to receive(:all)
         .with(token: token, href: '/apps?per_page=5000&no_embed=true')
         .and_return([app])
+
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .and_return(nil)
+      allow(Aptible::Api::App).to receive(:find_by_url)
+        .with("/find/app?handle=#{app.handle}", token: token)
+        .and_return(app)
+
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options
     end
