@@ -16,6 +16,9 @@ describe Aptible::CLI::Agent do
       .to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([a1, a2])
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/find/account?handle=#{a1.handle}", token: token)
+      .and_return(a1)
   end
 
   describe('#environment:list') do
@@ -123,6 +126,7 @@ describe Aptible::CLI::Agent do
       )
     end
     it 'should fail if env does not exist' do
+      allow(Aptible::Api::Account).to receive(:find_by_url).and_return(nil)
       expect { subject.send('environment:rename', 'foo1', 'foo2') }
         .to raise_error(/Could not find environment foo1/)
     end

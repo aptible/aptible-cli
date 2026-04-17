@@ -8,15 +8,18 @@ describe Aptible::CLI::Agent do
   before { allow(subject).to receive(:fetch_token).and_return(token) }
 
   before do
-    allow(Aptible::Api::App).to receive(:all)
-      .with(token: token, href: '/apps?per_page=5000&no_embed=true')
-      .and_return([app])
+    allow(Aptible::Api::App).to receive(:find_by_url)
+      .with("/find/app?handle=#{app.handle}", token: token)
+      .and_return(app)
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/apps?per_page=5000&no_embed=true')
       .and_return([account])
   end
 
   before { allow(subject).to receive(:options) { { app: app.handle } } }
+  before do
+    allow(subject).to receive(:current_configuration, &:current_configuration)
+  end
   let(:operation) { Fabricate(:operation, resource: app) }
 
   describe '#config' do
@@ -60,6 +63,11 @@ describe Aptible::CLI::Agent do
   end
 
   describe '#config:get' do
+    it 'shows nothing for an unconfigured app' do
+      subject.send('config:get', 'FOO')
+      expect(captured_output_text).to eq('')
+    end
+
     it 'should show single environment variable specified' do
       app.current_configuration = Fabricate(
         :configuration, app: app, env: { 'FOO' => 'BAR', 'QUX' => 'two words' }

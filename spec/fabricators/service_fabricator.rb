@@ -1,4 +1,4 @@
-class StubService < OpenStruct
+class StubService < StubAptibleResource
   def each_vhost(&block)
     return enum_for(:each_vhost) if block.nil?
     vhosts.each(&block)

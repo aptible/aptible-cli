@@ -1,6 +1,12 @@
-class StubDatabase < OpenStruct
+class StubDatabase < StubAptibleResource
   def provisioned?
     status == 'provisioned'
+  end
+
+  def objects
+    {
+      'database_credentials' => database_credentials
+    }
   end
 end
 
@@ -23,6 +29,9 @@ Fabricator(:database, from: :stub_database) do
     hash = {
       account: OpenStruct.new(
         href: "/accounts/#{attrs[:account].id}"
+      ),
+      database_credentials: OpenStruct.new(
+        href: "/databases/#{attrs[:handle]}/database_credentials"
       )
     }
     OpenStruct.new(hash)

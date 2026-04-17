@@ -65,7 +65,9 @@ module Aptible
         end
 
         def ensure_log_drain(account, handle)
-          drains = account.log_drains.select { |d| d.handle == handle }
+          link = account.links['log_drains'].base_href
+          account_drains = Aptible::Api::LogDrain.all(href: link, token: fetch_token)
+          drains = account_drains.select { |d| d.handle == handle }
 
           if drains.empty?
             raise Thor::Error, "No drain found with handle #{handle}"

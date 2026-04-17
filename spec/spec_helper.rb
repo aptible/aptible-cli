@@ -8,6 +8,11 @@ Dir["#{File.dirname(__FILE__)}/shared/**/*.rb"].each do |file|
   require file
 end
 
+# Load support files (shared classes used by fabricators, etc.)
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each do |file|
+  require file
+end
+
 # Require library up front
 require 'aptible/cli'
 
@@ -76,6 +81,8 @@ module SpecHarness
 end
 
 RSpec.configure do |config|
+  config.example_status_persistence_file_path = 'spec/reports/examples.txt'
+
   config.before(:each) do
     reset_spec_harness
     begin

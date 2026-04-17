@@ -1,4 +1,4 @@
-class StubAccount < OpenStruct
+class StubAccount < StubAptibleResource
   def each_app(&block)
     return enum_for(:each_app) if block.nil?
     apps.each(&block)
@@ -34,6 +34,14 @@ Fabricator(:account, from: :stub_account) do
     hash = {
       self: OpenStruct.new(
         href: "/accounts/#{attrs[:id]}"
+      ),
+      metric_drains: OpenStruct.new(
+        base_href: "/accounts/#{attrs[:id]}/metric_drains",
+        href: "/accounts/#{attrs[:id]}/metric_drains"
+      ),
+      log_drains: OpenStruct.new(
+        base_href: "/accounts/#{attrs[:id]}/log_drains",
+        href: "/accounts/#{attrs[:id]}/log_drains"
       )
     }
     OpenStruct.new(hash)

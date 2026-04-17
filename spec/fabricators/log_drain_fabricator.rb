@@ -1,4 +1,4 @@
-class StubLogDrain < OpenStruct
+class StubLogDrain < StubAptibleResource
   def attributes
     # I foresee hard-coding values like this
     # being hard to debug in the future,

@@ -67,7 +67,7 @@ module Aptible
 
               account = destination_account || backup.account
 
-              database = databases_from_handle(handle, account).first
+              database = database_from_handle(handle, account)
               render_database(database, account)
             end
 

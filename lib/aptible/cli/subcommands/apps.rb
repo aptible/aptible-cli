@@ -65,7 +65,7 @@ module Aptible
               end
             end
 
-            desc 'apps:scale SERVICE ' \
+            desc 'apps:scale [--app APP] SERVICE ' \
                  '[--container-count COUNT] [--container-size SIZE_MB] ' \
                  '[--container-profile PROFILE]',
                  'Scale a service'
@@ -107,7 +107,7 @@ module Aptible
               attach_to_operation_logs(op)
             end
 
-            desc 'apps:deprovision', 'Deprovision an app'
+            desc 'apps:deprovision [--app APP]', 'Deprovision an app'
             app_options
             define_method 'apps:deprovision' do
               telemetry(__method__, options)

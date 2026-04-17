@@ -1,4 +1,4 @@
-class StubExternalAwsAccount < OpenStruct
+class StubExternalAwsAccount < StubAptibleResource
   def attributes
     {
       'aws_account_id' => aws_account_id,

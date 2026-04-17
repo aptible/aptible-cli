@@ -9,13 +9,13 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'config', "Print an app's current configuration"
+            desc 'config [--app APP]', "Print an app's current configuration"
             app_options
             def config
               telemetry(__method__, options)
 
               app = ensure_app(options)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|
@@ -31,14 +31,14 @@ module Aptible
               end
             end
 
-            desc 'config:get [VAR1]',
+            desc 'config:get [--app APP] [VAR1]',
                  "Print a specific key within an app's current configuration"
             app_options
             define_method 'config:get' do |*args|
               telemetry(__method__, options)
 
               app = ensure_app(options)
-              config = app.current_configuration
+              config = current_configuration(app)
               env = config ? config.env : {}
 
               Formatter.render(Renderer.current) do |root|
@@ -50,7 +50,7 @@ module Aptible
               end
             end
 
-            desc 'config:add [VAR1=VAL1] [VAR2=VAL2] [...]',
+            desc 'config:add [--app APP] [VAR1=VAL1] [VAR2=VAL2] [...]',
                  'Add an ENV variable to an app'
             app_options
             define_method 'config:add' do |*args|
@@ -64,7 +64,7 @@ module Aptible
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:set [VAR1=VAL1] [VAR2=VAL2] [...]',
+            desc 'config:set [--app APP] [VAR1=VAL1] [VAR2=VAL2] [...]',
                  'Add an ENV variable to an app'
             app_options
             define_method 'config:set' do |*args|
@@ -72,7 +72,7 @@ module Aptible
               send('config:add', *args)
             end
 
-            desc 'config:rm [VAR1] [VAR2] [...]',
+            desc 'config:rm [--app APP] [VAR1] [VAR2] [...]',
                  'Remove an ENV variable from an app'
             app_options
             define_method 'config:rm' do |*args|
@@ -90,7 +90,7 @@ module Aptible
               attach_to_operation_logs(operation)
             end
 
-            desc 'config:unset [VAR1] [VAR2] [...]',
+            desc 'config:unset [--app APP] [VAR1] [VAR2] [...]',
                  'Remove an ENV variable from an app'
             app_options
             define_method 'config:unset' do |*args|

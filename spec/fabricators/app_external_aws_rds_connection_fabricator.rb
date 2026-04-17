@@ -1,4 +1,4 @@
-class StubAppExternalAwsRdsConnection < OpenStruct
+class StubAppExternalAwsRdsConnection < StubAptibleResource
   def attributes
     {
       'id' => id,

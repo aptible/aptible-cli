@@ -10,7 +10,7 @@ module Aptible
             include Helpers::App
             include Helpers::Telemetry
 
-            desc 'ssh [COMMAND]', 'Run a command against an app'
+            desc 'ssh [--app APP] [COMMAND]', 'Run a command against an app'
             long_desc <<-LONGDESC
               Runs an interactive command against a remote Aptible app
 

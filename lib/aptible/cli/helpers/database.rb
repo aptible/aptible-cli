@@ -36,16 +36,10 @@ module Aptible
             raise Thor::Error,
                   "Could not find environment #{environment_handle}"
           end
-          databases = databases_from_handle(db_handle, environment)
-          case databases.count
-          when 1
-            return databases.first
-          when 0
-            raise Thor::Error, "Could not find database #{db_handle}"
-          else
-            err = 'Multiple databases exist, please specify with --environment'
-            raise Thor::Error, err
-          end
+          db = database_from_handle(db_handle, environment)
+          raise Thor::Error, "Could not find database #{db_handle}" if db.nil?
+
+          db
         end
 
         def databases_href
@@ -140,20 +134,27 @@ module Aptible
           external_rds_databases_all.find { |a| a.handle == handle }
         end
 
-        def databases_from_handle(handle, environment)
-          databases = if environment
-                        environment.databases
-                      else
-                        databases_all
-                      end
-          databases.select { |a| a.handle == handle }
+        def database_from_handle(handle, environment)
+          url = "/find/database?handle=#{handle}"
+          url += "&environment=#{environment.handle}" unless environment.nil?
+
+          Aptible::Api::Database.find_by_url(
+            url,
+            token: fetch_token
+          )
+        rescue HyperResource::ClientError => e
+          raise unless e.body.is_a?(Hash) &&
+                       e.body['error'] == 'multiple_resources_found'
+          raise Thor::Error,
+                'Multiple databases exist, please specify ' \
+                'with --environment'
         end
 
         def clone_database(source, dest_handle)
           op = source.create_operation!(type: 'clone', handle: dest_handle)
           attach_to_operation_logs(op)
 
-          databases_from_handle(dest_handle, source.account).first
+          database_from_handle(dest_handle, source.account)
         end
 
         def replicate_database(source, dest_handle, options)
@@ -177,7 +178,7 @@ module Aptible
           op = source.create_operation!(replication_params)
           attach_to_operation_logs(op)
 
-          replica = databases_from_handle(dest_handle, source.account).first
+          replica = database_from_handle(dest_handle, source.account)
           attach_to_operation_logs(replica.operations.last)
           replica
         end
@@ -185,6 +186,14 @@ module Aptible
         # Creates a local tunnel and yields the helper
 
         def with_local_tunnel(credential, port = 0, target_account = nil)
+          # Credential has the senstive header set, and for some reason
+          # credential.create_operation! _lists all operations_. This would
+          # generate a show activity for every previous tunnel operation.
+          # So, we strip the sensitive header first to prevent that from happening
+          # This will also strip the connection_url, but we don't need it from
+          # this point on.
+          credential = without_sensitive(credential)
+          # Twice by here??
           op = if target_account.nil?
                  credential.create_operation!(
                    type: 'tunnel',
@@ -284,7 +293,7 @@ module Aptible
             raise Thor::Error, 'This command only works for PostgreSQL'
           end
 
-          credential = find_credential(database)
+          credential, _credentials = find_credential(database)
 
           with_local_tunnel(credential) do |tunnel_helper|
             yield local_url(credential, tunnel_helper.port)
@@ -304,7 +313,7 @@ module Aptible
           remote_url = credential.connection_url
 
           uri = URI.parse(remote_url)
-          domain = credential.database.account.stack.internal_domain
+          domain = without_sensitive(credential).database.account.stack.internal_domain
           "#{uri.scheme}://#{uri.user}:#{uri.password}@" \
           "localhost.#{domain}:#{local_port}#{uri.path}"
         end
@@ -314,21 +323,25 @@ module Aptible
             raise Thor::Error, "Database #{database.handle} is not provisioned"
           end
 
+          # Get the database credentials, without going using `with_senstive(database)`, as that
+          # would get the embedded last_operation, and generate an extra show activity
+          creds_link = database.links['database_credentials']
+          database_credentials = Aptible::Api::DatabaseCredential.all(
+            href: creds_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
+
           finder = proc { |c| c.default }
           finder = proc { |c| c.type == type } if type
-          credential = database.database_credentials.find(&finder)
+          credential = database_credentials.find(&finder)
 
-          return credential if credential
+          # It may be weird to return the credential and all the credentials, but the db:tunnel
+          # command lists all the credential types if you do not provide one, and we want to avoid
+          # generating more show activity than needed
+          return credential, database_credentials if credential
 
-          types = database.database_credentials.map(&:type)
-
-          # On v1, we fallback to the DB. We make sure to make --type work, to
-          # avoid a confusing experience for customers.
-          if database.account.stack.version == 'v1'
-            types << database.type
-            types.uniq!
-            return database if type.nil? || type == database.type
-          end
+          types = database_credentials.map(&:type)
 
           valid = types.join(', ')
 
@@ -365,6 +378,10 @@ module Aptible
         end
 
         def render_database(database, account)
+          # Maybe reload with senstive data
+          # Definately don't load the embedded last_operation
+          database.href = database.href + '?no_embed=true'
+          database = with_sensitive(database) if database.connection_url.nil?
           Formatter.render(Renderer.current) do |root|
             root.keyed_object('connection_url') do |node|
               ResourceFormatter.inject_database(node, database, account)

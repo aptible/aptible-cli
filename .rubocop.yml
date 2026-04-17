@@ -1,0 +1,5 @@
+inherit_gem:
+  aptible-tasks: .rubocop.yml
+
+Metrics/LineLength:
+  Max: 120

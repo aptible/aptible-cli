@@ -14,9 +14,19 @@ describe Aptible::CLI::Agent do
       .with(token: token, href: '/log_drains?per_page=5000')
       .and_return([log_drain])
 
+    allow(Aptible::Api::LogDrain).to receive(:all)
+      .with(token: token, href: "/accounts/#{account.id}/log_drains")
+      .and_return([log_drain])
+
     allow(Aptible::Api::Account).to receive(:all)
       .with(token: token, href: '/accounts?per_page=5000&no_embed=true')
       .and_return([account])
+
+    allow(Aptible::Api::Account).to receive(:find_by_url)
+      .with("/find/account?handle=#{account.handle}", token: token)
+      .and_return(account)
+
+    allow(account).to receive(:reload).and_return(account)
   end
 
   describe '#log_drain:list' do
@@ -81,6 +91,11 @@ describe Aptible::CLI::Agent do
 
     context 'elasticsearch' do
       let(:db) { Fabricate(:database, account: account, id: 5) }
+      before do
+        allow(Aptible::Api::Database).to receive(:find_by_url)
+          .with("/find/database?handle=#{db.handle}&environment=#{db.account.handle}", token: token)
+          .and_return(db)
+      end
 
       it 'creates a new Elasticsearch log drain' do
         opts = {
