@@ -537,10 +537,43 @@ describe Aptible::CLI::Agent do
       end
     end
 
+    shared_examples 'shared create idle timeout examples' do |method|
+      context 'IDLE_TIMEOUT' do
+        it 'passes idle_timeout if provided' do
+          expect_create_vhost(service, {}, { settings: { 'IDLE_TIMEOUT' => '30' } })
+          stub_options(idle_timeout: '30')
+          subject.send(method, 'web')
+        end
+      end
+    end
+
+    shared_examples 'shared create non-alb tls settings examples' do |method|
+      context 'SSL_CIPHERS_OVERRIDE' do
+        it 'passes ssl_ciphers_override if provided' do
+          wanted = { 'SSL_CIPHERS_OVERRIDE' => 'HIGH:!aNULL' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_ciphers_override: 'HIGH:!aNULL')
+          subject.send(method, 'web')
+        end
+      end
+
+      context 'DISABLE_WEAK_CIPHER_SUITES' do
+        [true, false].each do |value|
+          it "sets disable_weak_cipher_suites to '#{value}'" do
+            wanted = { 'DISABLE_WEAK_CIPHER_SUITES' => value.to_s }
+            expect_create_vhost(service, {}, { settings: wanted })
+            stub_options(disable_weak_cipher_suites: value)
+            subject.send(method, 'web')
+          end
+        end
+      end
+    end
+
     describe 'endpoints:tcp:create' do
       m = 'endpoints:tcp:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tcp vhost examples', m
+      include_examples 'shared create idle timeout examples', m
 
       it 'creates a TCP Endpoint' do
         expect_create_vhost(
@@ -562,6 +595,8 @@ describe Aptible::CLI::Agent do
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tcp vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create idle timeout examples', m
+      include_examples 'shared create non-alb tls settings examples', m
 
       it 'creates a TLS Endpoint' do
         expect_create_vhost(
@@ -614,6 +649,8 @@ describe Aptible::CLI::Agent do
       m = 'endpoints:grpc:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create idle timeout examples', m
+      include_examples 'shared create non-alb tls settings examples', m
 
       it 'creates a gRPC Endpoint' do
         expect_create_vhost(

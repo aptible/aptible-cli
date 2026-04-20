@@ -53,6 +53,13 @@ module Aptible
                   )
                 end
 
+                option(
+                  :idle_timeout,
+                  type: :string,
+                  desc: 'Timeout (seconds) to enforce idle timeouts while ' \
+                        'sending and receiving responses'
+                )
+
                 if builder.alb?
                   option(
                     :load_balancing_algorithm_type,
@@ -70,22 +77,6 @@ module Aptible
                           'Endpoints'
                   )
 
-                  # TODO : remove this one
-                  # option(
-                  #   :client_body_timeout,
-                  #   type: :string,
-                  #   desc: 'Timeout (seconds) for receiving the request body, ' \
-                  #         'applying only between successive read operations ' \
-                  #         'rather than to the entire request body transmission'
-                  # )
-
-                  # TODO : add ssl_ciphers_override
-                  # desc:  Customize the SSL ciphers used by your Endpoint. The value must be a string in the
-                  # format accepted by Nginx's `ssl_ciphers` directive.
-
-                  # TODO : add disable_weak_cipher_suites
-                  # desc:   An optionated ssl_ciphers_override policy that blocks the SSLv3 protocol and RC4 ciphers.
-
                   option(
                     :force_ssl,
                     type: :boolean,
@@ -94,33 +85,11 @@ module Aptible
                   )
 
                   option(
-                    :idle_timeout,
-                    type: :string,
-                    desc: 'Timeout (seconds) to enforce idle timeouts while ' \
-                          'sending and receiving responses'
-                  )
-
-                  # TODO : remove this one
-                  # option(
-                  #   :ignore_invalid_headers,
-                  #   type: :boolean,
-                  #   desc: 'Controls whether header fields with invalid names ' \
-                  #         'should be dropped by the endpoint'
-                  # )
-
-                  option(
                     :maintenance_page_url,
                     type: :string,
                     desc: 'The URL of a maintenance page to cache and serve ' \
                           'when requests time out, or your app is unhealthy'
                   )
-
-                  # TODO : remove this one
-                  # option(
-                  #   :nginx_error_log_level,
-                  #   type: :string,
-                  #   desc: "Sets the log level for the endpoint's error logs"
-                  # )
 
                   option(
                     :release_healthcheck_timeout,
@@ -210,16 +179,24 @@ module Aptible
                 )
 
                 option(
-                  :ssl_ciphers_override,
-                  type: :string,
-                  desc: 'Specify the allowed SSL ciphers'
-                )
-
-                option(
                   :ssl_protocols_override,
                   type: :string,
                   desc: 'Specify a list of allowed SSL protocols'
                 )
+
+                unless builder.alb?
+                  option(
+                    :ssl_ciphers_override,
+                    type: :string,
+                    desc: 'Specify the allowed SSL ciphers'
+                  )
+
+                  option(
+                    :disable_weak_cipher_suites,
+                    type: :boolean,
+                    desc: 'Block the SSLv3 protocol and RC4 ciphers'
+                  )
+                end
               end
             end
           end
@@ -322,6 +299,7 @@ module Aptible
               force_ssl
               show_elb_healthchecks
               strict_health_checks
+              disable_weak_cipher_suites
             )
 
             boolean_vhost_settings.each do |key|
