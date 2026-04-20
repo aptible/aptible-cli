@@ -70,13 +70,21 @@ module Aptible
                           'Endpoints'
                   )
 
-                  option(
-                    :client_body_timeout,
-                    type: :string,
-                    desc: 'Timeout (seconds) for receiving the request body, ' \
-                          'applying only between successive read operations ' \
-                          'rather than to the entire request body transmission'
-                  )
+                  # TODO : remove this one
+                  # option(
+                  #   :client_body_timeout,
+                  #   type: :string,
+                  #   desc: 'Timeout (seconds) for receiving the request body, ' \
+                  #         'applying only between successive read operations ' \
+                  #         'rather than to the entire request body transmission'
+                  # )
+
+                  # TODO : add ssl_ciphers_override
+                  # desc:  Customize the SSL ciphers used by your Endpoint. The value must be a string in the
+                  # format accepted by Nginx's `ssl_ciphers` directive.
+
+                  # TODO : add disable_weak_cipher_suites
+                  # desc:   An optionated ssl_ciphers_override policy that blocks the SSLv3 protocol and RC4 ciphers.
 
                   option(
                     :force_ssl,
@@ -92,12 +100,13 @@ module Aptible
                           'sending and receiving responses'
                   )
 
-                  option(
-                    :ignore_invalid_headers,
-                    type: :boolean,
-                    desc: 'Controls whether header fields with invalid names ' \
-                          'should be dropped by the endpoint'
-                  )
+                  # TODO : remove this one
+                  # option(
+                  #   :ignore_invalid_headers,
+                  #   type: :boolean,
+                  #   desc: 'Controls whether header fields with invalid names ' \
+                  #         'should be dropped by the endpoint'
+                  # )
 
                   option(
                     :maintenance_page_url,
@@ -106,11 +115,12 @@ module Aptible
                           'when requests time out, or your app is unhealthy'
                   )
 
-                  option(
-                    :nginx_error_log_level,
-                    type: :string,
-                    desc: "Sets the log level for the endpoint's error logs"
-                  )
+                  # TODO : remove this one
+                  # option(
+                  #   :nginx_error_log_level,
+                  #   type: :string,
+                  #   desc: "Sets the log level for the endpoint's error logs"
+                  # )
 
                   option(
                     :release_healthcheck_timeout,
