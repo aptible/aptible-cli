@@ -1,7 +1,6 @@
-class StubConfiguration < OpenStruct
-end
+class StubSetting < StubAptibleResource; end
 
-Fabricator(:setting, from: :stub_configuration) do
+Fabricator(:setting, from: :stub_setting) do
   settings { {} }
   sensitive_settings { {} }
 
