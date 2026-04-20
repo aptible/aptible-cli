@@ -274,10 +274,8 @@ module Aptible
             end
 
             vhost_settings = %i(
-              client_body_timeout
               idle_timeout
               maintenance_page_url
-              nginx_error_log_level
               release_healthcheck_timeout
               ssl_protocols_override
               ssl_ciphers_override
@@ -307,18 +305,6 @@ module Aptible
               next if value.nil?
 
               settings[key.to_s.upcase] = value.to_s
-            end
-
-            # This one we pass through to nginx for whatever rason, so
-            # "on" and "off" are the exected values
-            ignore_invalid_headers = options.delete(:ignore_invalid_headers)
-            unless ignore_invalid_headers.nil?
-              settings['IGNORE_INVALID_HEADERS'] = case ignore_invalid_headers
-                                                   when true
-                                                     'on'
-                                                   when false
-                                                     'off'
-                                                   end
             end
 
             options.delete(:environment)

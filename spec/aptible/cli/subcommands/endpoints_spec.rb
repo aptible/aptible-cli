@@ -262,10 +262,8 @@ describe Aptible::CLI::Agent do
     shared_examples 'shared create and modify ALB settings examples' do |method|
       context 'App Vhost Settings (string)' do
         string_options = %i(
-          client_body_timeout
           idle_timeout
           maintenance_page_url
-          nginx_error_log_level
           release_healthcheck_timeout
           ssl_protocols_override
         )
@@ -326,18 +324,6 @@ describe Aptible::CLI::Agent do
         end
       end
 
-      context 'Strange Vhost settings' do
-        { true => 'on', false => 'off' }.each do |bool, value|
-          context "--#{bool ? '' : 'no-'}ignore_invalid_headers" do
-            it "sets the value to the string '#{value}'" do
-              wanted = { 'IGNORE_INVALID_HEADERS' => value }
-              expect_create_vhost(service, {}, { settings: wanted })
-              stub_options(ignore_invalid_headers: bool)
-              subject.send(method, 'web')
-            end
-          end
-        end
-      end
     end
 
     shared_examples 'shared create app vhost examples' do |method|
