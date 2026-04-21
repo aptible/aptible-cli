@@ -14,6 +14,36 @@ module Aptible
             alb
           ).freeze
 
+          SSL_PROTOCOL_VALUES = [
+            'TLSv1 TLSv1.1 TLSv1.2',
+            'TLSv1 TLSv1.1 TLSv1.2 PFS',
+            'TLSv1.1 TLSv1.2',
+            'TLSv1.1 TLSv1.2 PFS',
+            'TLSv1.2',
+            'TLSv1.2 PFS',
+            'TLSv1.2 PFS TLSv1.3',
+            'TLSv1.3'
+          ].freeze
+
+          SSL_PROTOCOL_PFS_VALUES =
+            SSL_PROTOCOL_VALUES.select { |v| v.include?(' PFS') }.freeze
+
+          SSL_PROTOCOL_NON_PFS_VALUES =
+            SSL_PROTOCOL_VALUES.reject { |v| v.include?(' PFS') }.freeze
+
+          SSL_PROTOCOL_ALB_DESC = (
+            'Specify the allowed SSL protocols. Valid options: ' +
+            SSL_PROTOCOL_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            '. PFS options require an HTTPS (ALB) endpoint. ' \
+            'Use "default" to reset to the platform default'
+          ).freeze
+
+          SSL_PROTOCOL_NON_ALB_DESC = (
+            'Specify the allowed SSL protocols. Valid options: ' +
+            SSL_PROTOCOL_NON_PFS_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            '. Use "default" to reset to the platform default'
+          ).freeze
+
           def initialize(&block)
             FLAGS.each { |f| instance_variable_set("@#{f}", false) }
             instance_exec(&block) if block
@@ -57,7 +87,8 @@ module Aptible
                   :idle_timeout,
                   type: :string,
                   desc: 'Timeout (seconds) to enforce idle timeouts while ' \
-                        'sending and receiving responses'
+                        'sending and receiving responses. Use "default" to ' \
+                        'reset to the platform default'
                 )
 
                 if builder.alb?
@@ -88,14 +119,16 @@ module Aptible
                     :maintenance_page_url,
                     type: :string,
                     desc: 'The URL of a maintenance page to cache and serve ' \
-                          'when requests time out, or your app is unhealthy'
+                          'when requests time out, or your app is unhealthy. ' \
+                          'Use "default" to reset to the platform default'
                   )
 
                   option(
                     :release_healthcheck_timeout,
                     type: :string,
                     desc: 'Timeout (seconds) to wait for your app to ' \
-                          'respond to a release health check'
+                          'respond to a release health check. Use "default" ' \
+                          'to reset to the platform default'
                   )
 
                   option(
@@ -108,7 +141,7 @@ module Aptible
                   option(
                     :ssl_protocols_override,
                     type: :string,
-                    desc: 'Specify a list of allowed SSL protocols'
+                    desc: SSL_PROTOCOL_ALB_DESC
                   )
 
                   option(
@@ -181,14 +214,15 @@ module Aptible
                 option(
                   :ssl_protocols_override,
                   type: :string,
-                  desc: 'Specify a list of allowed SSL protocols'
+                  desc: SSL_PROTOCOL_NON_ALB_DESC
                 )
 
                 unless builder.alb?
                   option(
                     :ssl_ciphers_override,
                     type: :string,
-                    desc: 'Specify the allowed SSL ciphers'
+                    desc: 'Specify the allowed SSL ciphers. ' \
+                          'Use "default" to reset to the platform default'
                   )
 
                   option(
@@ -271,6 +305,21 @@ module Aptible
               end
 
               params[:shared] = options.delete(:shared)
+            end
+
+            if (proto = options[:ssl_protocols_override]) &&
+               proto != 'default'
+              unless SSL_PROTOCOL_VALUES.include?(proto)
+                raise Thor::Error,
+                      "Invalid --ssl-protocols-override: \"#{proto}\". " \
+                      "Valid options are: #{SSL_PROTOCOL_VALUES.join(', ')}"
+              end
+
+              if SSL_PROTOCOL_PFS_VALUES.include?(proto) && !alb?
+                raise Thor::Error,
+                      '--ssl-protocols-override: PFS options are only ' \
+                      'available on HTTPS (ALB) endpoints'
+              end
             end
 
             vhost_settings = %i(

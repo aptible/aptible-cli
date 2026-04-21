@@ -265,7 +265,6 @@ describe Aptible::CLI::Agent do
           idle_timeout
           maintenance_page_url
           release_healthcheck_timeout
-          ssl_protocols_override
         )
 
         let(:value) { 'some value' }
@@ -303,6 +302,40 @@ describe Aptible::CLI::Agent do
         end
       end
 
+      context '--ssl-protocols-override' do
+        it 'passes a valid non-PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2')
+          subject.send(method, 'web')
+        end
+
+        it 'passes a valid PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2 PFS' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2 PFS')
+          subject.send(method, 'web')
+        end
+
+        it 'raises an error for an invalid value' do
+          stub_options(ssl_protocols_override: 'TLSv1.0')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/invalid --ssl-protocols-override/im)
+        end
+
+        it 'passes nothing if not provided' do
+          expect_create_vhost(service, {})
+          subject.send(method, 'web')
+        end
+
+        it 'sends an empty string if passed the string "default"' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => '' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'default')
+          subject.send(method, 'web')
+        end
+      end
+
       context 'App Vhost Settings (boolean)' do
         boolean_options = %i(
           force_ssl
@@ -323,7 +356,6 @@ describe Aptible::CLI::Agent do
           end
         end
       end
-
     end
 
     shared_examples 'shared create app vhost examples' do |method|
@@ -534,6 +566,27 @@ describe Aptible::CLI::Agent do
     end
 
     shared_examples 'shared create non-alb tls settings examples' do |method|
+      context '--ssl-protocols-override' do
+        it 'passes a valid non-PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2')
+          subject.send(method, 'web')
+        end
+
+        it 'raises an error for a PFS value' do
+          stub_options(ssl_protocols_override: 'TLSv1.2 PFS')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/pfs.*only.*alb/im)
+        end
+
+        it 'raises an error for an invalid value' do
+          stub_options(ssl_protocols_override: 'TLSv1.0')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/invalid --ssl-protocols-override/im)
+        end
+      end
+
       context 'SSL_CIPHERS_OVERRIDE' do
         it 'passes ssl_ciphers_override if provided' do
           wanted = { 'SSL_CIPHERS_OVERRIDE' => 'HIGH:!aNULL' }
