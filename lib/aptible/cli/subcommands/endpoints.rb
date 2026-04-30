@@ -27,13 +27,18 @@ module Aptible
               service = database.service
               raise Thor::Error, 'Database is not provisioned' if service.nil?
 
+              prepared_params, settings = database_create_flags.prepare(
+                database.account,
+                options
+              )
+
               vhost = service.create_vhost!(
                 type: 'tcp',
                 platform: 'elb',
-                **database_create_flags.prepare(database.account, options)
+                **prepared_params
               )
 
-              provision_vhost_and_explain(service, vhost)
+              provision_vhost_and_explain(service, vhost, settings)
             end
 
             database_modify_flags = Helpers::Vhost::OptionSetBuilder.new do
@@ -49,9 +54,14 @@ module Aptible
 
               database = ensure_database(options.merge(db: options[:database]))
               vhost = find_vhost(each_service(database), hostname)
-              vhost.update!(**database_modify_flags.prepare(database.account,
-                                                            options))
-              provision_vhost_and_explain(vhost.service, vhost)
+
+              prepared_params, settings = database_modify_flags.prepare(
+                database.account,
+                options
+              )
+
+              vhost.update!(**prepared_params)
+              provision_vhost_and_explain(vhost.service, vhost, settings)
             end
 
             tcp_create_flags = Helpers::Vhost::OptionSetBuilder.new do
@@ -246,18 +256,26 @@ module Aptible
             no_commands do
               def create_app_vhost(flags, options, process_type, **attrs)
                 service = ensure_service(options, process_type)
+
+                prepared_params, settings =
+                  flags.prepare(service.account, options)
+
                 vhost = service.create_vhost!(
-                  **flags.prepare(service.account, options),
+                  **prepared_params,
                   **attrs
                 )
-                provision_vhost_and_explain(service, vhost)
+                provision_vhost_and_explain(service, vhost, settings)
               end
 
               def modify_app_vhost(flags, options, hostname)
                 app = ensure_app(options)
                 vhost = find_vhost(each_service(app), hostname)
-                vhost.update!(**flags.prepare(vhost.service.account, options))
-                provision_vhost_and_explain(vhost.service, vhost)
+
+                prepared_params, settings =
+                  flags.prepare(vhost.service.account, options)
+
+                vhost.update!(**prepared_params)
+                provision_vhost_and_explain(vhost.service, vhost, settings)
               end
             end
           end

@@ -25,12 +25,12 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  def expect_create_vhost(service, options)
+  def expect_create_vhost(service, options, settings: nil)
     expect(service).to receive(:create_vhost!).with(
       hash_including(options)
     ) do |args|
       Fabricate(:vhost, service: service, **args).tap do |v|
-        expect_operation(v, 'provision')
+        expect_operation(v, 'provision', settings: settings)
         expect(v).to receive(:reload).and_return(v)
         expect(Aptible::CLI::ResourceFormatter).to receive(:inject_vhost)
           .with(an_instance_of(Aptible::CLI::Formatter::Object), v, service)
@@ -49,8 +49,16 @@ describe Aptible::CLI::Agent do
     end
   end
 
-  def expect_operation(vhost, type)
-    expect(vhost).to receive(:create_operation!).with(type: type) do
+  def expect_operation(vhost, type, settings: nil)
+    expect(vhost).to receive(:create_operation!) do |args|
+      expect(args[:type]).to eq(type)
+
+      if settings.nil?
+        expect(args).not_to have_key(:settings)
+      else
+        expect(args[:settings]).to eq(settings)
+      end
+
       Fabricate(:operation).tap do |o|
         expect(subject).to receive(:attach_to_operation_logs).with(o)
       end
@@ -170,7 +178,13 @@ describe Aptible::CLI::Agent do
       it 'lists Endpoints' do
         s = Fabricate(:service, database: db)
         v1 = Fabricate(:vhost, service: s)
+        v1.current_setting = Fabricate(:setting,
+                                       settings: { 'IDLE_TIMEOUT' => '123' },
+                                       vhost: v1)
         v2 = Fabricate(:vhost, service: s)
+        v2.current_setting = Fabricate(:setting,
+                                       settings: { 'FORCE_SSL' => 'true' },
+                                       vhost: v2)
 
         stub_options(database: db.handle)
         subject.send('endpoints:list')
@@ -179,6 +193,8 @@ describe Aptible::CLI::Agent do
 
         expect(lines).to include("Hostname: #{v1.external_host}")
         expect(lines).to include("Hostname: #{v2.external_host}")
+        expect(lines).to include('Idle Timeout: 123')
+        expect(lines).to include('Force SSL: true')
 
         expect(lines[0]).not_to eq("\n")
         expect(lines[-1]).not_to eq("\n")
@@ -241,6 +257,105 @@ describe Aptible::CLI::Agent do
 
       allow(app).to receive(:class).and_return(Aptible::Api::App)
       stub_options
+    end
+
+    shared_examples 'shared create and modify ALB settings examples' do |method|
+      context 'App Vhost Settings (string)' do
+        string_options = %i(
+          idle_timeout
+          maintenance_page_url
+          release_healthcheck_timeout
+        )
+
+        let(:value) { 'some value' }
+
+        string_options.each do |option|
+          context "--#{option.to_s.tr('_', '-')}" do
+            it 'passes a value if provided' do
+              wanted = { option.to_s.upcase => value }
+              expect_create_vhost(service, {}, { settings: wanted })
+              stub_options(option => value)
+              subject.send(method, 'web')
+            end
+
+            it 'passes nothing if not provided' do
+              expect_create_vhost(service, {})
+              subject.send(method, 'web')
+            end
+
+            context 'reverting to default' do
+              it 'sends an empty string if passed an empty string' do
+                wanted = { option.to_s.upcase => '' }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => '')
+                subject.send(method, 'web')
+              end
+
+              it 'sends an empty string if passed the string "default"' do
+                wanted = { option.to_s.upcase => '' }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => 'default')
+                subject.send(method, 'web')
+              end
+            end
+          end
+        end
+      end
+
+      context '--ssl-protocols-override' do
+        it 'passes a valid non-PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2')
+          subject.send(method, 'web')
+        end
+
+        it 'passes a valid PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2 PFS' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2 PFS')
+          subject.send(method, 'web')
+        end
+
+        it 'raises an error for an invalid value' do
+          stub_options(ssl_protocols_override: 'TLSv1.0')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/invalid --ssl-protocols-override/im)
+        end
+
+        it 'passes nothing if not provided' do
+          expect_create_vhost(service, {})
+          subject.send(method, 'web')
+        end
+
+        it 'sends an empty string if passed the string "default"' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => '' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'default')
+          subject.send(method, 'web')
+        end
+      end
+
+      context 'App Vhost Settings (boolean)' do
+        boolean_options = %i(
+          force_ssl
+          show_elb_healthchecks
+          strict_health_checks
+        )
+
+        boolean_options.each do |option|
+          [true, false].each do |value|
+            context "--#{value ? '' : 'no-'}#{option.to_s.tr('_', '-')}" do
+              it "sets the value to the string '#{value}'" do
+                wanted = { option.to_s.upcase => value.to_s }
+                expect_create_vhost(service, {}, { settings: wanted })
+                stub_options(option => value)
+                subject.send(method, 'web')
+              end
+            end
+          end
+        end
+      end
     end
 
     shared_examples 'shared create app vhost examples' do |method|
@@ -440,10 +555,64 @@ describe Aptible::CLI::Agent do
       end
     end
 
+    shared_examples 'shared create idle timeout examples' do |method|
+      context 'IDLE_TIMEOUT' do
+        it 'passes idle_timeout if provided' do
+          expect_create_vhost(service, {}, { settings: { 'IDLE_TIMEOUT' => '30' } })
+          stub_options(idle_timeout: '30')
+          subject.send(method, 'web')
+        end
+      end
+    end
+
+    shared_examples 'shared create non-alb tls settings examples' do |method|
+      context '--ssl-protocols-override' do
+        it 'passes a valid non-PFS value' do
+          wanted = { 'SSL_PROTOCOLS_OVERRIDE' => 'TLSv1.2' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_protocols_override: 'TLSv1.2')
+          subject.send(method, 'web')
+        end
+
+        it 'raises an error for a PFS value' do
+          stub_options(ssl_protocols_override: 'TLSv1.2 PFS')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/pfs.*only.*alb/im)
+        end
+
+        it 'raises an error for an invalid value' do
+          stub_options(ssl_protocols_override: 'TLSv1.0')
+          expect { subject.send(method, 'web') }
+            .to raise_error(/invalid --ssl-protocols-override/im)
+        end
+      end
+
+      context 'SSL_CIPHERS_OVERRIDE' do
+        it 'passes ssl_ciphers_override if provided' do
+          wanted = { 'SSL_CIPHERS_OVERRIDE' => 'HIGH:!aNULL' }
+          expect_create_vhost(service, {}, { settings: wanted })
+          stub_options(ssl_ciphers_override: 'HIGH:!aNULL')
+          subject.send(method, 'web')
+        end
+      end
+
+      context 'DISABLE_WEAK_CIPHER_SUITES' do
+        [true, false].each do |value|
+          it "sets disable_weak_cipher_suites to '#{value}'" do
+            wanted = { 'DISABLE_WEAK_CIPHER_SUITES' => value.to_s }
+            expect_create_vhost(service, {}, { settings: wanted })
+            stub_options(disable_weak_cipher_suites: value)
+            subject.send(method, 'web')
+          end
+        end
+      end
+    end
+
     describe 'endpoints:tcp:create' do
       m = 'endpoints:tcp:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tcp vhost examples', m
+      include_examples 'shared create idle timeout examples', m
 
       it 'creates a TCP Endpoint' do
         expect_create_vhost(
@@ -465,6 +634,8 @@ describe Aptible::CLI::Agent do
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tcp vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create idle timeout examples', m
+      include_examples 'shared create non-alb tls settings examples', m
 
       it 'creates a TLS Endpoint' do
         expect_create_vhost(
@@ -484,6 +655,7 @@ describe Aptible::CLI::Agent do
       m = 'endpoints:https:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create and modify ALB settings examples', m
 
       it 'creates a HTTP Endpoint' do
         expect_create_vhost(
@@ -516,6 +688,8 @@ describe Aptible::CLI::Agent do
       m = 'endpoints:grpc:create'
       include_examples 'shared create app vhost examples', m
       include_examples 'shared create tls vhost examples', m
+      include_examples 'shared create idle timeout examples', m
+      include_examples 'shared create non-alb tls settings examples', m
 
       it 'creates a gRPC Endpoint' do
         expect_create_vhost(

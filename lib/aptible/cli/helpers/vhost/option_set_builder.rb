@@ -14,6 +14,36 @@ module Aptible
             alb
           ).freeze
 
+          SSL_PROTOCOL_VALUES = [
+            'TLSv1 TLSv1.1 TLSv1.2',
+            'TLSv1 TLSv1.1 TLSv1.2 PFS',
+            'TLSv1.1 TLSv1.2',
+            'TLSv1.1 TLSv1.2 PFS',
+            'TLSv1.2',
+            'TLSv1.2 PFS',
+            'TLSv1.2 PFS TLSv1.3',
+            'TLSv1.3'
+          ].freeze
+
+          SSL_PROTOCOL_PFS_VALUES =
+            SSL_PROTOCOL_VALUES.select { |v| v.include?(' PFS') }.freeze
+
+          SSL_PROTOCOL_NON_PFS_VALUES =
+            SSL_PROTOCOL_VALUES.reject { |v| v.include?(' PFS') }.freeze
+
+          SSL_PROTOCOL_ALB_DESC = (
+            'Specify the allowed SSL protocols. Valid options: ' +
+            SSL_PROTOCOL_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            '. PFS options require an HTTPS (ALB) endpoint. ' \
+            'Use "default" to reset to the platform default'
+          ).freeze
+
+          SSL_PROTOCOL_NON_ALB_DESC = (
+            'Specify the allowed SSL protocols. Valid options: ' +
+            SSL_PROTOCOL_NON_PFS_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            '. Use "default" to reset to the platform default'
+          ).freeze
+
           def initialize(&block)
             FLAGS.each { |f| instance_variable_set("@#{f}", false) }
             instance_exec(&block) if block
@@ -53,6 +83,14 @@ module Aptible
                   )
                 end
 
+                option(
+                  :idle_timeout,
+                  type: :string,
+                  desc: 'Timeout (seconds) to enforce idle timeouts while ' \
+                        'sending and receiving responses. Use "default" to ' \
+                        'reset to the platform default'
+                )
+
                 if builder.alb?
                   option(
                     :load_balancing_algorithm_type,
@@ -69,6 +107,50 @@ module Aptible
                     desc: "Share this Endpoint's load balancer with other " \
                           'Endpoints'
                   )
+
+                  option(
+                    :force_ssl,
+                    type: :boolean,
+                    desc: 'Redirect all HTTP requests to HTTPS, and ' \
+                          'enable the Strict-Transport-Security header (HSTS)'
+                  )
+
+                  option(
+                    :maintenance_page_url,
+                    type: :string,
+                    desc: 'The URL of a maintenance page to cache and serve ' \
+                          'when requests time out, or your app is unhealthy. ' \
+                          'Use "default" to reset to the platform default'
+                  )
+
+                  option(
+                    :release_healthcheck_timeout,
+                    type: :string,
+                    desc: 'Timeout (seconds) to wait for your app to ' \
+                          'respond to a release health check. Use "default" ' \
+                          'to reset to the platform default'
+                  )
+
+                  option(
+                    :show_elb_healthchecks,
+                    type: :boolean,
+                    desc: 'Show all runtime health check requets in the ' \
+                          "endpoint's logs"
+                  )
+
+                  option(
+                    :ssl_protocols_override,
+                    type: :string,
+                    desc: SSL_PROTOCOL_ALB_DESC
+                  )
+
+                  option(
+                    :strict_health_checks,
+                    type: :boolean,
+                    desc: 'Require containers to respond to health checks ' \
+                          'with a 200 OK HTTP response.'
+                  )
+
                 end
               end
 
@@ -128,6 +210,27 @@ module Aptible
                   desc: 'The fingerprint of an existing Certificate to use ' \
                         'on this Endpoint'
                 )
+
+                option(
+                  :ssl_protocols_override,
+                  type: :string,
+                  desc: SSL_PROTOCOL_NON_ALB_DESC
+                )
+
+                unless builder.alb?
+                  option(
+                    :ssl_ciphers_override,
+                    type: :string,
+                    desc: 'Specify the allowed SSL ciphers. ' \
+                          'Use "default" to reset to the platform default'
+                  )
+
+                  option(
+                    :disable_weak_cipher_suites,
+                    type: :boolean,
+                    desc: 'Block the SSLv3 protocol and RC4 ciphers'
+                  )
+                end
               end
             end
           end
@@ -137,6 +240,7 @@ module Aptible
             verify_option_conflicts(options)
 
             params = {}
+            settings = {}
 
             params[:ip_whitelist] = options.delete(:ip_whitelist) do
               create? ? [] : nil
@@ -203,6 +307,55 @@ module Aptible
               params[:shared] = options.delete(:shared)
             end
 
+            if (proto = options[:ssl_protocols_override]) &&
+               proto != 'default'
+              unless SSL_PROTOCOL_VALUES.include?(proto)
+                raise Thor::Error,
+                      "Invalid --ssl-protocols-override: \"#{proto}\". " \
+                      "Valid options are: #{SSL_PROTOCOL_VALUES.join(', ')}"
+              end
+
+              if SSL_PROTOCOL_PFS_VALUES.include?(proto) && !alb?
+                raise Thor::Error,
+                      '--ssl-protocols-override: PFS options are only ' \
+                      'available on HTTPS (ALB) endpoints'
+              end
+            end
+
+            vhost_settings = %i(
+              idle_timeout
+              maintenance_page_url
+              release_healthcheck_timeout
+              ssl_protocols_override
+              ssl_ciphers_override
+            )
+
+            vhost_settings.each do |key|
+              val = options.delete(key)
+              next if val.nil?
+
+              settings[key.to_s.upcase] = case val
+                                          when 'default'
+                                            ''
+                                          else
+                                            val
+                                          end
+            end
+
+            boolean_vhost_settings = %i(
+              force_ssl
+              show_elb_healthchecks
+              strict_health_checks
+              disable_weak_cipher_suites
+            )
+
+            boolean_vhost_settings.each do |key|
+              value = options.delete(key)
+              next if value.nil?
+
+              settings[key.to_s.upcase] = value.to_s
+            end
+
             options.delete(:environment)
 
             # NOTE: This is here to ensure that specs don't test for options
@@ -210,7 +363,7 @@ module Aptible
             # this.
             raise "Unexpected options: #{options}" if options.any?
 
-            params.delete_if { |_, v| v.nil? }
+            [params.delete_if { |_, v| v.nil? }, settings]
           end
 
           FLAGS.each do |f|
