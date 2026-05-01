@@ -311,7 +311,7 @@ module Aptible
               unless ALB_PROTOCOL_VALUES.include?(proto)
                 raise Thor::Error,
                       "Invalid --ssl-protocols-override: \"#{proto}\". " \
-                      "Valid options are: #{SSL_PROTOCOL_VALUES.join(', ')}"
+                      "Valid options are: #{ALB_PROTOCOL_VALUES.join(', ')}"
               end
 
               if !ELB_PROTOCOL_VALUES.include?(proto) && !alb?
