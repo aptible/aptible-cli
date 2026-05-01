@@ -25,22 +25,21 @@ module Aptible
             'TLSv1.3'
           ].freeze
 
-          SSL_PROTOCOL_PFS_VALUES =
-            SSL_PROTOCOL_VALUES.select { |v| v.include?(' PFS') }.freeze
+          ALB_PROTOCOL_VALUES = SSL_PROTOCOL_VALUES
 
-          SSL_PROTOCOL_NON_PFS_VALUES =
+          ELB_PROTOCOL_VALUES =
             SSL_PROTOCOL_VALUES.reject { |v| v.include?(' PFS') }.freeze
 
           SSL_PROTOCOL_ALB_DESC = (
             'Specify the allowed SSL protocols. Valid options: ' +
-            SSL_PROTOCOL_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            ALB_PROTOCOL_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
             '. PFS options require an HTTPS (ALB) endpoint. ' \
             'Use "default" to reset to the platform default'
           ).freeze
 
-          SSL_PROTOCOL_NON_ALB_DESC = (
+          SSL_PROTOCOL_ELB_DESC = (
             'Specify the allowed SSL protocols. Valid options: ' +
-            SSL_PROTOCOL_NON_PFS_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
+            ELB_PROTOCOL_VALUES.map { |v| "\"#{v}\"" }.join(', ') +
             '. Use "default" to reset to the platform default'
           ).freeze
 
@@ -211,13 +210,13 @@ module Aptible
                         'on this Endpoint'
                 )
 
-                option(
-                  :ssl_protocols_override,
-                  type: :string,
-                  desc: SSL_PROTOCOL_NON_ALB_DESC
-                )
-
                 unless builder.alb?
+                  option(
+                    :ssl_protocols_override,
+                    type: :string,
+                    desc: SSL_PROTOCOL_ELB_DESC
+                  )
+
                   option(
                     :ssl_ciphers_override,
                     type: :string,
@@ -309,16 +308,17 @@ module Aptible
 
             if (proto = options[:ssl_protocols_override]) &&
                proto != 'default'
-              unless SSL_PROTOCOL_VALUES.include?(proto)
+              unless ALB_PROTOCOL_VALUES.include?(proto)
                 raise Thor::Error,
                       "Invalid --ssl-protocols-override: \"#{proto}\". " \
-                      "Valid options are: #{SSL_PROTOCOL_VALUES.join(', ')}"
+                      "Valid options are: #{ALB_PROTOCOL_VALUES.join(', ')}"
               end
 
-              if SSL_PROTOCOL_PFS_VALUES.include?(proto) && !alb?
+              if !ELB_PROTOCOL_VALUES.include?(proto) && !alb?
                 raise Thor::Error,
-                      '--ssl-protocols-override: PFS options are only ' \
-                      'available on HTTPS (ALB) endpoints'
+                      "Invalid --ssl-protocols-override: \"#{proto}\". " \
+                      'PFS options are only valid for an HTTPS (ALB) endpoint. ' \
+                      "Valid options are: #{ELB_PROTOCOL_VALUES.join(', ')}"
               end
             end
 
