@@ -118,7 +118,7 @@ module Aptible
           end
 
           unless setting.nil?
-            node.value('aptible_docker_image',
+            node.value('docker_image',
                        setting.settings['APTIBLE_DOCKER_IMAGE'])
             node.value('private_registry_username',
                        setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'])

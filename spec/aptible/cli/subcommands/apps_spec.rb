@@ -228,7 +228,7 @@ describe Aptible::CLI::Agent do
             'git_remote' => app.git_repo,
             'created_at' => fmt_time(app.created_at),
             'services' => [],
-            'aptible_docker_image' => 'quay.io/myorg/myapp:latest',
+            'docker_image' => 'quay.io/myorg/myapp:latest',
             'private_registry_username' => 'registryuser',
             'private_registry_password' => 'registrypass'
           }
@@ -249,7 +249,7 @@ describe Aptible::CLI::Agent do
         subject.send('apps')
 
         json = captured_output_json
-        expect(json.first).not_to have_key('aptible_docker_image')
+        expect(json.first).not_to have_key('docker_image')
         expect(json.first).not_to have_key('private_registry_username')
         expect(json.first).not_to have_key('private_registry_password')
       end
