@@ -126,6 +126,32 @@ module Aptible
               end
             end
 
+            desc 'apps:settings HANDLE', 'Display deployment related settings for an app'
+            option :environment, aliases: '--env'
+            define_method 'apps:settings' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
+              environment = nil
+              if options[:environment]
+                environment = environment_from_handle(options[:environment])
+              end
+              app = app_from_handle(handle, environment)
+
+              raise Thor::Error, "Could not find app #{handle}" if app.nil?
+
+              app = with_sensitive(app)
+              setting = current_setting(app)
+
+              Formatter.render(Renderer.current) do |root|
+                root.object do |node|
+                  ResourceFormatter.inject_app(
+                    node, app, app.account, setting,
+                    include_services: false
+                  )
+                end
+              end
+            end
+
             desc 'apps:rename OLD_HANDLE NEW_HANDLE [--environment'\
                  ' ENVIRONMENT_HANDLE]', 'Rename an app handle. In order'\
                  ' for the new app handle to appear in log drain and metric'\

@@ -256,6 +256,66 @@ describe Aptible::CLI::Agent do
     end
   end
 
+  describe '#apps:settings' do
+    it 'displays app settings in JSON' do
+      ClimateControl.modify(APTIBLE_OUTPUT_FORMAT: 'json') do
+        setting = Fabricate(
+          :setting,
+          settings: { 'APTIBLE_DOCKER_IMAGE' => 'quay.io/myorg/myapp:latest' },
+          sensitive_settings: {
+            'APTIBLE_PRIVATE_REGISTRY_USERNAME' => 'registryuser',
+            'APTIBLE_PRIVATE_REGISTRY_PASSWORD' => 'registrypass'
+          }
+        )
+        allow(subject).to receive(:app_from_handle)
+          .with('hello', nil).and_return(app)
+        allow(subject).to receive(:current_setting).with(app)
+          .and_return(setting)
+
+        subject.send('apps:settings', 'hello')
+
+        json = captured_output_json
+        expect(json['handle']).to eq('hello')
+        expect(json['docker_image']).to eq('quay.io/myorg/myapp:latest')
+        expect(json['private_registry_username']).to eq('registryuser')
+        expect(json['private_registry_password']).to eq('registrypass')
+        expect(json).not_to have_key('services')
+        expect(json).not_to have_key('last_deploy_operation')
+      end
+    end
+
+    it 'displays app settings in text' do
+      setting = Fabricate(
+        :setting,
+        settings: { 'APTIBLE_DOCKER_IMAGE' => 'quay.io/myorg/myapp:latest' },
+        sensitive_settings: {
+          'APTIBLE_PRIVATE_REGISTRY_USERNAME' => 'registryuser',
+          'APTIBLE_PRIVATE_REGISTRY_PASSWORD' => 'registrypass'
+        }
+      )
+      allow(subject).to receive(:app_from_handle)
+        .with('hello', nil).and_return(app)
+      allow(subject).to receive(:current_setting).with(app)
+        .and_return(setting)
+
+      subject.send('apps:settings', 'hello')
+
+      output = captured_output_text
+      expect(output).to include('quay.io/myorg/myapp:latest')
+      expect(output).to include('registryuser')
+      expect(output).to include('registrypass')
+      expect(output).not_to include('services')
+    end
+
+    it 'raises an error when app is not found' do
+      allow(subject).to receive(:app_from_handle)
+        .with('nope', nil).and_return(nil)
+
+      expect { subject.send('apps:settings', 'nope') }
+        .to raise_error(Thor::Error, /Could not find app nope/)
+    end
+  end
+
   describe '#apps:create' do
     before do
       allow(Aptible::Api::Account).to receive(:all) { [account] }
