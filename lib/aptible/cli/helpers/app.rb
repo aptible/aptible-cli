@@ -209,6 +209,17 @@ module Aptible
           )
         end
 
+        def current_setting(app)
+          setting_link = app.links['current_setting']
+          return unless setting_link
+
+          Aptible::Api::Setting.find_by_url(
+            setting_link.href,
+            token: fetch_token,
+            headers: { 'Prefer' => 'no_sensitive_extras=false' }
+          )
+        end
+
         private
 
         def handle_strategies

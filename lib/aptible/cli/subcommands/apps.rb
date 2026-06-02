@@ -26,7 +26,8 @@ module Aptible
                     accounts.each do |account|
                       account.each_app do |app|
                         node.object do |n|
-                          ResourceFormatter.inject_app(n, app, account)
+                          setting = current_setting(app)
+                          ResourceFormatter.inject_app(n, app, account, setting)
                         end
                       end
                     end

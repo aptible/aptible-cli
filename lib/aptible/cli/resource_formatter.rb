@@ -95,7 +95,7 @@ module Aptible
           node.value('created_at', operation.created_at)
         end
 
-        def inject_app(node, app, account)
+        def inject_app(node, app, account, setting = nil)
           node.value('id', app.id)
           node.value('handle', app.handle)
           node.value('created_at', app.created_at)
@@ -115,6 +115,15 @@ module Aptible
                 inject_service(n, service, NO_NESTING)
               end
             end
+          end
+
+          unless setting.nil?
+            node.value('aptible_docker_image',
+                       setting.settings['APTIBLE_DOCKER_IMAGE'])
+            node.value('private_registry_username',
+                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'])
+            node.value('private_registry_password',
+                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_PASSWORD'])
           end
 
           attach_account(node, account)

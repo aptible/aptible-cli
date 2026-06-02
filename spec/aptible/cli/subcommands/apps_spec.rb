@@ -101,98 +101,158 @@ describe Aptible::CLI::Agent do
         .to eq("=== #{account2.handle}\n#{app2.handle}\n")
     end
 
-    it 'includes services in JSON' do
-      account = Fabricate(:account, handle: 'account')
-      app = Fabricate(:app, account: account, handle: 'app')
-      allow(Aptible::Api::Account).to receive(:all).and_return([account])
-      allow(Aptible::Api::App).to receive(:all).and_return([app])
+    context 'with JSON output format' do
+      around do |example|
+        ClimateControl.modify(APTIBLE_OUTPUT_FORMAT: 'json') { example.run }
+      end
 
-      s1 = Fabricate(
-        :service,
-        app: app, process_type: 's1', command: 'true', container_count: 2,
-        instance_class: 'm5'
-      )
-      s2 = Fabricate(
-        :service,
-        app: app, process_type: 's2', container_memory_limit_mb: 2048,
-        instance_class: 'r5'
-      )
+      it 'includes services in JSON' do
+        account = Fabricate(:account, handle: 'account')
+        app = Fabricate(:app, account: account, handle: 'app')
+        allow(Aptible::Api::Account).to receive(:all).and_return([account])
+        allow(Aptible::Api::App).to receive(:all).and_return([app])
 
-      expected_json = [
-        {
-          'environment' => {
-            'id' => account.id,
-            'handle' => account.handle,
-            'created_at' => fmt_time(account.created_at)
-          },
-          'handle' => app.handle,
-          'id' => app.id,
-          'status' => app.status,
-          'git_remote' => app.git_repo,
-          'created_at' => fmt_time(app.created_at),
-          'services' => [
-            {
-              'service' => s1.process_type,
-              'id' => s1.id,
-              'command' => s1.command,
-              'container_count' => s1.container_count,
-              'container_profile' => 'm',
-              'container_size' => s1.container_memory_limit_mb,
-              'created_at' => fmt_time(s1.created_at)
+        s1 = Fabricate(
+          :service,
+          app: app, process_type: 's1', command: 'true', container_count: 2,
+          instance_class: 'm5'
+        )
+        s2 = Fabricate(
+          :service,
+          app: app, process_type: 's2', container_memory_limit_mb: 2048,
+          instance_class: 'r5'
+        )
+
+        expected_json = [
+          {
+            'environment' => {
+              'id' => account.id,
+              'handle' => account.handle,
+              'created_at' => fmt_time(account.created_at)
             },
-            {
-              'service' => s2.process_type,
-              'id' => s2.id,
-              'command' => 'CMD',
-              'container_count' => s2.container_count,
-              'container_profile' => 'r',
-              'container_size' => s2.container_memory_limit_mb,
-              'created_at' => fmt_time(s2.created_at)
-            }
-          ]
-        }
-      ]
+            'handle' => app.handle,
+            'id' => app.id,
+            'status' => app.status,
+            'git_remote' => app.git_repo,
+            'created_at' => fmt_time(app.created_at),
+            'services' => [
+              {
+                'service' => s1.process_type,
+                'id' => s1.id,
+                'command' => s1.command,
+                'container_count' => s1.container_count,
+                'container_profile' => 'm',
+                'container_size' => s1.container_memory_limit_mb,
+                'created_at' => fmt_time(s1.created_at)
+              },
+              {
+                'service' => s2.process_type,
+                'id' => s2.id,
+                'command' => 'CMD',
+                'container_count' => s2.container_count,
+                'container_profile' => 'r',
+                'container_size' => s2.container_memory_limit_mb,
+                'created_at' => fmt_time(s2.created_at)
+              }
+            ]
+          }
+        ]
 
-      subject.send('apps')
+        subject.send('apps')
 
-      expect(captured_output_json).to eq(expected_json)
-    end
+        expect(captured_output_json).to eq(expected_json)
+      end
 
-    it 'includes the last deploy operation in JSON' do
-      account = Fabricate(:account, handle: 'account')
-      op = Fabricate(:operation, type: 'deploy', status: 'succeeded')
-      app = Fabricate(:app, account: account, handle: 'app',
-                            last_deploy_operation: op)
-      allow(Aptible::Api::Account).to receive(:all).and_return([account])
-      allow(Aptible::Api::App).to receive(:all).and_return([app])
+      it 'includes the last deploy operation in JSON' do
+        account = Fabricate(:account, handle: 'account')
+        op = Fabricate(:operation, type: 'deploy', status: 'succeeded')
+        app = Fabricate(:app, account: account, handle: 'app',
+                              last_deploy_operation: op)
+        allow(Aptible::Api::Account).to receive(:all).and_return([account])
+        allow(Aptible::Api::App).to receive(:all).and_return([app])
 
-      expected_json = [
-        {
-          'environment' => {
-            'id' => account.id,
-            'handle' => account.handle,
-            'created_at' => fmt_time(account.created_at)
-          },
-          'handle' => app.handle,
-          'id' => app.id,
-          'status' => app.status,
-          'git_remote' => app.git_repo,
-          'created_at' => fmt_time(app.created_at),
-          'last_deploy_operation' =>
-            {
-              'id' => op.id,
-              'status' => op.status,
-              'git_ref' => op.git_ref,
-              'user_email' => op.user_email,
-              'created_at' => op.created_at
+        expected_json = [
+          {
+            'environment' => {
+              'id' => account.id,
+              'handle' => account.handle,
+              'created_at' => fmt_time(account.created_at)
             },
-          'services' => []
-        }
-      ]
+            'handle' => app.handle,
+            'id' => app.id,
+            'status' => app.status,
+            'git_remote' => app.git_repo,
+            'created_at' => fmt_time(app.created_at),
+            'last_deploy_operation' =>
+              {
+                'id' => op.id,
+                'status' => op.status,
+                'git_ref' => op.git_ref,
+                'user_email' => op.user_email,
+                'created_at' => op.created_at
+              },
+            'services' => []
+          }
+        ]
 
-      subject.send('apps')
+        subject.send('apps')
 
-      expect(captured_output_json).to eq(expected_json)
+        expect(captured_output_json).to eq(expected_json)
+      end
+
+      it 'includes docker image and registry settings' do
+        account = Fabricate(:account, handle: 'account')
+        setting = Fabricate(
+          :setting,
+          settings: { 'APTIBLE_DOCKER_IMAGE' => 'quay.io/myorg/myapp:latest' },
+          sensitive_settings: {
+            'APTIBLE_PRIVATE_REGISTRY_USERNAME' => 'registryuser',
+            'APTIBLE_PRIVATE_REGISTRY_PASSWORD' => 'registrypass'
+          }
+        )
+        app = Fabricate(:app, account: account, handle: 'app')
+        allow(Aptible::Api::Account).to receive(:all).and_return([account])
+        allow(subject).to receive(:current_setting).with(app)
+          .and_return(setting)
+
+        expected_json = [
+          {
+            'environment' => {
+              'id' => account.id,
+              'handle' => account.handle,
+              'created_at' => fmt_time(account.created_at)
+            },
+            'handle' => app.handle,
+            'id' => app.id,
+            'status' => app.status,
+            'git_remote' => app.git_repo,
+            'created_at' => fmt_time(app.created_at),
+            'services' => [],
+            'aptible_docker_image' => 'quay.io/myorg/myapp:latest',
+            'private_registry_username' => 'registryuser',
+            'private_registry_password' => 'registrypass'
+          }
+        ]
+
+        subject.send('apps')
+
+        expect(captured_output_json).to eq(expected_json)
+      end
+
+      it 'omits docker image and registry settings when no current_setting' do
+        account = Fabricate(:account, handle: 'account')
+        app = Fabricate(:app, account: account, handle: 'app')
+        allow(Aptible::Api::Account).to receive(:all).and_return([account])
+        allow(subject).to receive(:current_setting).with(app)
+          .and_return(nil)
+
+        subject.send('apps')
+
+        json = captured_output_json
+        expect(json.first).not_to have_key('aptible_docker_image')
+        expect(json.first).not_to have_key('private_registry_username')
+        expect(json.first).not_to have_key('private_registry_password')
+      end
     end
   end
 
