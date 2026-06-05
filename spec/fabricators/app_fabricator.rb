@@ -28,6 +28,7 @@ Fabricator(:app, from: :stub_app) do
   services { [] }
   configurations { [] }
   current_configuration { nil }
+  current_setting { nil }
   errors { Aptible::Resource::Errors.new }
   created_at { Time.now }
 
@@ -37,6 +38,11 @@ Fabricator(:app, from: :stub_app) do
         href: "/accounts/#{attrs[:account].id}"
       )
     }
+    if attrs[:current_setting]
+      hash[:current_setting] = OpenStruct.new(
+        href: "/settings/#{attrs[:current_setting].id}"
+      )
+    end
     OpenStruct.new(hash)
   end
 

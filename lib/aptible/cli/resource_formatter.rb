@@ -95,10 +95,13 @@ module Aptible
           node.value('created_at', operation.created_at)
         end
 
-        def inject_app(node, app, account)
+        def inject_app(node, app, account, setting = nil,
+                       include_services: true)
           node.value('id', app.id)
           node.value('handle', app.handle)
           node.value('created_at', app.created_at)
+
+          attach_account(node, account)
 
           node.value('status', app.status)
           node.value('git_remote', app.git_repo)
@@ -109,15 +112,24 @@ module Aptible
             end
           end
 
-          node.list('services') do |services_list|
-            app.each_service do |service|
-              services_list.object do |n|
-                inject_service(n, service, NO_NESTING)
+          if include_services
+            node.list('services') do |services_list|
+              app.each_service do |service|
+                services_list.object do |n|
+                  inject_service(n, service, NO_NESTING)
+                end
               end
             end
           end
 
-          attach_account(node, account)
+          unless setting.nil?
+            node.value('docker_image',
+                       setting.settings['APTIBLE_DOCKER_IMAGE'])
+            node.value('private_registry_username',
+                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'])
+            node.value('private_registry_password',
+                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_PASSWORD'])
+          end
         end
 
         def inject_database_minimal(node, database, account)

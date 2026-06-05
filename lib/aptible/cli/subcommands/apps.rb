@@ -26,7 +26,8 @@ module Aptible
                     accounts.each do |account|
                       account.each_app do |app|
                         node.object do |n|
-                          ResourceFormatter.inject_app(n, app, account)
+                          setting = current_setting(app)
+                          ResourceFormatter.inject_app(n, app, account, setting)
                         end
                       end
                     end
@@ -122,6 +123,32 @@ module Aptible
                 # and was removed faster than attach_to_operation_logs
                 # could attach to the logs.
                 raise if e.response.status != 404
+              end
+            end
+
+            desc 'apps:settings HANDLE', 'Display deployment related settings for an app'
+            option :environment, aliases: '--env'
+            define_method 'apps:settings' do |handle|
+              telemetry(__method__, options.merge(handle: handle))
+
+              environment = nil
+              if options[:environment]
+                environment = environment_from_handle(options[:environment])
+              end
+              app = app_from_handle(handle, environment)
+
+              raise Thor::Error, "Could not find app #{handle}" if app.nil?
+
+              app = with_sensitive(app)
+              setting = current_setting(app)
+
+              Formatter.render(Renderer.current) do |root|
+                root.object do |node|
+                  ResourceFormatter.inject_app(
+                    node, app, app.account, setting,
+                    include_services: false
+                  )
+                end
               end
             end
 
