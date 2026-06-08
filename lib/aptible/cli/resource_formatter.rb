@@ -125,10 +125,12 @@ module Aptible
           unless setting.nil?
             node.value('docker_image',
                        setting.settings['APTIBLE_DOCKER_IMAGE'])
-            node.value('private_registry_username',
-                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'])
-            node.value('private_registry_password',
-                       setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_PASSWORD'])
+            if setting.sensitive_settings.is_a?(Hash)
+              node.value('private_registry_username',
+                         setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_USERNAME'])
+              node.value('private_registry_password',
+                         setting.sensitive_settings['APTIBLE_PRIVATE_REGISTRY_PASSWORD'])
+            end
           end
         end
 
