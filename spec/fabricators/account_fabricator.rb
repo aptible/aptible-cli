@@ -29,6 +29,7 @@ Fabricator(:account, from: :stub_account) do
   log_drains { [] }
   metric_drains { [] }
   backup_retention_policies { [] }
+  ai_tokens { [] }
   created_at { Time.now }
   links do |attrs|
     hash = {
