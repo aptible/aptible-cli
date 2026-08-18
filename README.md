@@ -121,6 +121,14 @@ If you need to parse the output in another program, set the `APTIBLE_OUTPUT_FORM
 
 The default format is `text`.
 
+### Telemetry
+
+The Aptible CLI reports anonymous usage telemetry to help improve the product. To opt out, set the `APTIBLE_DISABLE_TELEMETRY` environment variable to any non-empty value:
+
+```bash
+export APTIBLE_DISABLE_TELEMETRY=1
+```
+
 ## Contributing
 
 1. Fork the project.

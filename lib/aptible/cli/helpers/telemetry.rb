@@ -7,6 +7,8 @@ module Aptible
     module Helpers
       module Telemetry
         def telemetry(cmd, options = {})
+          return if ENV['APTIBLE_DISABLE_TELEMETRY']
+
           token_hash = decode_token
           format = Renderer.format
           format = 'text' if format.nil?
