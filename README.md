@@ -3,6 +3,10 @@
 
 # Aptible CLI
 
+> [!CAUTION]
+> This CLI has been replaced by a new version which can be downloaded [here](https://www.aptible.com/docs/reference/aptible-cli/overview).
+
+
 Command-line interface for Aptible services.
 
 ## Installation
